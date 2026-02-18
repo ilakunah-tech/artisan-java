@@ -1,0 +1,18 @@
+---
+description: Artisan Python→Java migration rules; apply only within artisan-java project
+globs: artisan-java/**/*
+alwaysApply: false
+---
+
+# Artisan Migration Rules (artisan-java only)
+
+**SCOPE**: These rules apply ONLY to the artisan-java project. They do not affect other projects open in Cursor. If the request is not related to Artisan migration to Java, ignore these rules.
+
+- **Source**: Python 3, PyQt5+, folder D:\project\artisantest-master (or workspace artisan-python equivalent)
+- **Target stack**: Java 17, JavaFX 21, Chart-FX 11.2.7, AtlantaFX 2.0.1, jSerialComm 2.10.4
+- **Architecture**: MVC (Model / View / Controller)
+- **Naming**: Keep class names as in original (Python → Java)
+- **Git**: One module = one branch; never move to the next module if the current one does not compile
+- **Tests**: Write tests for every Model class
+- **Comments**: English only
+- **Style**: Google Java Style Guide
