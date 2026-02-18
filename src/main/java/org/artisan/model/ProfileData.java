@@ -1,0 +1,45 @@
+package org.artisan.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Core roast profile data (curve and key metadata).
+ * Subset of Python ProfileData TypedDict used for curves and events.
+ */
+public class ProfileData {
+
+    private List<Double> timex = new ArrayList<>();
+    private List<Double> temp1 = new ArrayList<>();  // e.g. BT
+    private List<Double> temp2 = new ArrayList<>(); // e.g. ET
+    private List<Integer> specialevents = new ArrayList<>();
+    private List<Integer> specialeventstype = new ArrayList<>();
+    private List<Double> specialeventsvalue = new ArrayList<>();
+    private String title;
+    private Double samplingInterval;
+    private ComputedProfileInformation computed;
+
+    public List<Double> getTimex() { return timex; }
+    public void setTimex(List<Double> timex) { this.timex = timex != null ? timex : new ArrayList<>(); }
+    public List<Double> getTemp1() { return temp1; }
+    public void setTemp1(List<Double> temp1) { this.temp1 = temp1 != null ? temp1 : new ArrayList<>(); }
+    public List<Double> getTemp2() { return temp2; }
+    public void setTemp2(List<Double> temp2) { this.temp2 = temp2 != null ? temp2 : new ArrayList<>(); }
+    public List<Integer> getSpecialevents() { return specialevents; }
+    public void setSpecialevents(List<Integer> specialevents) { this.specialevents = specialevents != null ? specialevents : new ArrayList<>(); }
+    public List<Integer> getSpecialeventstype() { return specialeventstype; }
+    public void setSpecialeventstype(List<Integer> specialeventstype) { this.specialeventstype = specialeventstype != null ? specialeventstype : new ArrayList<>(); }
+    public List<Double> getSpecialeventsvalue() { return specialeventsvalue; }
+    public void setSpecialeventsvalue(List<Double> specialeventsvalue) { this.specialeventsvalue = specialeventsvalue != null ? specialeventsvalue : new ArrayList<>(); }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public Double getSamplingInterval() { return samplingInterval; }
+    public void setSamplingInterval(Double samplingInterval) { this.samplingInterval = samplingInterval; }
+    public ComputedProfileInformation getComputed() { return computed; }
+    public void setComputed(ComputedProfileInformation computed) { this.computed = computed; }
+
+    /** Returns the number of data points (length of timex). */
+    public int size() {
+        return timex.size();
+    }
+}
