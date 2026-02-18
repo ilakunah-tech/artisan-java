@@ -13,7 +13,11 @@ class EventTypeTest {
         assertNotNull(EventType.DRY_END);
         assertNotNull(EventType.FC_START);
         assertNotNull(EventType.FC_END);
+        assertNotNull(EventType.SC_START);
+        assertNotNull(EventType.SC_END);
         assertNotNull(EventType.DROP);
-        assertEquals(6, EventType.values().length);
+        assertNotNull(EventType.COOL_END);
+        assertNotNull(EventType.CUSTOM);
+        assertEquals(9, EventType.values().length);
     }
 }
