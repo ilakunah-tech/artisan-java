@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group = 'org.artisan'
+version = '0.1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = '21'
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing']
+}
+
+dependencies {
+    // JavaFX 21 (modules configured by javafx plugin above)
+    implementation 'org.openjfx:javafx-controls:21'
+    implementation 'org.openjfx:javafx-fxml:21'
+    implementation 'org.openjfx:javafx-swing:21'
+
+    // AtlantaFX theme
+    implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
+
+    // Chart-FX
+    implementation 'de.gsi.chart:chartfx-chart:11.2.7'
+
+    // Serial port (COM)
+    implementation 'com.fazecast:jSerialComm:2.10.4'
+
+    // JUnit 5
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+application {
+    mainClass = 'org.artisan.Launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
