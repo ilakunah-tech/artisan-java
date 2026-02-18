@@ -73,7 +73,6 @@ public final class RoastChartController {
         applyColors();
 
         pane = new StackPane(chart);
-        pane.getStylesheets().add("io/github/mkpaz/atlantafx/base/theme/primer-dark.css");
         pane.getStyleClass().add("chart-pane");
     }
 

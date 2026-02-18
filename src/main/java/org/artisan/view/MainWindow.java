@@ -39,6 +39,8 @@ public final class MainWindow extends Application {
   @Override
   public void start(Stage primaryStage) {
     appSettings = AppSettings.load();
+    applyAtlantaFXTheme(appSettings.isDarkTheme());
+
 
     RoastSession session = new RoastSession();
     ArtisanTime timeclock = new ArtisanTime();
@@ -60,7 +62,6 @@ public final class MainWindow extends Application {
     }));
 
     BorderPane root = new BorderPane();
-    root.getStylesheets().add("io/github/mkpaz/atlantafx/base/theme/primer-dark.css");
 
     HBox toolbar = new HBox(10);
     Button onOff = new Button("ON");
@@ -122,6 +123,20 @@ public final class MainWindow extends Application {
       appSettings.save();
     });
     primaryStage.show();
+  }
+
+  private static void applyAtlantaFXTheme(boolean dark) {
+    try {
+      String themeClassName = dark
+          ? "io.github.mkpaz.atlantafx.base.theme.PrimerDark"
+          : "io.github.mkpaz.atlantafx.base.theme.PrimerLight";
+      Class<?> themeClass = Class.forName(themeClassName);
+      Object theme = themeClass.getDeclaredConstructor().newInstance();
+      String css = (String) themeClass.getMethod("getUserAgentStylesheet").invoke(theme);
+      Application.setUserAgentStylesheet(css);
+    } catch (Exception e) {
+      Application.setUserAgentStylesheet(null);
+    }
   }
 
   private void toggleSampling() {

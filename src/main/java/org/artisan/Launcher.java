@@ -1,27 +1,15 @@
 package org.artisan;
 
 import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
+import org.artisan.view.MainWindow;
 
 /**
  * Artisan JavaFX application entry point.
+ * Delegates to MainWindow (toolbar, chart, status bar).
  */
-public class Launcher extends Application {
-
-    @Override
-    public void start(Stage stage) {
-        Label label = new Label("Artisan (Java)");
-        StackPane root = new StackPane(label);
-        Scene scene = new Scene(root, 400, 200);
-        stage.setScene(scene);
-        stage.setTitle("Artisan");
-        stage.show();
-    }
+public class Launcher {
 
     public static void main(String[] args) {
-        launch(args);
+        Application.launch(MainWindow.class, args);
     }
 }
