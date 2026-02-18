@@ -15,6 +15,8 @@ public class ProfileData {
     private List<Integer> specialevents = new ArrayList<>();
     private List<Integer> specialeventstype = new ArrayList<>();
     private List<Double> specialeventsvalue = new ArrayList<>();
+    /** Event indices: 0=CHARGE, 1=DRY_END, 2=FC_START, 3=FC_END, 4=SCs, 5=SCe, 6=DROP, 7=COOL. -1 or 0 means not set. */
+    private List<Integer> timeindex = new ArrayList<>();
     private String title;
     private Double samplingInterval;
     private ComputedProfileInformation computed;
@@ -31,6 +33,8 @@ public class ProfileData {
     public void setSpecialeventstype(List<Integer> specialeventstype) { this.specialeventstype = specialeventstype != null ? specialeventstype : new ArrayList<>(); }
     public List<Double> getSpecialeventsvalue() { return specialeventsvalue; }
     public void setSpecialeventsvalue(List<Double> specialeventsvalue) { this.specialeventsvalue = specialeventsvalue != null ? specialeventsvalue : new ArrayList<>(); }
+    public List<Integer> getTimeindex() { return timeindex; }
+    public void setTimeindex(List<Integer> timeindex) { this.timeindex = timeindex != null ? timeindex : new ArrayList<>(); }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public Double getSamplingInterval() { return samplingInterval; }
