@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Window;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -16,6 +17,7 @@ import org.artisan.controller.AppController;
 import org.artisan.controller.AppSettings;
 import org.artisan.controller.RoastSession;
 import org.artisan.controller.Sample;
+import org.artisan.device.DeviceManager;
 import org.artisan.device.DevicePort;
 import org.artisan.device.StubDevice;
 import org.artisan.model.ArtisanTime;
@@ -78,7 +80,9 @@ public final class MainWindow extends Application {
     drop.setOnAction(e -> appController.onDropButton());
     Button coolEnd = new Button("COOL END");
     coolEnd.setOnAction(e -> appController.onCoolEndButton());
-    toolbar.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd);
+    Button deviceBtn = new Button("\u2699 Device");
+    deviceBtn.setOnAction(e -> openDeviceSettings(root));
+    toolbar.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn);
 
     Node chartView = chartController.getView();
     chartController.startUpdateTimer();
@@ -136,6 +140,21 @@ public final class MainWindow extends Application {
       Application.setUserAgentStylesheet(css);
     } catch (Exception e) {
       Application.setUserAgentStylesheet(null);
+    }
+  }
+
+  private void openDeviceSettings(BorderPane root) {
+    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
+    if (owner == null) return;
+    DeviceSettingsDialog dialog = new DeviceSettingsDialog(owner, appSettings);
+    dialog.showAndWait();
+    if (dialog.isResultOk()) {
+      DevicePort device = DeviceManager.createDevice(
+          dialog.getSelectedDeviceType(),
+          dialog.getSelectedPort(),
+          dialog.getBaudRate());
+      appController.setDevice(device);
+      appController.getSampling().setSamplingRate(dialog.getSamplingRateMs());
     }
   }
 

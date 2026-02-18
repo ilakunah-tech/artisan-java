@@ -29,7 +29,7 @@ public final class AppController {
 
   private final RoastSession session;
   private final Sampling sampling;
-  private final DevicePort device;
+  private volatile DevicePort device;
   private final RoastChartController chartController;
   private final AxisConfig axisConfig;
   private final ColorConfig colorConfig;
@@ -61,6 +61,11 @@ public final class AppController {
     return sampling;
   }
 
+  /** Sets the device used for sampling (e.g. after DeviceSettingsDialog OK). */
+  public void setDevice(DevicePort device) {
+    this.device = device != null ? device : new org.artisan.device.StubDevice();
+  }
+
   /** May be null in tests. */
   public RoastChartController getChartController() {
     return chartController;
@@ -80,6 +85,9 @@ public final class AppController {
    */
   public void startSampling() {
     session.start();
+    if (device != null && !device.isConnected()) {
+      device.connect();
+    }
     sampling.setSamplingRate(sampling.getDelayMs());
     sampling.start(() -> {
       double[] temps = device.readTemperatures();
@@ -98,6 +106,9 @@ public final class AppController {
 
   public void stopSampling() {
     sampling.stop();
+    if (device != null && device.isConnected()) {
+      device.disconnect();
+    }
   }
 
   /** Called when user presses CHARGE; records only if session is active. */

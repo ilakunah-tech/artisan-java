@@ -9,7 +9,8 @@ import java.io.InputStream;
 
 /**
  * Hottop 2k+ roaster device (serial). Message format: 36 bytes, header 0xA5 0x96.
- * ET at bytes 23–24, BT at bytes 25–26 (big-endian).
+ * ET = (bytes[22]<<8|bytes[23])/10.0, BT = (bytes[24]<<8|bytes[25])/10.0.
+ * Timeout 500ms; on timeout returns last known values. Reconnect after 3 read failures.
  */
 public class HottopDevice extends AbstractCommPort {
 
@@ -17,7 +18,13 @@ public class HottopDevice extends AbstractCommPort {
     private static final byte[] HEADER = {(byte) 0xA5, (byte) 0x96};
 
     private static final int MESSAGE_LENGTH = 36;
-    private static final int READ_TIMEOUT_MS_HOTTOP = 300;
+    private static final int READ_TIMEOUT_MS = 500;
+    private static final int FAILURES_BEFORE_RECONNECT = 3;
+    private static final int RECONNECT_DELAY_MS = 2000;
+
+    private volatile double lastET = 0.0;
+    private volatile double lastBT = 0.0;
+    private int consecutiveFailures = 0;
 
     public HottopDevice(String portName) {
         super(portName);
@@ -29,24 +36,35 @@ public class HottopDevice extends AbstractCommPort {
         port.setNumDataBits(DATA_BITS);
         port.setNumStopBits(STOP_BITS);
         port.setParity(SerialPort.NO_PARITY);
-        port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, READ_TIMEOUT_MS_HOTTOP, READ_TIMEOUT_MS_HOTTOP);
+        port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, READ_TIMEOUT_MS, READ_TIMEOUT_MS);
     }
 
     @Override
     protected double[] readTemperaturesImpl() {
         SerialPort port = getSerialPort();
         if (port == null) {
-            return new double[0];
+            return new double[]{lastET, lastBT};
         }
         byte[] message = readMessage(port);
-        if (message == null || message.length != MESSAGE_LENGTH) {
-            return new double[0];
+        if (message == null || message.length != MESSAGE_LENGTH || message[0] != HEADER[0] || message[1] != HEADER[1]) {
+            consecutiveFailures++;
+            if (consecutiveFailures >= FAILURES_BEFORE_RECONNECT) {
+                try {
+                    disconnect();
+                    Thread.sleep(RECONNECT_DELAY_MS);
+                    connect();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                consecutiveFailures = 0;
+            }
+            return new double[]{lastET, lastBT};
         }
-        if (message[0] != HEADER[0] || message[1] != HEADER[1]) {
-            return new double[0];
-        }
-        int et = ((message[23] & 0xFF) << 8) | (message[24] & 0xFF);
-        int bt = ((message[25] & 0xFF) << 8) | (message[26] & 0xFF);
+        consecutiveFailures = 0;
+        double et = ((message[22] & 0xFF) << 8 | (message[23] & 0xFF)) / 10.0;
+        double bt = ((message[24] & 0xFF) << 8 | (message[25] & 0xFF)) / 10.0;
+        lastET = et;
+        lastBT = bt;
         return new double[]{et, bt};
     }
 

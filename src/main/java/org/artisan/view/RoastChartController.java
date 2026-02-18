@@ -18,6 +18,7 @@ import de.gsi.chart.plugins.ParameterMeasurements;
 import de.gsi.chart.plugins.Zoomer;
 import de.gsi.chart.ui.geometry.Side;
 import de.gsi.dataset.spi.DoubleDataSet;
+import javafx.util.StringConverter;
 
 /**
  * JavaFX controller for the roast profile chart (Chart-FX).
@@ -47,15 +48,34 @@ public final class RoastChartController {
         this.colorConfig = colorConfig != null ? colorConfig : new ColorConfig(ColorConfig.Theme.DARK);
         this.axisConfig = axisConfig != null ? axisConfig : new AxisConfig();
 
-        DefaultNumericAxis xAxis = new DefaultNumericAxis("Time (s)");
+        DefaultNumericAxis xAxis = new DefaultNumericAxis("Time");
         xAxis.setSide(Side.BOTTOM);
         xAxis.setMin(axisConfig.getTimeMinSec());
         xAxis.setMax(axisConfig.getTimeMaxSec());
         xAxis.setAutoRangeRounding(false);
+        xAxis.setTickLabelFormatter(new StringConverter<Number>() {
+            @Override
+            public String toString(Number sec) {
+                int totalSec = sec != null ? (int) Math.round(sec.doubleValue()) : 0;
+                int m = totalSec / 60;
+                int s = totalSec % 60;
+                return String.format("%d:%02d", m, s);
+            }
+            @Override
+            public Number fromString(String s) {
+                try {
+                    String[] parts = s != null ? s.split(":") : new String[0];
+                    if (parts.length == 2) {
+                        return Integer.parseInt(parts[0].trim()) * 60 + Integer.parseInt(parts[1].trim());
+                    }
+                } catch (NumberFormatException ignored) {}
+                return 0;
+            }
+        });
 
-        DefaultNumericAxis yAxis = new DefaultNumericAxis("Temp");
+        DefaultNumericAxis yAxis = new DefaultNumericAxis("Temp (°C)");
         yAxis.setSide(Side.LEFT);
-        yAxis.setMin(axisConfig.getTempMin());
+        yAxis.setMin(0);
         yAxis.setMax(axisConfig.getTempMax());
         yAxis.setAutoRangeRounding(false);
 

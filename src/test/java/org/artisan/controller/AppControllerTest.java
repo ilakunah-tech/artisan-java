@@ -7,6 +7,7 @@ import org.artisan.model.CurveSet;
 import org.artisan.model.Roastlog;
 import org.artisan.model.Sampling;
 import org.artisan.device.DevicePort;
+import org.artisan.device.SimulatorDevice;
 import org.artisan.device.StubDevice;
 import org.artisan.model.ArtisanTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,10 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -70,6 +75,27 @@ class AppControllerTest {
     session.getCanvasData().addDataPoint(0.0, 100.0, 200.0);
     appController.onChargeButton();
     assertEquals(1, session.getEvents().size());
+  }
+
+  @Test
+  void startSamplingWithSimulatorDeviceAddsPointsAndCallsConsumer() throws InterruptedException {
+    appController.setDevice(new SimulatorDevice());
+    appController.getSampling().setSamplingRate(100);
+    AtomicInteger callCount = new AtomicInteger(0);
+    CountDownLatch threeCalls = new CountDownLatch(3);
+    appController.setOnSampleConsumer(s -> {
+      session.getCanvasData().addDataPoint(s.timeSec(), s.bt(), s.et());
+      if (callCount.incrementAndGet() <= 3) {
+        threeCalls.countDown();
+      }
+    });
+    appController.startSampling();
+    boolean completed = threeCalls.await(5, TimeUnit.SECONDS);
+    appController.stopSampling();
+    assertTrue(completed, "Expected at least 3 sample callbacks");
+    assertTrue(callCount.get() >= 3, "onSampleConsumer should be called at least 3 times");
+    assertTrue(session.getCanvasData().getTimex().size() >= 3,
+        "canvasData should have at least 3 points, got " + session.getCanvasData().getTimex().size());
   }
 
   @Test
