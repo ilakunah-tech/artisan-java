@@ -34,4 +34,18 @@ class DeviceManagerTest {
     assertTrue(d1 instanceof SimulatorDevice);
     assertTrue(d2 instanceof SimulatorDevice);
   }
+
+  @Test
+  void createDeviceBescaTcpReturnsBescaDevice() {
+    DevicePort device = DeviceManager.createDevice("Besca (Modbus TCP)", "192.168.1.1", 502);
+    assertNotNull(device);
+    assertTrue(device instanceof BescaDevice);
+  }
+
+  @Test
+  void createDeviceDiedrichRtuReturnsDiedrichDevice() {
+    DevicePort device = DeviceManager.createDevice("Diedrich (Modbus RTU)", "COM3", 9600);
+    assertNotNull(device);
+    assertTrue(device instanceof DiedrichDevice);
+  }
 }

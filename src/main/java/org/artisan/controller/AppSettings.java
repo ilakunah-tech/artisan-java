@@ -17,6 +17,11 @@ public final class AppSettings {
   private static final String KEY_SAMPLING_RATE_MS = "samplingRateMs";
   private static final String KEY_TEMP_UNIT = "tempUnit";
   private static final String KEY_DARK_THEME = "darkTheme";
+  private static final String KEY_DEVICE_TCP_PORT = "deviceTcpPort";
+  private static final String KEY_MODBUS_SLAVE_ID = "modbusSlaveId";
+  private static final String KEY_MODBUS_BT_REGISTER = "modbusBtRegister";
+  private static final String KEY_MODBUS_ET_REGISTER = "modbusEtRegister";
+  private static final String KEY_MODBUS_SCALE_FACTOR = "modbusScaleFactor";
 
   private String lastDevicePort = "";
   private String deviceType = "Simulator";
@@ -24,6 +29,11 @@ public final class AppSettings {
   private int samplingRateMs = 2000;
   private AxisConfig.TemperatureUnit tempUnit = AxisConfig.TemperatureUnit.CELSIUS;
   private boolean darkTheme = true;
+  private int deviceTcpPort = 502;
+  private int modbusSlaveId = 1;
+  private int modbusBtRegister = 1;
+  private int modbusEtRegister = 2;
+  private double modbusScaleFactor = 10.0;
 
   public String getLastDevicePort() {
     return lastDevicePort;
@@ -73,6 +83,46 @@ public final class AppSettings {
     this.darkTheme = darkTheme;
   }
 
+  public int getDeviceTcpPort() {
+    return deviceTcpPort;
+  }
+
+  public void setDeviceTcpPort(int deviceTcpPort) {
+    this.deviceTcpPort = Math.max(1, Math.min(65535, deviceTcpPort));
+  }
+
+  public int getModbusSlaveId() {
+    return modbusSlaveId;
+  }
+
+  public void setModbusSlaveId(int modbusSlaveId) {
+    this.modbusSlaveId = Math.max(1, Math.min(247, modbusSlaveId));
+  }
+
+  public int getModbusBtRegister() {
+    return modbusBtRegister;
+  }
+
+  public void setModbusBtRegister(int modbusBtRegister) {
+    this.modbusBtRegister = Math.max(0, modbusBtRegister);
+  }
+
+  public int getModbusEtRegister() {
+    return modbusEtRegister;
+  }
+
+  public void setModbusEtRegister(int modbusEtRegister) {
+    this.modbusEtRegister = Math.max(0, modbusEtRegister);
+  }
+
+  public double getModbusScaleFactor() {
+    return modbusScaleFactor;
+  }
+
+  public void setModbusScaleFactor(double modbusScaleFactor) {
+    this.modbusScaleFactor = modbusScaleFactor > 0 ? modbusScaleFactor : 10.0;
+  }
+
   /** Loads settings from Preferences. */
   public static AppSettings load() {
     AppSettings s = new AppSettings();
@@ -88,6 +138,11 @@ public final class AppSettings {
       s.tempUnit = AxisConfig.TemperatureUnit.CELSIUS;
     }
     s.darkTheme = prefs.getBoolean(KEY_DARK_THEME, true);
+    s.deviceTcpPort = prefs.getInt(KEY_DEVICE_TCP_PORT, 502);
+    s.modbusSlaveId = prefs.getInt(KEY_MODBUS_SLAVE_ID, 1);
+    s.modbusBtRegister = prefs.getInt(KEY_MODBUS_BT_REGISTER, 1);
+    s.modbusEtRegister = prefs.getInt(KEY_MODBUS_ET_REGISTER, 2);
+    s.modbusScaleFactor = prefs.getDouble(KEY_MODBUS_SCALE_FACTOR, 10.0);
     return s;
   }
 
@@ -100,5 +155,10 @@ public final class AppSettings {
     prefs.putInt(KEY_SAMPLING_RATE_MS, samplingRateMs);
     prefs.put(KEY_TEMP_UNIT, tempUnit.name());
     prefs.putBoolean(KEY_DARK_THEME, darkTheme);
+    prefs.putInt(KEY_DEVICE_TCP_PORT, deviceTcpPort);
+    prefs.putInt(KEY_MODBUS_SLAVE_ID, modbusSlaveId);
+    prefs.putInt(KEY_MODBUS_BT_REGISTER, modbusBtRegister);
+    prefs.putInt(KEY_MODBUS_ET_REGISTER, modbusEtRegister);
+    prefs.putDouble(KEY_MODBUS_SCALE_FACTOR, modbusScaleFactor);
   }
 }
