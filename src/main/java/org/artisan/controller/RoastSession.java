@@ -88,6 +88,21 @@ public final class RoastSession {
     canvasData.setFcEndIndex(timexIndex);
   }
 
+  public void markScStart(int timexIndex) {
+    double temp = tempAt(timexIndex);
+    events.add(new EventEntry(timexIndex, temp, "SC Start", EventType.SC_START));
+  }
+
+  public void markScEnd(int timexIndex) {
+    double temp = tempAt(timexIndex);
+    events.add(new EventEntry(timexIndex, temp, "SC End", EventType.SC_END));
+  }
+
+  public void markTurningPoint(int timexIndex) {
+    double temp = tempAt(timexIndex);
+    events.add(new EventEntry(timexIndex, temp, "TP", EventType.TURNING_POINT));
+  }
+
   /** Records DROP and sets state to DROPPING. */
   public void markDrop(int timexIndex) {
     double temp = tempAt(timexIndex);

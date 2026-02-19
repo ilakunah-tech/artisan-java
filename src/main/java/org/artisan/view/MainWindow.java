@@ -15,10 +15,12 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.TitledPane;
 import javafx.stage.Stage;
 
 import org.artisan.controller.AppController;
@@ -61,6 +63,10 @@ import org.artisan.model.Sampling;
 import org.artisan.model.SamplingConfig;
 import org.artisan.view.CalculatorDialog;
 import org.artisan.view.ComparatorView;
+import org.artisan.view.ControlsPanel;
+import org.artisan.view.LargeLCDsDialog;
+import org.artisan.view.LogViewer;
+import org.artisan.view.NotificationLevel;
 import org.artisan.view.SimulatorDialog;
 import org.artisan.view.TransposerDialog;
 
@@ -174,6 +180,7 @@ public final class MainWindow extends Application {
         appController.getChartController().onSample(s.timeSec(), s.bt(), s.et());
       }
       appController.afterSample(s);
+      appController.notifySampleListeners(s);
     }));
 
     appController.setMarkEventCallback(label -> {
@@ -193,6 +200,8 @@ public final class MainWindow extends Application {
     });
 
     BorderPane root = new BorderPane();
+    StackPane overlayRoot = new StackPane(root);
+    appController.setMainRoot(overlayRoot);
 
     HBox toolbarRow1 = new HBox(10);
     Button onOff = new Button("ON");
@@ -281,6 +290,12 @@ public final class MainWindow extends Application {
 
     Node chartView = chartController.getView();
     chartController.startUpdateTimer();
+    ControlsPanel controlsPanel = new ControlsPanel(appController);
+    TitledPane controlsTitled = new TitledPane("Controls", controlsPanel);
+    controlsTitled.setCollapsible(true);
+    controlsTitled.setExpanded(false);
+    VBox centerWithControls = new VBox(chartView, controlsTitled);
+    VBox.setVgrow(chartView, javafx.scene.layout.Priority.ALWAYS);
 
     statusBar = new Label("BT: —  ET: —  RoR: —");
     elapsedLabel = new Label("Elapsed: 0 s");
@@ -321,12 +336,12 @@ public final class MainWindow extends Application {
     statusTimer.start();
 
     root.setTop(new VBox(menuBar, toolbar, phasesLCD));
-    root.setCenter(chartView);
+    root.setCenter(centerWithControls);
     root.setBottom(new VBox(statisticsPanel, status));
 
     appController.refreshStatistics();
 
-    Scene scene = new Scene(root, 1000, 600);
+    Scene scene = new Scene(overlayRoot, 1000, 600);
     primaryStage.setScene(scene);
     updateWindowTitle();
     primaryStage.setOnCloseRequest(e -> {
@@ -390,6 +405,11 @@ public final class MainWindow extends Application {
       }
     });
     viewMenu.getItems().addAll(showCrosshair, showWatermark, showLegend, new SeparatorMenuItem());
+    MenuItem largeLcdsItem = new MenuItem("Large LCDs...");
+    largeLcdsItem.setOnAction(e -> new LargeLCDsDialog(primaryStage, appController).show());
+    MenuItem logViewerItem = new MenuItem("Log Viewer...");
+    logViewerItem.setOnAction(e -> new LogViewer(primaryStage).show());
+    viewMenu.getItems().addAll(largeLcdsItem, logViewerItem, new SeparatorMenuItem());
     MenuItem fullScreenItem = new MenuItem("Full Screen");
     fullScreenItem.setOnAction(e -> primaryStage.setFullScreen(!primaryStage.isFullScreen()));
     viewMenu.getItems().addAll(fullScreenItem, new SeparatorMenuItem());
@@ -858,6 +878,7 @@ public final class MainWindow extends Application {
     }
     if (samplingOn) {
       appController.startSampling();
+      appController.notifyUser("Sampling started", NotificationLevel.INFO);
     } else {
       appController.stopSampling();
     }

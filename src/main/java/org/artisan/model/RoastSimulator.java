@@ -77,7 +77,7 @@ public final class RoastSimulator {
             return chargeTemp + a * t * t;
         }
         // From rorPeakTime to totalTimeSeconds: decline RoR, end at dropTemp
-        // Simple: linear interpolation in temperature from value at rorPeakTime to dropTemp
+        if (totalTimeSeconds <= rorPeakTime) return dropTemp;
         double btAtPeak = btAt(rorPeakTime);
         double frac = (t - rorPeakTime) / (totalTimeSeconds - rorPeakTime);
         if (frac >= 1) return dropTemp;

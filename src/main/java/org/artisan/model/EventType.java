@@ -5,6 +5,7 @@ package org.artisan.model;
  */
 public enum EventType {
     CHARGE,
+    TURNING_POINT,
     DRY_END,
     FC_START,
     FC_END,

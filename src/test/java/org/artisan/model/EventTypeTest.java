@@ -10,6 +10,7 @@ class EventTypeTest {
     @Test
     void eventTypesExist() {
         assertNotNull(EventType.CHARGE);
+        assertNotNull(EventType.TURNING_POINT);
         assertNotNull(EventType.DRY_END);
         assertNotNull(EventType.FC_START);
         assertNotNull(EventType.FC_END);
@@ -18,6 +19,6 @@ class EventTypeTest {
         assertNotNull(EventType.DROP);
         assertNotNull(EventType.COOL_END);
         assertNotNull(EventType.CUSTOM);
-        assertEquals(9, EventType.values().length);
+        assertEquals(10, EventType.values().length);
     }
 }

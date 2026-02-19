@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 import org.artisan.model.AlarmList;
@@ -31,8 +32,12 @@ import org.artisan.view.RoastChartController;
 import java.lang.ref.WeakReference;
 import java.util.logging.Level;
 
+import javafx.scene.Node;
 import javafx.stage.Window;
 import java.util.logging.Logger;
+
+import org.artisan.view.NotificationLevel;
+import org.artisan.view.NotificationSystem;
 
 import org.artisan.device.DeviceConfig;
 import org.artisan.device.DevicePort;
@@ -72,7 +77,15 @@ public final class AppController {
   private double lastSampleBt = Double.NaN;
   private double lastSampleTimeSec = Double.NaN;
   private WeakReference<ComparatorView> comparatorViewRef;
+  private WeakReference<Node> mainWindowRootRef;
+  private final List<SampleListener> sampleListeners = new CopyOnWriteArrayList<>();
   private static final Logger LOG = Logger.getLogger(AppController.class.getName());
+
+  /** Functional interface for sample updates (BT, ET, RoR BT, RoR ET, time sec). */
+  @FunctionalInterface
+  public interface SampleListener {
+    void onSample(double bt, double et, double rorBT, double rorET, double timeSec);
+  }
 
   public AppController(
       RoastSession session,
@@ -272,6 +285,32 @@ public final class AppController {
     }
   }
 
+  /** Registers a listener for sample updates (BT, ET, RoR BT, RoR ET, time). Called after chart update. */
+  public void addSampleListener(SampleListener listener) {
+    if (listener != null) sampleListeners.add(listener);
+  }
+
+  /** Unregisters a sample listener. */
+  public void removeSampleListener(SampleListener listener) {
+    sampleListeners.remove(listener);
+  }
+
+  /**
+   * Notifies all sample listeners with the given values. Call from the view layer after the
+   * chart has been updated (so RoR values reflect the latest canvas deltas).
+   */
+  public void notifySampleListeners(Sample s) {
+    double rorBT = 0.0;
+    double rorET = 0.0;
+    var delta2 = session.getCanvasData().getDelta2();
+    var delta1 = session.getCanvasData().getDelta1();
+    if (delta2 != null && !delta2.isEmpty()) rorBT = delta2.get(delta2.size() - 1);
+    if (delta1 != null && !delta1.isEmpty()) rorET = delta1.get(delta1.size() - 1);
+    for (SampleListener l : sampleListeners) {
+      l.onSample(s.bt(), s.et(), rorBT, rorET, s.timeSec());
+    }
+  }
+
   /** Returns the sampling interval in seconds (from SamplingConfig or Sampling fallback). */
   public double getSamplingInterval() {
     if (samplingConfig != null) return samplingConfig.getIntervalSeconds();
@@ -341,6 +380,69 @@ public final class AppController {
     if (autoSave != null) autoSave.stop();
     if (device != null && device.isConnected()) {
       device.disconnect();
+    }
+  }
+
+  /**
+   * Marks an event of the given type at the current timex index.
+   * Logs at FINE and adds EventEntry via session mark methods. Call from ControlsPanel buttons.
+   */
+  public void markEvent(EventType type) {
+    if (type == null) return;
+    if (!session.isActive() && type != EventType.CHARGE) return;
+    LOG.log(Level.FINE, "Mark event: {0}", type);
+    int idx = currentTimexIndex();
+    double temp = idx >= 0 && idx < session.getCanvasData().getTemp2().size()
+        ? session.getCanvasData().getTemp2().get(idx) : 0.0;
+    String label = type.name().replace('_', ' ');
+    if (type == EventType.CHARGE) {
+      autoDryTriggered = false;
+      autoFcsTriggered = false;
+      if (alarmEngine != null) alarmEngine.reset();
+      if (eventReplay != null) eventReplay.reset();
+      session.markCharge(idx);
+      if (chartController != null) chartController.resetLiveRor();
+      if (autoSave != null) {
+        autoSave.start(this::buildProfileData, () -> {
+          ProfileData p = buildProfileData();
+          return p != null && p.getTitle() != null && !p.getTitle().isBlank() ? p.getTitle() : "roast";
+        });
+      }
+    } else if (type == EventType.DRY_END) session.markDryEnd(idx);
+    else if (type == EventType.FC_START) session.markFcStart(idx);
+    else if (type == EventType.FC_END) session.markFcEnd(idx);
+    else if (type == EventType.SC_START) session.markScStart(idx);
+    else if (type == EventType.SC_END) session.markScEnd(idx);
+    else if (type == EventType.TURNING_POINT) session.markTurningPoint(idx);
+    else if (type == EventType.DROP) {
+      session.markDrop(idx);
+      if (autoSave != null) { autoSave.onDrop(); autoSave.stop(); }
+    } else if (type == EventType.COOL_END) session.markCoolEnd(idx);
+    else session.getEvents().add(new EventEntry(idx, temp, label, EventType.CUSTOM));
+    if (fileSession != null) fileSession.markDirty();
+    if (chartController != null) chartController.updateChart();
+  }
+
+  /**
+   * Sets a control output (e.g. Gas, Air, Drum duty 0–100%). Stub: logs at FINE; actual hardware via DeviceManager later.
+   */
+  public void setControlOutput(String name, double value) {
+    LOG.log(Level.FINE, "Control output: {0}={1}", new Object[] { name, value });
+  }
+
+  /** Sets the main window root (StackPane) for toast notifications. Call from MainWindow.start(). */
+  public void setMainRoot(Node root) {
+    this.mainWindowRootRef = root != null ? new WeakReference<>(root) : null;
+  }
+
+  /**
+   * Shows a toast notification on the main window. Calls NotificationSystem.show(mainWindowRoot, message, level).
+   * Requires setMainRoot() to have been called with a StackPane.
+   */
+  public void notifyUser(String message, NotificationLevel level) {
+    Node root = mainWindowRootRef != null ? mainWindowRootRef.get() : null;
+    if (root != null && message != null) {
+      NotificationSystem.show(root, message, level != null ? level : NotificationLevel.INFO);
     }
   }
 

@@ -232,7 +232,7 @@ public final class ComparatorView {
             double y = p.getDouble(PREFIX + "y", Double.NaN);
             double w = p.getDouble(PREFIX + "width", Double.NaN);
             double h = p.getDouble(PREFIX + "height", Double.NaN);
-            if (Double.isFinite(x) && Double.isFinite(y)) stage.setX(x);
+            if (Double.isFinite(x)) stage.setX(x);
             if (Double.isFinite(y)) stage.setY(y);
             if (Double.isFinite(w) && w > 100) stage.setWidth(w);
             if (Double.isFinite(h) && h > 100) stage.setHeight(h);

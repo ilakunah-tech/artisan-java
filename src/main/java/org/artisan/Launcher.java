@@ -1,6 +1,7 @@
 package org.artisan;
 
 import javafx.application.Application;
+import org.artisan.view.InMemoryLogHandler;
 import org.artisan.view.MainWindow;
 
 /**
@@ -10,6 +11,7 @@ import org.artisan.view.MainWindow;
 public class Launcher {
 
     public static void main(String[] args) {
+        InMemoryLogHandler.install();
         Application.launch(MainWindow.class, args);
     }
 }

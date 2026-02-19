@@ -135,6 +135,7 @@ public final class TransposerDialog extends ArtisanDialog {
         }
     }
 
+    /** Applies transform and loads profile; does not close the dialog (super.onOk is the single close point). */
     private void applyAndClose() {
         ProfileData current = appController != null ? appController.getCurrentProfileData() : null;
         if (current == null) return;
