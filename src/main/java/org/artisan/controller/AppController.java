@@ -28,12 +28,14 @@ import org.artisan.model.Sampling;
 import org.artisan.model.SamplingConfig;
 import org.artisan.model.Statistics;
 import org.artisan.view.ComparatorView;
+import org.artisan.view.DesignerView;
 import org.artisan.view.RoastChartController;
 
 import java.lang.ref.WeakReference;
 import java.util.logging.Level;
 
 import javafx.scene.Node;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 import java.util.logging.Logger;
 
@@ -79,6 +81,7 @@ public final class AppController {
   private double lastSampleBt = Double.NaN;
   private double lastSampleTimeSec = Double.NaN;
   private WeakReference<ComparatorView> comparatorViewRef;
+  private WeakReference<Stage> designerStageRef;
   private WeakReference<Node> mainWindowRootRef;
   private final List<SampleListener> sampleListeners = new CopyOnWriteArrayList<>();
   private static final Logger LOG = Logger.getLogger(AppController.class.getName());
@@ -690,6 +693,22 @@ public final class AppController {
       comparatorViewRef = new WeakReference<>(view);
     }
     view.show();
+  }
+
+  /**
+   * Opens the Profile Designer window (reuses if already open).
+   */
+  public void openDesigner(Window owner) {
+    Stage s = designerStageRef != null ? designerStageRef.get() : null;
+    if (s == null || !s.isShowing()) {
+      DesignerView view = new DesignerView(owner, this);
+      s = view.getStage();
+      designerStageRef = new WeakReference<>(s);
+      view.show();
+      return;
+    }
+    s.show();
+    s.toFront();
   }
 
   /**

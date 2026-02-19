@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import org.artisan.view.InMemoryLogHandler;
 import org.artisan.view.MainWindow;
 
@@ -67,6 +66,15 @@ public class Launcher {
 
     public static void main(String[] args) {
         InMemoryLogHandler.install();
+        if (!tryAcquireLock()) {
+            // JavaFX not yet started — use Swing or plain stderr
+            javax.swing.JOptionPane.showMessageDialog(null,
+                "Artisan Java is already running.",
+                "Already Running",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            System.exit(0);
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(Launcher::releaseLock));
         Application.launch(MainWindow.class, args);
     }
 }

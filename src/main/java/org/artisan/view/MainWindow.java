@@ -62,6 +62,7 @@ import org.artisan.model.CanvasData;
 import org.artisan.model.Roastlog;
 import org.artisan.model.Sampling;
 import org.artisan.model.SamplingConfig;
+import org.artisan.util.CropsterConverter;
 import org.artisan.view.BatchesDialog;
 import org.artisan.view.CalculatorDialog;
 import org.artisan.view.ComparatorView;
@@ -117,11 +118,6 @@ public final class MainWindow extends Application {
 
   @Override
   public void start(Stage primaryStage) {
-    if (!org.artisan.Launcher.tryAcquireLock()) {
-      new Alert(Alert.AlertType.WARNING, "Artisan Java is already running.").showAndWait();
-      Platform.exit();
-      return;
-    }
     final Stage stage = primaryStage;
     appSettings = AppSettings.load();
     displaySettings = DisplaySettings.load();
@@ -245,7 +241,9 @@ public final class MainWindow extends Application {
     comparatorBtn.setOnAction(e -> appController.openComparator(stage));
     Button simulatorBtn = new Button("Simulator");
     simulatorBtn.setOnAction(e -> new SimulatorDialog(stage, appController).showAndWait());
-    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn, comparatorBtn, simulatorBtn);
+    Button designerBtn = new Button("Designer");
+    designerBtn.setOnAction(e -> appController.openDesigner(stage));
+    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn, comparatorBtn, simulatorBtn, designerBtn);
 
     customEventButtonsBox = new HBox(6);
     rebuildCustomEventButtons();
@@ -273,13 +271,15 @@ public final class MainWindow extends Application {
     Menu toolsMenu = new Menu("Tools");
     MenuItem comparatorItem = new MenuItem("Comparator...");
     comparatorItem.setOnAction(e -> appController.openComparator(stage));
+    MenuItem designerItem = new MenuItem("Designer...");
+    designerItem.setOnAction(e -> appController.openDesigner(stage));
     MenuItem transposerItem = new MenuItem("Transposer...");
     transposerItem.setOnAction(e -> new TransposerDialog(stage, appController).showAndWait());
     MenuItem simulatorItem = new MenuItem("Simulator...");
     simulatorItem.setOnAction(e -> new SimulatorDialog(stage, appController).showAndWait());
     MenuItem calculatorItem = new MenuItem("Calculator...");
     calculatorItem.setOnAction(e -> new CalculatorDialog(stage, appController).showAndWait());
-    toolsMenu.getItems().addAll(comparatorItem, transposerItem, simulatorItem, calculatorItem);
+    toolsMenu.getItems().addAll(comparatorItem, designerItem, transposerItem, simulatorItem, calculatorItem);
 
     Menu configMenu = new Menu("Config");
     MenuItem axesItem = new MenuItem("Axes...");
@@ -512,14 +512,52 @@ public final class MainWindow extends Application {
     fileMenu.setOnShowing(e -> refreshRecentMenu(recentMenu, clearRecentItem, root, chartController));
     MenuItem exportItem = new MenuItem("Export...");
     exportItem.setOnAction(e -> doExport(root));
+    MenuItem exportCropsterItem = new MenuItem("Export to Cropster CSV...");
+    exportCropsterItem.setOnAction(e -> doExportToCropster());
+    MenuItem importCropsterItem = new MenuItem("Import from Cropster CSV...");
+    importCropsterItem.setOnAction(e -> doImportFromCropster());
     MenuItem quitItem = new MenuItem("Quit");
     quitItem.setAccelerator(javafx.scene.input.KeyCombination.keyCombination("Ctrl+Q"));
     quitItem.setOnAction(e -> primaryStage.getOnCloseRequest().handle(new javafx.stage.WindowEvent(primaryStage, javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST)));
 
     fileMenu.getItems().addAll(newItem, openItem, saveItem, saveAsItem,
-        new SeparatorMenuItem(), recentMenu, new SeparatorMenuItem(), exportItem, new SeparatorMenuItem(), quitItem);
+        new SeparatorMenuItem(), recentMenu, new SeparatorMenuItem(),
+        exportItem, exportCropsterItem, importCropsterItem,
+        new SeparatorMenuItem(), quitItem);
     refreshRecentMenu(recentMenu, clearRecentItem, root, chartController);
     return fileMenu;
+  }
+
+  private void doExportToCropster() {
+    ProfileData pd = appController != null ? appController.getCurrentProfileData() : null;
+    if (pd == null || pd.getTimex() == null || pd.getTimex().isEmpty()) {
+      new Alert(Alert.AlertType.WARNING, "No data to export.").showAndWait();
+      return;
+    }
+    FileChooser chooser = new FileChooser();
+    chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV (*.csv)", "*.csv"));
+    java.io.File file = chooser.showSaveDialog(primaryStage);
+    if (file == null) return;
+    java.nio.file.Path path = file.toPath();
+    try {
+      CropsterConverter.exportToCropster(pd, appController.getRoastProperties(), path);
+    } catch (IOException ex) {
+      new Alert(Alert.AlertType.ERROR, "Export failed: " + ex.getMessage()).showAndWait();
+    }
+  }
+
+  private void doImportFromCropster() {
+    FileChooser chooser = new FileChooser();
+    chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV (*.csv)", "*.csv"));
+    java.io.File file = chooser.showOpenDialog(primaryStage);
+    if (file == null) return;
+    java.nio.file.Path path = file.toPath();
+    ProfileData pd = CropsterConverter.importFromCropster(path);
+    if (pd != null && appController != null) {
+      appController.loadSimulatedProfile(pd);
+    } else {
+      new Alert(Alert.AlertType.WARNING, "Could not import Cropster CSV.").showAndWait();
+    }
   }
 
   private void refreshRecentMenu(Menu recentMenu, MenuItem clearRecentItem, BorderPane root, RoastChartController chartController) {
