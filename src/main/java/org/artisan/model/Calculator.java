@@ -91,6 +91,32 @@ public final class Calculator {
         return areaUnderCurve(timex, temp2, baseTempC, startIdx, endIdx);
     }
 
+    /**
+     * AUC above base temp between startTimeSec and endTimeSec (nearest index).
+     * Convenience for Calculator dialog.
+     */
+    public static double computeAUC(List<Double> timex, List<Double> bt, double baseTempC, double startTimeSec, double endTimeSec) {
+        if (timex == null || bt == null || timex.isEmpty() || bt.isEmpty()) return 0.0;
+        int startIdx = nearestTimeIndex(timex, startTimeSec);
+        int endIdx = nearestTimeIndex(timex, endTimeSec);
+        if (startIdx < 0 || endIdx < 0 || startIdx >= endIdx) return 0.0;
+        return areaUnderCurve(timex, bt, baseTempC, startIdx, endIdx);
+    }
+
+    private static int nearestTimeIndex(List<Double> timex, double timeSec) {
+        if (timex == null || timex.isEmpty()) return -1;
+        int best = 0;
+        double bestDist = Math.abs(timex.get(0) - timeSec);
+        for (int i = 1; i < timex.size(); i++) {
+            double d = Math.abs(timex.get(i) - timeSec);
+            if (d < bestDist) {
+                bestDist = d;
+                best = i;
+            }
+        }
+        return best;
+    }
+
     /** Clamp invalid temps (Python: &gt;500 -> 0). See main.py calcAUC:24191-24195 */
     private static double clampTemp(double t) {
         if (!Double.isFinite(t) || t > 500) return 0;

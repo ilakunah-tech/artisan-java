@@ -59,6 +59,10 @@ import org.artisan.model.CanvasData;
 import org.artisan.model.Roastlog;
 import org.artisan.model.Sampling;
 import org.artisan.model.SamplingConfig;
+import org.artisan.view.CalculatorDialog;
+import org.artisan.view.ComparatorView;
+import org.artisan.view.SimulatorDialog;
+import org.artisan.view.TransposerDialog;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -99,6 +103,7 @@ public final class MainWindow extends Application {
 
   @Override
   public void start(Stage primaryStage) {
+    final Stage stage = primaryStage;
     appSettings = AppSettings.load();
     displaySettings = DisplaySettings.load();
     phasesSettings = PhasesSettings.load();
@@ -214,7 +219,11 @@ public final class MainWindow extends Application {
     propertiesBtn.setOnAction(e -> openRoastPropertiesDialog(root));
     Button cupProfileBtn = new Button("Cup Profile");
     cupProfileBtn.setOnAction(e -> openCupProfileDialog(root));
-    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn);
+    Button comparatorBtn = new Button("Comparator");
+    comparatorBtn.setOnAction(e -> appController.openComparator(stage));
+    Button simulatorBtn = new Button("Simulator");
+    simulatorBtn.setOnAction(e -> new SimulatorDialog(stage, appController).showAndWait());
+    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn, comparatorBtn, simulatorBtn);
 
     customEventButtonsBox = new HBox(6);
     rebuildCustomEventButtons();
@@ -231,6 +240,17 @@ public final class MainWindow extends Application {
     MenuItem cupProfileItem = new MenuItem("Cup Profile...");
     cupProfileItem.setOnAction(e -> openCupProfileDialog(root));
     roastMenu.getItems().addAll(propertiesItem, cupProfileItem);
+    Menu toolsMenu = new Menu("Tools");
+    MenuItem comparatorItem = new MenuItem("Comparator...");
+    comparatorItem.setOnAction(e -> appController.openComparator(stage));
+    MenuItem transposerItem = new MenuItem("Transposer...");
+    transposerItem.setOnAction(e -> new TransposerDialog(stage, appController).showAndWait());
+    MenuItem simulatorItem = new MenuItem("Simulator...");
+    simulatorItem.setOnAction(e -> new SimulatorDialog(stage, appController).showAndWait());
+    MenuItem calculatorItem = new MenuItem("Calculator...");
+    calculatorItem.setOnAction(e -> new CalculatorDialog(stage, appController).showAndWait());
+    toolsMenu.getItems().addAll(comparatorItem, transposerItem, simulatorItem, calculatorItem);
+
     Menu configMenu = new Menu("Config");
     MenuItem axesItem = new MenuItem("Axes...");
     axesItem.setOnAction(e -> openAxesDialog(root, chartController));
@@ -255,7 +275,7 @@ public final class MainWindow extends Application {
     MenuItem pidItem = new MenuItem("PID...");
     pidItem.setOnAction(e -> openPidDialog(root));
     configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
-    menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, configMenu);
+    menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
 

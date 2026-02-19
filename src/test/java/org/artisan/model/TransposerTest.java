@@ -112,6 +112,17 @@ class TransposerTest {
     }
 
     @Test
+    void apply_withScale() {
+        ProfileData orig = profile(new double[]{0, 60}, new double[]{100.0, 200.0});
+        TransposerParams params = new TransposerParams(0, 0, 2.0);
+        ProfileData result = Transposer.apply(orig, params);
+        assertNotSame(orig, result);
+        assertEquals(orig.getTimex(), result.getTimex());
+        assertEquals(100.0 * 2.0, result.getTemp2().get(0), 0.01);
+        assertEquals(200.0 * 2.0, result.getTemp2().get(1), 0.01);
+    }
+
+    @Test
     void transposeTemp_preservesInvalidReadings() {
         ProfileData orig = new ProfileData();
         orig.setTimex(Arrays.asList(0.0, 60.0));

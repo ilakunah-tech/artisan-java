@@ -1,10 +1,12 @@
 package org.artisan.view;
 
+import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 
 import org.artisan.model.CupProfile;
 
@@ -85,13 +87,24 @@ public final class FlavorWheelView extends StackPane {
             double ay = cy + radius * Math.sin(angleRad);
             gc.strokeLine(cx, cy, ax, ay);
 
-            // Label: place outside the circle
+            // Label: place outside the circle; align left/right/center by axis position
+            double cos = Math.cos(angleRad);
             double labelRadius = radius + 18;
-            double lx = cx + labelRadius * Math.cos(angleRad);
+            double lx = cx + labelRadius * cos;
             double ly = cy + labelRadius * Math.sin(angleRad);
+            TextAlignment align;
+            if (cos > 0.1) {
+                align = TextAlignment.LEFT;
+                lx += 4;
+            } else if (cos < -0.1) {
+                align = TextAlignment.RIGHT;
+                lx -= 4;
+            } else {
+                align = TextAlignment.CENTER;
+            }
             String text = labels[i];
             gc.setFont(javafx.scene.text.Font.font(10));
-            gc.setTextAlign(angleRad >= -Math.PI / 2 && angleRad <= Math.PI / 2 ? javafx.scene.text.TextAlignment.CENTER : javafx.scene.text.TextAlignment.CENTER);
+            gc.setTextAlign(align);
             gc.fillText(text, lx, ly);
         }
 
@@ -119,6 +132,9 @@ public final class FlavorWheelView extends StackPane {
 
     /** Export as image for PDF/print. */
     public WritableImage toImage() {
+        if (!Platform.isFxApplicationThread()) {
+            throw new IllegalStateException("toImage() must be called on JavaFX Application Thread");
+        }
         int w = (int) Math.ceil(canvas.getWidth());
         int h = (int) Math.ceil(canvas.getHeight());
         if (w <= 0 || h <= 0) return null;

@@ -71,6 +71,37 @@ public final class Transposer {
         return transposeTemp(afterTime, tempOffset);
     }
 
+    /**
+     * Applies time shift, temperature shift, and temperature scale to the profile.
+     * Result: time' = time + timeShift, temp' = (temp + tempShift) * tempScale.
+     * Invalid readings (-1 or non-finite) are left unchanged.
+     *
+     * @param profile source profile (not modified)
+     * @param params  time shift (s), temp shift (°C), temp scale (e.g. 0.5–2.0)
+     * @return new ProfileData, or null if profile or params is null
+     */
+    public static ProfileData apply(ProfileData profile, TransposerParams params) {
+        if (profile == null || params == null) return null;
+        ProfileData afterTime = transposeTime(profile, params.getTimeShift());
+        ProfileData out = copySkeleton(afterTime);
+        out.setTemp1(shiftAndScaleTempList(afterTime.getTemp1(), params.getTempShift(), params.getTempScale()));
+        out.setTemp2(shiftAndScaleTempList(afterTime.getTemp2(), params.getTempShift(), params.getTempScale()));
+        return out;
+    }
+
+    private static List<Double> shiftAndScaleTempList(List<Double> list, double shift, double scale) {
+        if (list == null) return new ArrayList<>();
+        List<Double> out = new ArrayList<>(list.size());
+        for (Double t : list) {
+            if (t == null || t == -1 || !Util.isProperTemp(t)) {
+                out.add(t == null ? null : t);
+            } else {
+                out.add((Util.toFloat(t) + shift) * scale);
+            }
+        }
+        return out;
+    }
+
     private static List<Double> shiftTempList(List<Double> list, double offset) {
         if (list == null) {
             return new ArrayList<>();

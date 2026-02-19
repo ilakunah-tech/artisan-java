@@ -25,9 +25,13 @@ import org.artisan.model.Roastlog;
 import org.artisan.model.Sampling;
 import org.artisan.model.SamplingConfig;
 import org.artisan.model.Statistics;
+import org.artisan.view.ComparatorView;
 import org.artisan.view.RoastChartController;
 
+import java.lang.ref.WeakReference;
 import java.util.logging.Level;
+
+import javafx.stage.Window;
 import java.util.logging.Logger;
 
 import org.artisan.device.DeviceConfig;
@@ -67,6 +71,7 @@ public final class AppController {
   private final CupProfile cupProfile;
   private double lastSampleBt = Double.NaN;
   private double lastSampleTimeSec = Double.NaN;
+  private WeakReference<ComparatorView> comparatorViewRef;
   private static final Logger LOG = Logger.getLogger(AppController.class.getName());
 
   public AppController(
@@ -528,6 +533,63 @@ public final class AppController {
       chartController.updateChart();
     }
     refreshStatistics();
+  }
+
+  /**
+   * Returns current profile built from session (canvas data + events).
+   * May be used by Tools dialogs (Transposer, Calculator).
+   */
+  public ProfileData getCurrentProfileData() {
+    return buildProfileData();
+  }
+
+  /**
+   * Opens the Roast Comparator window (reuses if already open). Call from MainWindow Tools menu.
+   */
+  public void openComparator(Window owner) {
+    ComparatorView view = comparatorViewRef != null ? comparatorViewRef.get() : null;
+    if (view == null || !view.getStage().isShowing()) {
+      view = new ComparatorView(owner);
+      comparatorViewRef = new WeakReference<>(view);
+    }
+    view.show();
+  }
+
+  /**
+   * Loads a simulated (or any) profile into the session as current profile, marks dirty, and refreshes chart.
+   * Used by Tools » Simulator "Load as Profile".
+   */
+  public void loadSimulatedProfile(ProfileData pd) {
+    if (pd == null) return;
+    loadProfileFromProfileData(pd);
+    if (fileSession != null) fileSession.markDirty();
+    if (chartController != null) {
+      chartController.updateChart();
+    }
+    refreshStatistics();
+  }
+
+  private void loadProfileFromProfileData(ProfileData profile) {
+    if (profile == null) return;
+    session.reset();
+    CanvasData cd = session.getCanvasData();
+    List<Double> timex = profile.getTimex();
+    List<Double> temp1 = profile.getTemp1();
+    List<Double> temp2 = profile.getTemp2();
+    if (timex != null && temp1 != null && temp2 != null) {
+      int n = Math.min(timex.size(), Math.min(temp1.size(), temp2.size()));
+      for (int i = 0; i < n; i++) {
+        cd.addDataPoint(timex.get(i), temp2.get(i), temp1.get(i));
+      }
+    }
+    List<Integer> timeindex = profile.getTimeindex();
+    if (timeindex != null && timeindex.size() >= 7) {
+      if (timeindex.get(0) >= 0) cd.setChargeIndex(timeindex.get(0));
+      if (timeindex.size() > 1 && timeindex.get(1) >= 0) cd.setDryEndIndex(timeindex.get(1));
+      if (timeindex.size() > 2 && timeindex.get(2) >= 0) cd.setFcStartIndex(timeindex.get(2));
+      if (timeindex.size() > 3 && timeindex.get(3) >= 0) cd.setFcEndIndex(timeindex.get(3));
+      if (timeindex.size() > 6 && timeindex.get(6) >= 0) cd.setDropIndex(timeindex.get(6));
+    }
   }
 
   /**

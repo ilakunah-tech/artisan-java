@@ -36,14 +36,7 @@ public final class CupProfile {
 
     /** Default instance with all scores 0. */
     public static CupProfile defaults() {
-        CupProfile p = new CupProfile();
-        p.scores = new LinkedHashMap<>();
-        for (String attr : DEFAULT_ATTRIBUTES) {
-            p.scores.put(attr, 0.0);
-        }
-        p.defects = 0.0;
-        p.cupNotes = "";
-        return p;
+        return new CupProfile();
     }
 
     /** Scores map (flavor attribute → score 0.0–10.0). */
