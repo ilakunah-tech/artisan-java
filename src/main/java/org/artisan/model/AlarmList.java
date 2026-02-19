@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * List of alarms with evaluation and reset.
+ * List of alarms. Evaluation is done by AlarmEngine; this class holds add/remove/reset.
  */
 public class AlarmList {
 
@@ -35,41 +35,32 @@ public class AlarmList {
     }
 
     /**
+     * Returns a copy of the alarm list (for persistence and iteration).
+     */
+    public List<Alarm> getAlarms() {
+        return new ArrayList<>(alarms);
+    }
+
+    /**
+     * Replaces all alarms with the given list (e.g. after loading from file).
+     */
+    public void setAlarms(List<Alarm> list) {
+        alarms.clear();
+        if (list != null) {
+            for (Alarm a : list) {
+                if (a != null) {
+                    alarms.add(a);
+                }
+            }
+        }
+    }
+
+    /**
      * Re-arms all alarms so they can fire again.
      */
     public void resetAll() {
         for (Alarm a : alarms) {
             a.reset();
         }
-    }
-
-    /**
-     * Evaluates all alarms for the current cycle and returns only those that fired this cycle.
-     * Guard condition is checked: an alarm with guardAlarmIndex >= 0 only evaluates if
-     * the alarm at that index has already triggered. Triggered alarms are marked and included once.
-     *
-     * @param currentTemp   current temperature
-     * @param currentTimeSec current time in seconds
-     * @param events        event list (for conditions that use events)
-     * @return list of alarms that fired this cycle (newly triggered)
-     */
-    public List<Alarm> evaluateAll(double currentTemp, double currentTimeSec, List<EventEntry> events) {
-        List<EventEntry> ev = events != null ? events : new ArrayList<>();
-        List<Alarm> fired = new ArrayList<>();
-        for (int i = 0; i < alarms.size(); i++) {
-            Alarm a = alarms.get(i);
-            if (!a.isActive() || a.isTriggered()) {
-                continue;
-            }
-            int guard = a.getGuardAlarmIndex();
-            if (guard >= 0 && guard < alarms.size() && !alarms.get(guard).isTriggered()) {
-                continue; // guard alarm must have fired first
-            }
-            if (a.evaluate(currentTemp, currentTimeSec, ev)) {
-                a.markTriggered();
-                fired.add(a);
-            }
-        }
-        return fired;
     }
 }

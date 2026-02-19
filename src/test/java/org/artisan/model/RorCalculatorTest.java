@@ -94,4 +94,57 @@ class RorCalculatorTest {
             assertTrue(e.getMessage().contains("temps") || e.getMessage() == null);
         }
     }
+
+    @Test
+    void computeRoRSmoothed_flatLine_returnsAllZeros() {
+        List<Double> timex = List.of(0.0, 1.0, 2.0, 3.0, 4.0, 5.0);
+        List<Double> temps = List.of(100.0, 100.0, 100.0, 100.0, 100.0, 100.0);
+        List<Double> ror = calculator.computeRoRSmoothed(timex, temps, 3);
+        assertNotNull(ror);
+        assertEquals(6, ror.size());
+        for (int i = 0; i < ror.size(); i++) {
+            assertEquals(0.0, ror.get(i), 0.01, "index " + i);
+        }
+    }
+
+    @Test
+    void computeRoRSmoothed_linearRise_returnsConstantRoR() {
+        // 0s->0°C, 60s->60°C => 60 °C/min. Window=1: smooth then RoR; linear stays linear so RoR=60 after first point.
+        List<Double> timex = List.of(0.0, 30.0, 60.0, 90.0, 120.0);
+        List<Double> temps = List.of(0.0, 30.0, 60.0, 90.0, 120.0);
+        List<Double> ror = calculator.computeRoRSmoothed(timex, temps, 1);
+        assertNotNull(ror);
+        assertEquals(5, ror.size());
+        assertEquals(0.0, ror.get(0), 0.1);
+        assertEquals(60.0, ror.get(1), 0.5);
+        assertEquals(60.0, ror.get(2), 0.5);
+        assertEquals(60.0, ror.get(3), 0.5);
+        assertEquals(60.0, ror.get(4), 0.5);
+    }
+
+    @Test
+    void clampRoR_valuesOutsideRangeAreClamped() {
+        List<Double> ror = new java.util.ArrayList<>(List.of(-50.0, -20.0, 0.0, 25.0, 50.0, 100.0));
+        RorCalculator.clampRoR(ror, RorCalculator.DEFAULT_MIN_ROR, RorCalculator.DEFAULT_MAX_ROR);
+        assertEquals(-20.0, ror.get(0), 0.0);
+        assertEquals(-20.0, ror.get(1), 0.0);
+        assertEquals(0.0, ror.get(2), 0.0);
+        assertEquals(25.0, ror.get(3), 0.0);
+        assertEquals(50.0, ror.get(4), 0.0);
+        assertEquals(50.0, ror.get(5), 0.0);
+    }
+
+    @Test
+    void findTurningPoint_returnsMinBtIndex() {
+        List<Double> temp2 = List.of(100.0, 95.0, 92.0, 94.0, 98.0);
+        int idx = RorCalculator.findTurningPoint(temp2, 0, 4);
+        assertEquals(2, idx);
+    }
+
+    @Test
+    void findTurningPoint_returnsChargeIdx_whenFlatLine() {
+        List<Double> temp2 = List.of(100.0, 100.0, 100.0, 100.0);
+        int idx = RorCalculator.findTurningPoint(temp2, 0, 3);
+        assertEquals(0, idx);
+    }
 }

@@ -110,4 +110,50 @@ class AppControllerTest {
     assertTrue(loaded != null);
     assertEquals(2, loaded.getTimex().size());
   }
+
+  @Test
+  void autoDRY_calledOnceWhenThresholdCrossed_notAgainOnSubsequentSamples() {
+    PhasesSettings phasesSettings = PhasesSettings.load();
+    phasesSettings.setAutoDRY(true);
+    phasesSettings.setDryEndTempC(150.0);
+    appController.setPhasesSettings(phasesSettings);
+    appController.setDisplaySettings(DisplaySettings.load());
+
+    session.start();
+    session.getCanvasData().addDataPoint(0.0, 100.0, 80.0);
+    appController.onChargeButton();
+    assertTrue(session.getCanvasData().getDryEndIndex() < 0);
+
+    session.getCanvasData().addDataPoint(1.0, 151.0, 120.0);
+    appController.afterSample(new Sample(1.0, 151.0, 120.0));
+    assertEquals(1, session.getCanvasData().getDryEndIndex());
+
+    session.getCanvasData().addDataPoint(2.0, 160.0, 125.0);
+    appController.afterSample(new Sample(2.0, 160.0, 125.0));
+    assertEquals(1, session.getCanvasData().getDryEndIndex());
+  }
+
+  @Test
+  void autoFCs_calledOnceWhenThresholdCrossed_notAgainOnSubsequentSamples() {
+    PhasesSettings phasesSettings = PhasesSettings.load();
+    phasesSettings.setAutoDRY(false);
+    phasesSettings.setAutoFCs(true);
+    phasesSettings.setFcsTempC(195.0);
+    appController.setPhasesSettings(phasesSettings);
+    appController.setDisplaySettings(DisplaySettings.load());
+
+    session.start();
+    session.getCanvasData().addDataPoint(0.0, 100.0, 80.0);
+    appController.onChargeButton();
+    session.getCanvasData().addDataPoint(1.0, 180.0, 150.0);
+    assertTrue(session.getCanvasData().getFcStartIndex() < 0);
+
+    session.getCanvasData().addDataPoint(2.0, 196.0, 200.0);
+    appController.afterSample(new Sample(2.0, 196.0, 200.0));
+    assertEquals(2, session.getCanvasData().getFcStartIndex());
+
+    session.getCanvasData().addDataPoint(3.0, 210.0, 205.0);
+    appController.afterSample(new Sample(3.0, 210.0, 205.0));
+    assertEquals(2, session.getCanvasData().getFcStartIndex());
+  }
 }

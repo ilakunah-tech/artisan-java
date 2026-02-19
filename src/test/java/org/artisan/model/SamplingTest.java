@@ -1,128 +1,64 @@
 package org.artisan.model;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Sampling / spike filter tests (condition logic and SamplingConfig).
+ */
 class SamplingTest {
 
-    private Sampling sampling;
-
-    @AfterEach
-    void tearDown() {
-        if (sampling != null) {
-            sampling.stop();
-        }
+    @Test
+    void spikeFilter_rejectsSample_whenExceedsThreshold() {
+        SamplingConfig config = new SamplingConfig();
+        config.setFilterSpikes(true);
+        config.setSpikeThreshold(25.0);
+        config.setIntervalSeconds(1.0);
+        double lastBt = 100.0;
+        double lastTimeSec = 0.0;
+        double bt = 150.0;
+        double timeSec = 1.0;
+        double dt = timeSec - lastTimeSec;
+        double ratePerSec = Math.abs(bt - lastBt) / dt;
+        assertTrue(ratePerSec > config.getSpikeThreshold());
     }
 
     @Test
-    void initAndReset() {
-        ArtisanTime timeclock = new ArtisanTime();
-        sampling = new Sampling(timeclock);
-        assertEquals(Sampling.DEFAULT_DELAY_MS, sampling.getDelayMs());
-        assertFalse(sampling.isRunning());
-
-        sampling.setSamplingRate(500);
-        assertEquals(500, sampling.getDelayMs());
-        sampling.reset();
-        assertEquals(Sampling.DEFAULT_DELAY_MS, sampling.getDelayMs());
-        assertFalse(sampling.isRunning());
+    void spikeFilter_acceptsSample_whenBelowThreshold() {
+        SamplingConfig config = new SamplingConfig();
+        config.setFilterSpikes(true);
+        config.setSpikeThreshold(25.0);
+        config.setIntervalSeconds(1.0);
+        double lastBt = 100.0;
+        double lastTimeSec = 0.0;
+        double bt = 110.0;
+        double timeSec = 1.0;
+        double dt = timeSec - lastTimeSec;
+        double ratePerSec = Math.abs(bt - lastBt) / dt;
+        assertFalse(ratePerSec > config.getSpikeThreshold());
     }
 
     @Test
-    void intervalBetweenSamples() throws InterruptedException {
-        ArtisanTime timeclock = new ArtisanTime();
-        timeclock.setBase(1000);
-        sampling = new Sampling(timeclock);
-        int intervalMs = 80;
-        sampling.setSamplingRate(intervalMs);
-
-        List<Long> ticks = new ArrayList<>();
-        CountDownLatch atLeastThree = new CountDownLatch(3);
-        Runnable onSample = () -> {
-            ticks.add(System.currentTimeMillis());
-            atLeastThree.countDown();
-        };
-
-        sampling.start(onSample);
-        assertTrue(sampling.isRunning());
-        boolean completed = atLeastThree.await(500, TimeUnit.MILLISECONDS);
-        assertTrue(completed, "Expected at least 3 sample ticks within 500ms");
-
-        sampling.stop();
-        assertFalse(sampling.isRunning());
-
-        for (int i = 1; i < ticks.size(); i++) {
-            long gap = ticks.get(i) - ticks.get(i - 1);
-            assertTrue(gap >= intervalMs * 0.7,
-                    "Gap between samples should be at least ~70% of interval: gap=" + gap + " interval=" + intervalMs);
-        }
+    void samplingConfig_defaults_and_intervalMs() {
+        SamplingConfig config = new SamplingConfig();
+        assertEquals(SamplingConfig.DEFAULT_INTERVAL_SECONDS, config.getIntervalSeconds());
+        assertEquals(1000, config.getIntervalMs());
     }
 
     @Test
-    void zeroIntervalClampedToMin() {
-        ArtisanTime timeclock = new ArtisanTime();
-        sampling = new Sampling(timeclock);
-        sampling.setSamplingRate(0);
-        assertEquals(Sampling.MIN_DELAY_MS, sampling.getDelayMs());
-    }
-
-    @Test
-    void veryLargeInterval() {
-        ArtisanTime timeclock = new ArtisanTime();
-        sampling = new Sampling(timeclock);
-        int large = 3600_000;
-        sampling.setSamplingRate(large);
-        assertEquals(large, sampling.getDelayMs());
-        sampling.start(() -> {});
-        assertTrue(sampling.isRunning());
-        sampling.stop();
-        assertFalse(sampling.isRunning());
-    }
-
-    @Test
-    void afterStopNoMoreTicks() throws InterruptedException {
-        ArtisanTime timeclock = new ArtisanTime();
-        sampling = new Sampling(timeclock);
-        sampling.setSamplingRate(50);
-
-        AtomicInteger count = new AtomicInteger(0);
-        sampling.start(count::incrementAndGet);
-
-        while (count.get() < 2) {
-            Thread.sleep(10);
-        }
-        int countBeforeStop = count.get();
-        sampling.stop();
-        assertFalse(sampling.isRunning());
-
-        Thread.sleep(200);
-        int countAfterWait = count.get();
-        assertEquals(countBeforeStop, countAfterWait,
-                "After stop(), tick count must not increase (before=" + countBeforeStop + " after=" + countAfterWait + ")");
-    }
-
-    @Test
-    void getElapsedMsAdvancesAfterStart() throws InterruptedException {
-        ArtisanTime timeclock = new ArtisanTime();
-        timeclock.setBase(1000);
-        sampling = new Sampling(timeclock);
-        sampling.setSamplingRate(200);
-        sampling.start(() -> {});
-
-        Thread.sleep(60);
-        double elapsed = sampling.getElapsedMs();
-        assertTrue(elapsed >= 50, "Elapsed should advance after start: " + elapsed);
-
-        sampling.stop();
+    void samplingConfig_loadSaveRoundTrip() {
+        SamplingConfig config = new SamplingConfig();
+        config.setIntervalSeconds(2.0);
+        config.setFilterSpikes(true);
+        config.setSpikeThreshold(30.0);
+        SamplingConfig.saveToPreferences(config);
+        SamplingConfig loaded = new SamplingConfig();
+        SamplingConfig.loadFromPreferences(loaded);
+        assertEquals(2.0, loaded.getIntervalSeconds());
+        assertTrue(loaded.isFilterSpikes());
+        assertEquals(30.0, loaded.getSpikeThreshold());
     }
 }

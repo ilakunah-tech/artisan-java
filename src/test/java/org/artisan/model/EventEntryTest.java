@@ -29,6 +29,18 @@ class EventEntryTest {
     }
 
     @Test
+    void valueDefaultZero_withFourArgConstructor() {
+        EventEntry e = new EventEntry(0, 200.0, "x", EventType.CHARGE);
+        assertEquals(0.0, e.getValue());
+    }
+
+    @Test
+    void valueStored_withFiveArgConstructor() {
+        EventEntry e = new EventEntry(1, 205.0, "Gas", EventType.CUSTOM, 75.0);
+        assertEquals(75.0, e.getValue());
+    }
+
+    @Test
     void equality() {
         EventEntry a = new EventEntry(1, 210.0, "Dry", EventType.DRY_END);
         EventEntry b = new EventEntry(1, 210.0, "Dry", EventType.DRY_END);

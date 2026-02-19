@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AxisConfigTest {
 
@@ -17,6 +18,27 @@ class AxisConfigTest {
         assertEquals(275, c.getTempMax());
         assertEquals(50, c.getTempTickStep());
         assertEquals(AxisConfig.TemperatureUnit.CELSIUS, c.getUnit());
+    }
+
+    @Test
+    void defaults_areCorrect() {
+        AxisConfig c = new AxisConfig();
+        assertEquals(-30, c.getTimeMinSec());
+        assertEquals(600, c.getTimeMaxSec());
+        assertEquals(0, c.getTempMin());
+        assertEquals(275, c.getTempMax());
+        assertTrue(c.isAutoScaleY());
+        assertTrue(c.isAutoScaleY2());
+        assertEquals(AxisConfig.DEFAULT_MIN_ROR, c.getRorMin());
+        assertEquals(AxisConfig.DEFAULT_MAX_ROR, c.getRorMax());
+    }
+
+    @Test
+    void celsiusToFahrenheit_and_back() {
+        double c = 100.0;
+        double f = AxisConfig.celsiusToFahrenheit(c);
+        double back = AxisConfig.fahrenheitToCelsius(f);
+        assertEquals(c, back, 0.01);
     }
 
     @Test

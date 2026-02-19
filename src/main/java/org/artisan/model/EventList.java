@@ -24,6 +24,14 @@ public class EventList {
         }
     }
 
+    /**
+     * Replaces the entry at the given index (e.g. after dragging to new time).
+     */
+    public void set(int index, EventEntry entry) {
+        if (entry == null || index < 0 || index >= entries.size()) return;
+        entries.set(index, entry);
+    }
+
     public EventEntry get(int index) {
         return entries.get(index);
     }

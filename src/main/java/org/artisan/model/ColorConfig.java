@@ -3,11 +3,13 @@ package org.artisan.model;
 import javafx.scene.paint.Color;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Color configuration for profile chart (curves and events).
- * Maps Python palette / EvalueColor semantics to JavaFX colors.
+ * Maps Python qmc.palette semantics to JavaFX colors. Supports full palette keys
+ * (curve, background curve, graph, LCD) and optional alpha for legendbg, analysismask, statsanalysisbkgnd.
  * Supports light and dark theme (AtlantaFX Primer Light / Dark style).
  */
 public final class ColorConfig {
@@ -27,6 +29,10 @@ public final class ColorConfig {
     private Color curveDeltaET;
     private final Map<EventType, Color> eventColors = new EnumMap<>(EventType.class);
     private Theme theme;
+    /** Full palette by key (et, bt, deltaet, deltabt, background*, graph keys). Overrides theme when set. */
+    private final Map<String, Color> palette = new HashMap<>();
+    /** Alpha 0.0–1.0 for keys: legendbg, analysismask, statsanalysisbkgnd */
+    private final Map<String, Double> paletteAlpha = new HashMap<>();
 
     public ColorConfig() {
         this(Theme.LIGHT);
@@ -108,20 +114,56 @@ public final class ColorConfig {
         }
     }
 
-    public Color getCurveBT() { return curveBT; }
-    public void setCurveBT(Color c) { this.curveBT = c != null ? c : Color.BLACK; }
+    public Color getCurveBT() { return palette.getOrDefault("bt", curveBT); }
+    public void setCurveBT(Color c) { this.curveBT = c != null ? c : Color.BLACK; palette.put("bt", this.curveBT); }
 
-    public Color getCurveET() { return curveET; }
-    public void setCurveET(Color c) { this.curveET = c != null ? c : Color.BLACK; }
+    public Color getCurveET() { return palette.getOrDefault("et", curveET); }
+    public void setCurveET(Color c) { this.curveET = c != null ? c : Color.BLACK; palette.put("et", this.curveET); }
 
     public Color getCurveRoR() { return curveRoR; }
     public void setCurveRoR(Color c) { this.curveRoR = c != null ? c : Color.BLACK; }
 
-    public Color getCurveDeltaBT() { return curveDeltaBT; }
-    public void setCurveDeltaBT(Color c) { this.curveDeltaBT = c != null ? c : Color.BLACK; }
+    public Color getCurveDeltaBT() { return palette.getOrDefault("deltabt", curveDeltaBT); }
+    public void setCurveDeltaBT(Color c) { this.curveDeltaBT = c != null ? c : Color.BLACK; palette.put("deltabt", this.curveDeltaBT); }
 
-    public Color getCurveDeltaET() { return curveDeltaET; }
-    public void setCurveDeltaET(Color c) { this.curveDeltaET = c != null ? c : Color.BLACK; }
+    public Color getCurveDeltaET() { return palette.getOrDefault("deltaet", curveDeltaET); }
+    public void setCurveDeltaET(Color c) { this.curveDeltaET = c != null ? c : Color.BLACK; palette.put("deltaet", this.curveDeltaET); }
+
+    /** Get palette color by key (curve: et, bt, deltaet, deltabt; graph: background, canvas, grid, etc.). */
+    public Color getPaletteColor(String key) {
+        if (key == null) return Color.BLACK;
+        Color c = palette.get(key);
+        if (c != null) return c;
+        switch (key) {
+            case "et": return curveET;
+            case "bt": return curveBT;
+            case "deltaet": return curveDeltaET;
+            case "deltabt": return curveDeltaBT;
+            default: return Color.BLACK;
+        }
+    }
+
+    /** Set palette color by key. */
+    public void setPaletteColor(String key, Color color) {
+        if (key == null) return;
+        Color c = color != null ? color : Color.BLACK;
+        palette.put(key, c);
+        switch (key) {
+            case "et": curveET = c; break;
+            case "bt": curveBT = c; break;
+            case "deltaet": curveDeltaET = c; break;
+            case "deltabt": curveDeltaBT = c; break;
+            default: break;
+        }
+    }
+
+    /** Alpha 0.0–1.0 for legendbg, analysismask, statsanalysisbkgnd. */
+    public double getPaletteAlpha(String key) {
+        return paletteAlpha.getOrDefault(key != null ? key : "", 0.8);
+    }
+    public void setPaletteAlpha(String key, double value) {
+        if (key != null) paletteAlpha.put(key, Math.max(0, Math.min(1, value)));
+    }
 
     public Color getEventColor(EventType event) {
         return eventColors.getOrDefault(event != null ? event : EventType.CUSTOM, Color.GRAY);

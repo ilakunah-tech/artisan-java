@@ -93,4 +93,15 @@ class EventListTest {
         list.add(new EventEntry(0, 200.0, "A", EventType.CHARGE));
         assertThrows(IndexOutOfBoundsException.class, () -> list.get(1));
     }
+
+    @Test
+    void set_replacesEntry() {
+        list.add(new EventEntry(0, 200.0, "A", EventType.CUSTOM));
+        list.add(new EventEntry(5, 205.0, "B", EventType.CUSTOM));
+        list.set(1, new EventEntry(3, 202.0, "B2", EventType.CUSTOM));
+        assertEquals(2, list.size());
+        assertEquals(3, list.get(1).getTimeIndex());
+        assertEquals(202.0, list.get(1).getTemp());
+        assertEquals("B2", list.get(1).getLabel());
+    }
 }

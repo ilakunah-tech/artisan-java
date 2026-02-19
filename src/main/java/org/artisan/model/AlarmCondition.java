@@ -1,15 +1,23 @@
 package org.artisan.model;
 
 /**
- * Alarm trigger condition (from atypes alarmcond and alarmtime).
+ * Alarm trigger condition (IF part). Matches Python Artisan alarmcond/alarmtime.
  */
 public enum AlarmCondition {
-    /** Fire when temperature rises above threshold */
-    ABOVE_TEMP,
-    /** Fire when temperature falls below threshold */
-    BELOW_TEMP,
-    /** Fire when current time (sec) >= threshold */
-    AT_TIME,
-    /** Fire when current time (sec) >= threshold (e.g. time of a referenced event) */
-    AFTER_EVENT
+    /** Fire when BT rises above threshold (°C) */
+    BT_RISES_ABOVE,
+    /** Fire when BT falls below threshold (°C) */
+    BT_FALLS_BELOW,
+    /** Fire when ET rises above threshold (°C) */
+    ET_RISES_ABOVE,
+    /** Fire when ET falls below threshold (°C) */
+    ET_FALLS_BELOW,
+    /** Fire when RoR (BT) rises above threshold (°C/min) */
+    ROR_RISES_ABOVE,
+    /** Fire when RoR (BT) falls below threshold (°C/min) */
+    ROR_FALLS_BELOW,
+    /** Fire when time since CHARGE (seconds) >= threshold */
+    TIME_AFTER_CHARGE,
+    /** Fire when time (seconds) >= threshold (e.g. time of a referenced event) */
+    TIME_AFTER_EVENT
 }

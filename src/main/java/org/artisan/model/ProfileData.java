@@ -10,8 +10,14 @@ import java.util.List;
 public class ProfileData {
 
     private List<Double> timex = new ArrayList<>();
-    private List<Double> temp1 = new ArrayList<>();  // e.g. BT
-    private List<Double> temp2 = new ArrayList<>(); // e.g. ET
+    /** ET curve (°C). */
+    private List<Double> temp1 = new ArrayList<>();
+    /** BT curve (°C). */
+    private List<Double> temp2 = new ArrayList<>();
+    /** ΔET / RoR(ET) (°C/min), optional. */
+    private List<Double> delta1 = new ArrayList<>();
+    /** ΔBT / RoR(BT) (°C/min), optional. */
+    private List<Double> delta2 = new ArrayList<>();
     private List<Integer> specialevents = new ArrayList<>();
     private List<Integer> specialeventstype = new ArrayList<>();
     private List<Double> specialeventsvalue = new ArrayList<>();
@@ -27,6 +33,10 @@ public class ProfileData {
     public void setTemp1(List<Double> temp1) { this.temp1 = temp1 != null ? temp1 : new ArrayList<>(); }
     public List<Double> getTemp2() { return temp2; }
     public void setTemp2(List<Double> temp2) { this.temp2 = temp2 != null ? temp2 : new ArrayList<>(); }
+    public List<Double> getDelta1() { return delta1; }
+    public void setDelta1(List<Double> delta1) { this.delta1 = delta1 != null ? delta1 : new ArrayList<>(); }
+    public List<Double> getDelta2() { return delta2; }
+    public void setDelta2(List<Double> delta2) { this.delta2 = delta2 != null ? delta2 : new ArrayList<>(); }
     public List<Integer> getSpecialevents() { return specialevents; }
     public void setSpecialevents(List<Integer> specialevents) { this.specialevents = specialevents != null ? specialevents : new ArrayList<>(); }
     public List<Integer> getSpecialeventstype() { return specialeventstype; }

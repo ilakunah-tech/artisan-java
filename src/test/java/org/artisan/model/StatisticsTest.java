@@ -115,4 +115,16 @@ class StatisticsTest {
         assertFalse(d.isEmpty());
         assertEquals(b.getMeanBt(), d.getMeanBt(), 0.01);
     }
+
+    @Test
+    void computeKnownData_returnsCorrectMeanBtRorMaxTotalTime() {
+        List<Double> timex = Arrays.asList(0.0, 60.0, 120.0, 180.0);
+        List<Double> temp2 = Arrays.asList(100.0, 120.0, 150.0, 140.0);
+        ProfileData p = profile(timex, null, temp2, 0, 3);
+        RoastStats s = Statistics.compute(p);
+        assertFalse(s.isEmpty());
+        assertEquals(180.0, s.getTotalTimeSec(), 1e-6);
+        assertEquals(30.0, s.getRorMax(), 0.01);
+        assertEquals((100 + 120 + 150 + 140) / 4.0, s.getMeanBt(), 0.01);
+    }
 }

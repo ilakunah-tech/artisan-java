@@ -60,4 +60,36 @@ class CalculatorTest {
     void areaUnderCurveNullProfile() {
         assertEquals(0.0, Calculator.areaUnderCurve((ProfileData) null, 100.0));
     }
+
+    @Test
+    void developmentTimeRatioFromPhaseResult() {
+        // total 300s, development 180s -> fcs at 120s -> DTR = 60%
+        PhaseResult phase = new PhaseResult(300, 60, 120, 180, 20, 40, 40, false);
+        assertEquals(60.0, Calculator.developmentTimeRatio(phase), 0.01);
+    }
+
+    @Test
+    void developmentTimeRatioPhaseResultInvalid() {
+        assertEquals(0.0, Calculator.developmentTimeRatio(null));
+        PhaseResult invalid = new PhaseResult(100, 0, 0, 0, 0, 0, 0, true);
+        assertEquals(0.0, Calculator.developmentTimeRatio(invalid), 0.0);
+    }
+
+    @Test
+    void areaUnderCurve_belowBase() {
+        // All BT below base -> AUC == 0
+        List<Double> timex = Arrays.asList(0.0, 60.0, 120.0);
+        List<Double> temp2 = Arrays.asList(50.0, 70.0, 90.0);
+        double auc = Calculator.areaUnderCurve(timex, temp2, 100.0, 0, 2);
+        assertEquals(0.0, auc, 0.01);
+    }
+
+    @Test
+    void areaUnderCurve_linearRamp_matchesAnalytical() {
+        // BT = 100 + t (linear 1 °C/s from 0 to 60s). Base 50. Average above base = 100 + 30 - 50 = 80 over 60s -> 80 * 60 / 60 = 80 C·min
+        List<Double> timex = Arrays.asList(0.0, 60.0);
+        List<Double> temp2 = Arrays.asList(100.0, 160.0);
+        double auc = Calculator.areaUnderCurve(timex, temp2, 50.0, 0, 1);
+        assertEquals(80.0, auc, 0.1);
+    }
 }

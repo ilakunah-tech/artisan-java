@@ -26,6 +26,20 @@ public final class Calculator {
     }
 
     /**
+     * DTR from phase result: 100 * developmentTimeSec / totalTimeSec.
+     *
+     * @param phase result from Phases.compute
+     * @return DTR as percentage, or 0 if invalid/empty
+     */
+    public static double developmentTimeRatio(PhaseResult phase) {
+        if (phase == null || phase.isInvalid() || phase.getTotalTimeSec() <= 0) {
+            return 0.0;
+        }
+        double fcsTimeSec = phase.getTotalTimeSec() - phase.getDevelopmentTimeSec();
+        return developmentTimeRatio(phase.getTotalTimeSec(), fcsTimeSec);
+    }
+
+    /**
      * Area Under Curve (AUC) above base temperature, in Celsius·minutes.
      * Trapezoidal: for each segment, area = max(0, (T[i]+T[i-1])/2 - base) * dt; sum then /60.
      * See main.py calcAUC:24187-24207, profileAUC:24268-24276

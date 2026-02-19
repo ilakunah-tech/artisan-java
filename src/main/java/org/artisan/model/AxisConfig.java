@@ -1,5 +1,7 @@
 package org.artisan.model;
 
+import java.util.prefs.Preferences;
+
 /**
  * Chart axis configuration (time X, temperature Y).
  * Mirrors axis settings from Python artisanlib (axis dialog / canvas defaults).
@@ -25,6 +27,19 @@ public final class AxisConfig {
     private double tempTickStep;
     /** Current temperature unit. */
     private TemperatureUnit unit;
+    /** Auto-fit temperature axis from data. */
+    private boolean autoScaleY = true;
+    /** Auto-fit RoR axis from data. */
+    private boolean autoScaleY2 = true;
+    /** RoR (right) axis min (degrees/min). */
+    private double rorMin = DEFAULT_MIN_ROR;
+    /** RoR (right) axis max (degrees/min). */
+    private double rorMax = DEFAULT_MAX_ROR;
+
+    /** Default min RoR for axis (degrees/min). */
+    public static final double DEFAULT_MIN_ROR = -20.0;
+    /** Default max RoR for axis (degrees/min). */
+    public static final double DEFAULT_MAX_ROR = 50.0;
 
     public AxisConfig() {
         this(-30, 600, 120, 0, 275, 50, TemperatureUnit.CELSIUS);
@@ -99,6 +114,23 @@ public final class AxisConfig {
     public TemperatureUnit getUnit() { return unit; }
     public void setUnit(TemperatureUnit unit) { this.unit = unit != null ? unit : TemperatureUnit.CELSIUS; }
 
+    public boolean isAutoScaleY() { return autoScaleY; }
+    public void setAutoScaleY(boolean autoScaleY) { this.autoScaleY = autoScaleY; }
+
+    public boolean isAutoScaleY2() { return autoScaleY2; }
+    public void setAutoScaleY2(boolean autoScaleY2) { this.autoScaleY2 = autoScaleY2; }
+
+    public double getRorMin() { return rorMin; }
+    public void setRorMin(double rorMin) { this.rorMin = rorMin; }
+
+    public double getRorMax() { return rorMax; }
+    public void setRorMax(double rorMax) { this.rorMax = rorMax; }
+
+    /** Returns "°C" or "°F" for display. */
+    public String getTempUnitString() {
+        return unit == TemperatureUnit.FAHRENHEIT ? "°F" : "°C";
+    }
+
     /** Converts temperature from Celsius to Fahrenheit. */
     public static double celsiusToFahrenheit(double c) {
         return c * 9.0 / 5.0 + 32.0;
@@ -135,5 +167,42 @@ public final class AxisConfig {
         return new AxisConfig(timeMinSec, timeMaxSec, timeTickStepSec,
                 fahrenheitToCelsius(tempMin), fahrenheitToCelsius(tempMax),
                 fahrenheitToCelsius(tempTickStep), TemperatureUnit.CELSIUS);
+    }
+
+    private static final String PREFS_NODE = "org/artisan/artisan-java";
+    private static final String PREFIX = "axis.";
+
+    /** Loads axis settings from Preferences into the given config. */
+    public static void loadFromPreferences(AxisConfig target) {
+        if (target == null) return;
+        Preferences p = Preferences.userRoot().node(PREFS_NODE);
+        target.setTimeMinSec(p.getDouble(PREFIX + "timeMinSec", -30));
+        target.setTimeMaxSec(p.getDouble(PREFIX + "timeMaxSec", 600));
+        target.setTimeTickStepSec(p.getDouble(PREFIX + "timeTickStepSec", 120));
+        target.setTempMin(p.getDouble(PREFIX + "tempMin", 0));
+        target.setTempMax(p.getDouble(PREFIX + "tempMax", 275));
+        target.setTempTickStep(p.getDouble(PREFIX + "tempTickStep", 50));
+        target.setAutoScaleY(p.getBoolean(PREFIX + "autoScaleY", true));
+        target.setAutoScaleY2(p.getBoolean(PREFIX + "autoScaleY2", true));
+        target.setRorMin(p.getDouble(PREFIX + "rorMin", DEFAULT_MIN_ROR));
+        target.setRorMax(p.getDouble(PREFIX + "rorMax", DEFAULT_MAX_ROR));
+        target.setUnit(p.getBoolean(PREFIX + "unitFahrenheit", false) ? TemperatureUnit.FAHRENHEIT : TemperatureUnit.CELSIUS);
+    }
+
+    /** Saves the given config to Preferences. */
+    public static void saveToPreferences(AxisConfig config) {
+        if (config == null) return;
+        Preferences p = Preferences.userRoot().node(PREFS_NODE);
+        p.putDouble(PREFIX + "timeMinSec", config.getTimeMinSec());
+        p.putDouble(PREFIX + "timeMaxSec", config.getTimeMaxSec());
+        p.putDouble(PREFIX + "timeTickStepSec", config.getTimeTickStepSec());
+        p.putDouble(PREFIX + "tempMin", config.getTempMin());
+        p.putDouble(PREFIX + "tempMax", config.getTempMax());
+        p.putDouble(PREFIX + "tempTickStep", config.getTempTickStep());
+        p.putBoolean(PREFIX + "autoScaleY", config.isAutoScaleY());
+        p.putBoolean(PREFIX + "autoScaleY2", config.isAutoScaleY2());
+        p.putDouble(PREFIX + "rorMin", config.getRorMin());
+        p.putDouble(PREFIX + "rorMax", config.getRorMax());
+        p.putBoolean(PREFIX + "unitFahrenheit", config.getUnit() == TemperatureUnit.FAHRENHEIT);
     }
 }
