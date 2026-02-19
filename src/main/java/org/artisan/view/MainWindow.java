@@ -26,20 +26,24 @@ import org.artisan.controller.AppSettings;
 import org.artisan.controller.AutoSave;
 import org.artisan.controller.BackgroundSettings;
 import org.artisan.controller.CommController;
+import org.artisan.controller.DeviceManager;
 import org.artisan.controller.DisplaySettings;
 import org.artisan.controller.FileSession;
 import org.artisan.controller.PhasesSettings;
 import org.artisan.controller.RoastSession;
 import org.artisan.controller.Sample;
+import org.artisan.device.AillioR1Config;
 import org.artisan.device.BleDeviceChannel;
 import org.artisan.device.BlePortConfig;
 import org.artisan.device.DeviceChannel;
-import org.artisan.device.DeviceManager;
+import org.artisan.device.DeviceConfig;
 import org.artisan.device.DevicePort;
+import org.artisan.device.DeviceType;
 import org.artisan.device.ModbusDeviceChannel;
 import org.artisan.device.ModbusPortConfig;
 import org.artisan.device.SerialDeviceChannel;
 import org.artisan.device.SerialPortConfig;
+import org.artisan.device.SimulatorConfig;
 import org.artisan.device.StubDevice;
 import org.artisan.controller.EventButtonConfigPersistence;
 import org.artisan.model.ArtisanTime;
@@ -88,6 +92,9 @@ public final class MainWindow extends Application {
   private SerialPortConfig serialPortConfig;
   private ModbusPortConfig modbusPortConfig;
   private BlePortConfig blePortConfig;
+  private DeviceConfig deviceConfig;
+  private SimulatorConfig simulatorConfig;
+  private AillioR1Config aillioR1Config;
   private CommController commController;
 
   @Override
@@ -135,11 +142,15 @@ public final class MainWindow extends Application {
     ModbusPortConfig.loadFromPreferences(modbusPortConfig);
     blePortConfig = new BlePortConfig();
     BlePortConfig.loadFromPreferences(blePortConfig);
+    deviceConfig = new DeviceConfig();
+    deviceConfig.load();
+    simulatorConfig = new SimulatorConfig();
+    SimulatorConfig.loadFromPreferences(simulatorConfig);
+    aillioR1Config = new AillioR1Config();
+    AillioR1Config.loadFromPreferences(aillioR1Config);
     commController = new CommController();
-    String activeType = Preferences.userRoot().node("org/artisan/artisan-java").get("ports.activeType", "serial");
-    DeviceChannel defaultChannel = "modbus".equals(activeType) ? new ModbusDeviceChannel(modbusPortConfig)
-        : "ble".equals(activeType) ? new BleDeviceChannel(blePortConfig)
-        : new SerialDeviceChannel(serialPortConfig);
+    DeviceChannel defaultChannel = DeviceManager.createChannel(
+        deviceConfig.getActiveType(), serialPortConfig, modbusPortConfig);
     commController.setChannel(defaultChannel);
     commController.setOnSample(result -> Platform.runLater(() ->
         appController.acceptSampleFromComm(commController.getElapsedMs() / 1000.0, result.bt(), result.et())));
@@ -215,6 +226,8 @@ public final class MainWindow extends Application {
     samplingItem.setOnAction(e -> openSamplingDialog(root, chartController));
     MenuItem portsItem = new MenuItem("Ports...");
     portsItem.setOnAction(e -> openPortsDialog(root));
+    MenuItem deviceItem = new MenuItem("Device...");
+    deviceItem.setOnAction(e -> openDevicesDialog(root));
     MenuItem phasesItem = new MenuItem("Phases");
     phasesItem.setOnAction(e -> openPhasesDialog(root, chartController));
     MenuItem backgroundItem = new MenuItem("Background...");
@@ -227,7 +240,7 @@ public final class MainWindow extends Application {
     autosaveItem.setOnAction(e -> openAutoSaveDialog(root));
     MenuItem replayItem = new MenuItem("Replay...");
     replayItem.setOnAction(e -> openReplayDialog(root));
-    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem);
+    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem);
     menuBar.getMenus().addAll(fileMenu, viewMenu, configMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
@@ -625,18 +638,15 @@ public final class MainWindow extends Application {
   }
 
   private void openDeviceSettings(BorderPane root) {
+    openDevicesDialog(root);
+  }
+
+  private void openDevicesDialog(BorderPane root) {
     Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
     if (owner == null) return;
-    DeviceSettingsDialog dialog = new DeviceSettingsDialog(owner, appSettings);
+    DevicesDialog dialog = new DevicesDialog(owner, appController,
+        serialPortConfig, modbusPortConfig, deviceConfig, simulatorConfig, aillioR1Config);
     dialog.showAndWait();
-    if (dialog.isResultOk()) {
-      DevicePort device = DeviceManager.createDevice(
-          dialog.getSelectedDeviceType(),
-          dialog.getSelectedPort(),
-          dialog.getBaudRate());
-      appController.setDevice(device);
-      appController.getSampling().setSamplingRate(dialog.getSamplingRateMs());
-    }
   }
 
   private void openColorsDialog(BorderPane root, RoastChartController chartController) {

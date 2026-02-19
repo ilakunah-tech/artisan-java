@@ -38,6 +38,9 @@ dependencies {
     // Serial port (COM)
     implementation 'com.fazecast:jSerialComm:2.10.4'
 
+    // USB HID (Aillio Bullet R1)
+    implementation 'org.hid4java:hid4java:0.8.0'
+
     // Modbus (TCP, UDP, serial RTU/ASCII)
     implementation 'com.ghgande:j2mod:2.6.1'
     implementation 'com.infiniteautomation:modbus4j:3.0.3'

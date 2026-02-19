@@ -28,7 +28,11 @@ import org.artisan.view.RoastChartController;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.artisan.device.DeviceConfig;
 import org.artisan.device.DevicePort;
+import org.artisan.device.DeviceType;
+import org.artisan.device.ModbusPortConfig;
+import org.artisan.device.SerialPortConfig;
 import org.artisan.model.ArtisanTime;
 
 /**
@@ -126,6 +130,22 @@ public final class AppController {
   /** Sets the device used for sampling (e.g. after DeviceSettingsDialog OK). */
   public void setDevice(DevicePort device) {
     this.device = device != null ? device : new org.artisan.device.StubDevice();
+  }
+
+  /**
+   * Sets the active device type and rebuilds CommController channel via DeviceManager.
+   * Saves DeviceConfig.activeType. Call from DevicesDialog OK/Apply.
+   */
+  public void setDevice(DeviceType type, SerialPortConfig serial, ModbusPortConfig modbus) {
+    org.artisan.device.DeviceChannel ch = DeviceManager.createChannel(
+        type != null ? type : org.artisan.device.DeviceType.NONE, serial, modbus);
+    if (commController != null) {
+      commController.setChannel(ch);
+    }
+    DeviceConfig cfg = new DeviceConfig();
+    cfg.load();
+    cfg.setActiveType(type != null ? type : org.artisan.device.DeviceType.NONE);
+    cfg.save();
   }
 
   /** May be null in tests. */
