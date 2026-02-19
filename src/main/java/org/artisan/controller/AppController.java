@@ -1,9 +1,11 @@
 package org.artisan.controller;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -288,6 +290,40 @@ public final class AppController {
     boolean running = (commController != null && commController.isRunning())
         || (sampling != null && sampling.isRunning());
     return running ? DisplayState.SAMPLING : DisplayState.IDLE;
+  }
+
+  /**
+   * Generates release notes for the current build.
+   * Includes Version (from version.properties), status string, key features, and migration plan link.
+   */
+  public String generateReleaseNotes() {
+    String version = "?";
+    try (InputStream in = getClass().getResourceAsStream("/version.properties")) {
+      if (in != null) {
+        Properties p = new Properties();
+        p.load(in);
+        version = p.getProperty("version", "?");
+      }
+    } catch (Exception ignored) {}
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("Version: ").append(version).append('\n');
+    sb.append("Status: 90% complete, ready for alpha release").append('\n');
+    sb.append('\n');
+    sb.append("Key features:").append('\n');
+    sb.append("- Java 17 + JavaFX 21 baseline").append('\n');
+    sb.append("- MainWindow with chart, controls, and keyboard shortcuts").append('\n');
+    sb.append("- Sampling loop via CommController (Serial/Modbus/BLE) + simulator stub").append('\n');
+    sb.append("- Phases panel (Drying/Maillard/Development) with canvas renderer").append('\n');
+    sb.append("- Large LCDs dialog (live BT/ET/RoR/Time) with preferences persistence").append('\n');
+    sb.append("- Status bar with live BT/ET/RoR/Time/State").append('\n');
+    sb.append("- QR Code dialog (generate, save PNG, copy to clipboard)").append('\n');
+    sb.append("- Background profiles + display settings + AtlantaFX theme support").append('\n');
+    sb.append("- Export/import helpers (CSV + Cropster) and production/ranking reports").append('\n');
+    sb.append("- Improved file session handling (dirty tracking, recent files, close confirmation)").append('\n');
+    sb.append('\n');
+    sb.append("Full migration plan: https://github.com/ilakunah-tech/artisan-java").append('\n');
+    return sb.toString();
   }
 
   public void setAutoSave(AutoSave autoSave) {

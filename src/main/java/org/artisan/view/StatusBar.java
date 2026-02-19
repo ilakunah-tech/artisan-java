@@ -17,11 +17,13 @@ import org.artisan.controller.AppController.DisplayState;
 public final class StatusBar extends HBox {
 
     private static final String DASH = "—";
+    private static final String ROR_DASH = "–––";
     private static final double PADDING = 4.0;
     private static final int SEPARATOR_PADDING = 8;
 
     private final Label btLabel;
     private final Label etLabel;
+    private final Label rorLabel;
     private final Label timeLabel;
     private final Label stateLabel;
 
@@ -32,6 +34,7 @@ public final class StatusBar extends HBox {
 
         btLabel = new Label(formatLcd("BT", DASH));
         etLabel = new Label(formatLcd("ET", DASH));
+        rorLabel = new Label(formatLcd("RoR", ROR_DASH));
         timeLabel = new Label(formatLcd("Time", DASH));
         stateLabel = new Label(formatLcd("State", DASH));
         stateLabel.setTextFill(Color.GRAY);
@@ -40,6 +43,8 @@ public final class StatusBar extends HBox {
             btLabel,
             new Separator(Orientation.VERTICAL),
             etLabel,
+            new Separator(Orientation.VERTICAL),
+            rorLabel,
             new Separator(Orientation.VERTICAL),
             timeLabel,
             new Separator(Orientation.VERTICAL),
@@ -52,14 +57,16 @@ public final class StatusBar extends HBox {
     }
 
     /**
-     * Updates BT, ET, Time from a sample. Call from SampleListener (FX thread).
+     * Updates BT, ET, RoR (BT), Time from a sample. Call from SampleListener (FX thread).
      */
     public void updateSample(double bt, double et, double rorBT, double rorET, double timeSec) {
         String btStr = formatTemp(bt);
         String etStr = formatTemp(et);
+        String rorStr = formatRor(rorBT);
         String timeStr = formatTime(timeSec);
         btLabel.setText(formatLcd("BT", btStr));
         etLabel.setText(formatLcd("ET", etStr));
+        rorLabel.setText(formatLcd("RoR", rorStr));
         timeLabel.setText(formatLcd("Time", timeStr));
     }
 
@@ -89,5 +96,10 @@ public final class StatusBar extends HBox {
         int m = total / 60;
         int s = total % 60;
         return String.format("%d:%02d", m, s);
+    }
+
+    private static String formatRor(double ror) {
+        if (!Double.isFinite(ror)) return ROR_DASH;
+        return String.format("%+.1f", ror);
     }
 }

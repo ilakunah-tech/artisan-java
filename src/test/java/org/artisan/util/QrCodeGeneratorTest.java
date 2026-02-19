@@ -6,6 +6,7 @@ import java.nio.file.Path;
 
 import javafx.scene.image.WritableImage;
 
+import org.artisan.view.QrCodeDialog;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -36,5 +37,13 @@ class QrCodeGeneratorTest {
         QrCodeGenerator.saveQrPng("https://example.com", 150, out);
         assertTrue(Files.isRegularFile(out));
         assertTrue(Files.size(out) > 0);
+    }
+
+    @Test
+    void qrcodeDialog_localFileUri_usesTripleSlash(@TempDir Path dir) throws IOException {
+        Path local = dir.resolve("test.alog");
+        Files.writeString(local, "x");
+        String uri = QrCodeDialog.computeContent(local.toString());
+        assertTrue(uri.startsWith("file:///"), "Expected file URI with triple slash, got: " + uri);
     }
 }

@@ -1,5 +1,6 @@
 package org.artisan.view;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.prefs.Preferences;
 
@@ -45,8 +46,7 @@ public final class QrCodeDialog {
         stage.initOwner(owner);
         stage.initModality(javafx.stage.Modality.NONE);
 
-        String initialContent = contentFromController();
-        textField = new TextField(initialContent);
+        textField = new TextField(DEFAULT_URL);
         textField.setPromptText("URL or text to encode");
         textField.setMinWidth(320);
 
@@ -80,17 +80,27 @@ public final class QrCodeDialog {
 
         loadPreferences();
         stage.setOnCloseRequest(e -> savePreferences());
+
+        setContent();
     }
 
-    private String contentFromController() {
-        if (appController == null) return DEFAULT_URL;
-        String path = appController.getCurrentFilePath();
-        if (path != null && !path.isBlank()) {
-            try {
-                return Path.of(path).toUri().toString();
-            } catch (Exception ignored) {}
-        }
+    public static String computeContent(String currentFilePath) {
+        if (currentFilePath == null || currentFilePath.isBlank()) return DEFAULT_URL;
+        try {
+            Path path = Path.of(currentFilePath);
+            if (Files.isRegularFile(path)) {
+                return path.toUri().toString().replaceFirst("^file:", "file:///"); // ensure 3 slashes
+            }
+        } catch (Exception ignored) {}
         return DEFAULT_URL;
+    }
+
+    private void setContent() {
+        String content = DEFAULT_URL;
+        if (appController != null) {
+            content = computeContent(appController.getCurrentFilePath());
+        }
+        textField.setText(content);
     }
 
     private void generate() {
@@ -149,7 +159,7 @@ public final class QrCodeDialog {
     }
 
     public void show() {
-        textField.setText(contentFromController());
+        setContent();
         generate();
         loadPreferences();
         stage.show();
