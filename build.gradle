@@ -53,6 +53,10 @@ dependencies {
     // Statistics (mean, median, percentiles)
     implementation 'org.apache.commons:commons-math3:3.6.1'
 
+    // QR Code (ZXing)
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+
     // JUnit 5
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

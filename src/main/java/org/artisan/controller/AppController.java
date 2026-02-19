@@ -259,6 +259,37 @@ public final class AppController {
     this.fileSession = fileSession;
   }
 
+  /** Current open file path as String, or null if none. */
+  public String getCurrentFilePath() {
+    if (fileSession == null) return null;
+    Path p = fileSession.getCurrentFilePath();
+    return p != null ? p.toString() : null;
+  }
+
+  /** Display name for window title: filename, or "Untitled", or "Untitled *" / "name *" when dirty. */
+  public String getCurrentFileName() {
+    if (fileSession == null) return "Untitled";
+    Path p = fileSession.getCurrentFilePath();
+    String name = (p != null && p.getFileName() != null) ? p.getFileName().toString() : "Untitled";
+    if (fileSession.isDirty()) name += " *";
+    return name;
+  }
+
+  /** True if the current session has unsaved changes. */
+  public boolean isSessionDirty() {
+    return fileSession != null && fileSession.isDirty();
+  }
+
+  /** Display state for status bar: IDLE, SAMPLING, PAUSED, ERROR. */
+  public enum DisplayState { IDLE, SAMPLING, PAUSED, ERROR }
+
+  /** Current state for StatusBar (sampling on/off; error not yet wired). */
+  public DisplayState getCurrentState() {
+    boolean running = (commController != null && commController.isRunning())
+        || (sampling != null && sampling.isRunning());
+    return running ? DisplayState.SAMPLING : DisplayState.IDLE;
+  }
+
   public void setAutoSave(AutoSave autoSave) {
     this.autoSave = autoSave;
   }

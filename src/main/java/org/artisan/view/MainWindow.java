@@ -9,6 +9,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -73,10 +74,12 @@ import org.artisan.view.LargeLCDsDialog;
 import org.artisan.view.LogViewer;
 import org.artisan.view.NotificationLevel;
 import org.artisan.view.ProductionReportDialog;
+import org.artisan.view.QrCodeDialog;
 import org.artisan.view.RankingReportDialog;
 import org.artisan.view.RoastReportDialog;
 import org.artisan.view.S7Dialog;
 import org.artisan.view.SimulatorDialog;
+import org.artisan.view.StatusBar;
 import org.artisan.view.TransposerDialog;
 
 import java.awt.Desktop;
@@ -86,6 +89,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
@@ -105,6 +109,7 @@ public final class MainWindow extends Application {
   private AutoSave autoSave;
   private Label statusBar;
   private Label elapsedLabel;
+  private StatusBar statusBarComponent;
   private PhasesLCD phasesLCD;
   private StatisticsPanel statisticsPanel;
   private boolean samplingOn;
@@ -198,6 +203,12 @@ public final class MainWindow extends Application {
       appController.notifySampleListeners(s);
     }));
 
+    statusBarComponent = new StatusBar();
+    appController.addSampleListener((bt, et, rorBT, rorET, timeSec) -> {
+      statusBarComponent.updateSample(bt, et, rorBT, rorET, timeSec);
+      statusBarComponent.setState(appController.getCurrentState());
+    });
+
     appController.setMarkEventCallback(label -> {
       var cd = appController.getSession().getCanvasData();
       var timex = cd.getTimex();
@@ -220,34 +231,49 @@ public final class MainWindow extends Application {
 
     HBox toolbarRow1 = new HBox(10);
     Button onOff = new Button("ON");
+    onOff.setTooltip(new Tooltip("Start / Stop sampling (F5)"));
     onOff.setOnAction(e -> toggleSampling());
     Button charge = new Button("CHARGE");
+    charge.setTooltip(new Tooltip("Charge"));
     charge.setOnAction(e -> appController.onChargeButton());
     Button dryEnd = new Button("DRY END");
+    dryEnd.setTooltip(new Tooltip("Dry end"));
     dryEnd.setOnAction(e -> appController.onDryEndButton());
     Button fcStart = new Button("FC START");
+    fcStart.setTooltip(new Tooltip("First crack start"));
     fcStart.setOnAction(e -> appController.onFcStartButton());
     Button fcEnd = new Button("FC END");
+    fcEnd.setTooltip(new Tooltip("First crack end"));
     fcEnd.setOnAction(e -> appController.onFcEndButton());
     Button drop = new Button("DROP");
+    drop.setTooltip(new Tooltip("Drop"));
     drop.setOnAction(e -> appController.onDropButton());
     Button coolEnd = new Button("COOL END");
+    coolEnd.setTooltip(new Tooltip("Cool end"));
     coolEnd.setOnAction(e -> appController.onCoolEndButton());
     Button deviceBtn = new Button("\u2699 Device");
+    deviceBtn.setTooltip(new Tooltip("Device settings"));
     deviceBtn.setOnAction(e -> openDeviceSettings(root));
     Button colorsBtn = new Button("Colors");
+    colorsBtn.setTooltip(new Tooltip("Colors"));
     colorsBtn.setOnAction(e -> openColorsDialog(root, chartController));
     Button pidBtn = new Button("\u2699 PID");
+    pidBtn.setTooltip(new Tooltip("PID settings"));
     pidBtn.setOnAction(e -> openPidDialog(root));
     Button propertiesBtn = new Button("Properties");
+    propertiesBtn.setTooltip(new Tooltip("Roast properties"));
     propertiesBtn.setOnAction(e -> openRoastPropertiesDialog(root));
     Button cupProfileBtn = new Button("Cup Profile");
+    cupProfileBtn.setTooltip(new Tooltip("Cup profile"));
     cupProfileBtn.setOnAction(e -> openCupProfileDialog(root));
     Button comparatorBtn = new Button("Comparator");
+    comparatorBtn.setTooltip(new Tooltip("Comparator"));
     comparatorBtn.setOnAction(e -> appController.openComparator(stage));
     Button simulatorBtn = new Button("Simulator");
+    simulatorBtn.setTooltip(new Tooltip("Simulator"));
     simulatorBtn.setOnAction(e -> new SimulatorDialog(stage, appController).showAndWait());
     Button designerBtn = new Button("Designer");
+    designerBtn.setTooltip(new Tooltip("Designer"));
     designerBtn.setOnAction(e -> appController.openDesigner(stage));
     toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn, comparatorBtn, simulatorBtn, designerBtn);
 
@@ -317,6 +343,8 @@ public final class MainWindow extends Application {
     Menu helpMenu = new Menu("Help");
     MenuItem aboutItem = new MenuItem("About Artisan Java...");
     aboutItem.setOnAction(e -> new PlatformDialog(stage).showAndWait());
+    MenuItem qrCodeItem = new MenuItem("QR Code...");
+    qrCodeItem.setOnAction(e -> new QrCodeDialog(stage, appController).show());
     MenuItem logViewerItem = new MenuItem("Open Log Viewer");
     logViewerItem.setOnAction(e -> new LogViewer(stage).show());
     MenuItem githubItem = new MenuItem("GitHub Repository");
@@ -327,7 +355,7 @@ public final class MainWindow extends Application {
         new Alert(Alert.AlertType.ERROR, "Could not open URL: " + ex.getMessage()).showAndWait();
       }
     });
-    helpMenu.getItems().addAll(aboutItem, logViewerItem, githubItem);
+    helpMenu.getItems().addAll(aboutItem, qrCodeItem, logViewerItem, githubItem);
     menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu, helpMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
@@ -377,13 +405,14 @@ public final class MainWindow extends Application {
           elapsedLabel.setText(String.format("Elapsed: %.0f s", elapsed));
         }
         phasesLCD.update(appController.getSession().getCanvasData(), phasesSettings.toConfig());
+        statusBarComponent.setState(appController.getCurrentState());
       }
     };
     statusTimer.start();
 
     root.setTop(new VBox(menuBar, toolbar, phasesLCD));
     root.setCenter(centerWithControls);
-    root.setBottom(new VBox(statisticsPanel, status));
+    root.setBottom(new VBox(statisticsPanel, statusBarComponent, status));
 
     appController.refreshStatistics();
 
@@ -397,26 +426,20 @@ public final class MainWindow extends Application {
     registerAccelerators(scene, root, chartController);
     updateWindowTitle();
     primaryStage.setOnCloseRequest(e -> {
-      if (fileSession.isDirty()) {
+      if (appController.isSessionDirty()) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Unsaved changes");
-        alert.setHeaderText("You have unsaved changes. Save before quitting?");
-        alert.getButtonTypes().setAll(ButtonType.NO, ButtonType.YES, ButtonType.CANCEL);
-        alert.getButtonTypes().stream()
-            .filter(b -> b == ButtonType.YES)
-            .findFirst()
-            .ifPresent(b -> ((Button) alert.getDialogPane().lookupButton(b)).setText("Save"));
-        alert.getButtonTypes().stream()
-            .filter(b -> b == ButtonType.NO)
-            .findFirst()
-            .ifPresent(b -> ((Button) alert.getDialogPane().lookupButton(b)).setText("Discard"));
-        ButtonType choice = alert.showAndWait().orElse(ButtonType.CANCEL);
-        if (choice == ButtonType.CANCEL) {
+        alert.setContentText("Save before closing?");
+        ButtonType save = new ButtonType("Save");
+        ButtonType discard = new ButtonType("Discard");
+        ButtonType cancel = ButtonType.CANCEL;
+        alert.getButtonTypes().setAll(save, discard, cancel);
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.orElse(cancel) == save) {
+          doSave();
+        } else if (result.orElse(cancel) == cancel) {
           e.consume();
           return;
-        }
-        if (choice == ButtonType.YES) {
-          doSave();
         }
       }
       appController.stopSampling();
@@ -740,13 +763,9 @@ public final class MainWindow extends Application {
 
   private void updateWindowTitle() {
     if (primaryStage == null) return;
-    String base = "Artisan Java";
-    Path p = fileSession.getCurrentFilePath();
-    String name = p != null && p.getFileName() != null ? p.getFileName().toString() : "New Roast";
-    String title = base + " — " + name;
+    String title = "Artisan Java — " + appController.getCurrentFileName();
     String roastTitle = appController.getRoastProperties().getTitle();
     if (roastTitle != null && !roastTitle.isBlank()) title += " — " + roastTitle;
-    if (fileSession.isDirty()) title += " *";
     primaryStage.setTitle(title);
   }
 

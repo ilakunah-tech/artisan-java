@@ -1,5 +1,6 @@
 package org.artisan.view;
 
+import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
@@ -44,11 +45,15 @@ public final class PhasesCanvasPanel extends Pane {
 
     /**
      * Updates the stored phase result and re-renders the canvas.
+     * Must run on the JavaFX application thread.
      */
     public void refresh(PhaseResult result) {
-        this.result = result != null ? result : PhaseResult.INVALID;
-        double w = getWidth() > 0 ? getWidth() : canvas.getWidth();
-        paintComponent(canvas.getGraphicsContext2D(), w, HEIGHT_PX);
+        PhaseResult r = result != null ? result : PhaseResult.INVALID;
+        Platform.runLater(() -> {
+            this.result = r;
+            double w = getWidth() > 0 ? getWidth() : canvas.getWidth();
+            paintComponent(canvas.getGraphicsContext2D(), w, HEIGHT_PX);
+        });
     }
 
     /**
