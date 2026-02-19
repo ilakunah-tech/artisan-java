@@ -15,6 +15,7 @@ import org.artisan.model.ColorConfig;
 import org.artisan.model.CurveSet;
 import org.artisan.model.EventEntry;
 import org.artisan.model.EventType;
+import org.artisan.model.BatchManager;
 import org.artisan.model.PhaseResult;
 import org.artisan.model.Phases;
 import org.artisan.model.PhasesConfig;
@@ -74,6 +75,7 @@ public final class AppController {
   private final PIDControl pidControl;
   private final RoastProperties roastProperties;
   private final CupProfile cupProfile;
+  private final BatchManager batchManager;
   private double lastSampleBt = Double.NaN;
   private double lastSampleTimeSec = Double.NaN;
   private WeakReference<ComparatorView> comparatorViewRef;
@@ -115,6 +117,11 @@ public final class AppController {
     this.roastProperties.load();
     this.cupProfile = new CupProfile();
     this.cupProfile.load();
+    this.batchManager = new BatchManager();
+  }
+
+  public BatchManager getBatchManager() {
+    return batchManager;
   }
 
   public RoastProperties getRoastProperties() {
@@ -413,7 +420,7 @@ public final class AppController {
     else if (type == EventType.FC_END) session.markFcEnd(idx);
     else if (type == EventType.SC_START) session.markScStart(idx);
     else if (type == EventType.SC_END) session.markScEnd(idx);
-    else if (type == EventType.TURNING_POINT) session.markTurningPoint(idx);
+    else if (type == EventType.TP) session.markTurningPoint(idx);
     else if (type == EventType.DROP) {
       session.markDrop(idx);
       if (autoSave != null) { autoSave.onDrop(); autoSave.stop(); }

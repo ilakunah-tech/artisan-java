@@ -100,7 +100,7 @@ public final class RoastSession {
 
   public void markTurningPoint(int timexIndex) {
     double temp = tempAt(timexIndex);
-    events.add(new EventEntry(timexIndex, temp, "TP", EventType.TURNING_POINT));
+    events.add(new EventEntry(timexIndex, temp, "TP", EventType.TP));
   }
 
   /** Records DROP and sets state to DROPPING. */

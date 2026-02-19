@@ -29,7 +29,7 @@ public final class ControlsPanel extends VBox {
         HBox eventRow = new HBox(8);
         eventRow.getChildren().addAll(
             button("CHARGE", EventType.CHARGE),
-            button("TP", EventType.TURNING_POINT),
+            button("TP", EventType.TP),
             button("DRY END", EventType.DRY_END),
             button("FC START", EventType.FC_START),
             button("FC END", EventType.FC_END),

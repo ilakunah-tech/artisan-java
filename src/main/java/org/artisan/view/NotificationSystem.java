@@ -1,5 +1,7 @@
 package org.artisan.view;
 
+import java.util.logging.Logger;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -7,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
+import javafx.scene.Scene;
 import javafx.util.Duration;
 
 /**
@@ -15,6 +18,7 @@ import javafx.util.Duration;
  */
 public final class NotificationSystem {
 
+    private static final Logger LOG = Logger.getLogger(NotificationSystem.class.getName());
     private static final int DISMISS_MS = 4000;
     private static final int FADE_MS = 200;
     private static final String TEXT_COLOR = "white";
@@ -45,10 +49,24 @@ public final class NotificationSystem {
         overlay.setPickOnBounds(false);
         StackPane.setMargin(label, new javafx.geometry.Insets(0, 0, 24, 0));
 
-        if (!(anchor instanceof StackPane)) return;
-        StackPane root = (StackPane) anchor;
-        root.getChildren().add(overlay);
-        showThenRemove(overlay, root);
+        StackPane container;
+        if (anchor instanceof StackPane) {
+            container = (StackPane) anchor;
+        } else if (anchor.getScene() != null) {
+            Scene scene = anchor.getScene();
+            Node root = scene.getRoot();
+            if (root instanceof StackPane) {
+                container = (StackPane) root;
+            } else {
+                LOG.warning("NotificationSystem: anchor is not StackPane and scene root is not StackPane; cannot show notification");
+                return;
+            }
+        } else {
+            LOG.warning("NotificationSystem: anchor has no scene; cannot show notification");
+            return;
+        }
+        container.getChildren().add(overlay);
+        showThenRemove(overlay, container);
     }
 
     private static void showThenRemove(StackPane overlay, StackPane container) {

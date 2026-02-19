@@ -112,7 +112,10 @@ public final class LargeLCDsDialog {
     }
 
     public void show() {
-        if (appController != null) appController.addSampleListener(sampleListener);
+        if (appController != null) {
+            appController.removeSampleListener(sampleListener);
+            appController.addSampleListener(sampleListener);
+        }
         stage.show();
         stage.toFront();
     }
