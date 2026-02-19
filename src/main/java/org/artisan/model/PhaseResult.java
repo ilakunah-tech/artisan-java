@@ -8,6 +8,9 @@ import java.util.Objects;
  */
 public final class PhaseResult {
 
+    /** Invalid phase result (e.g. no DROP or DROP before FC START). */
+    public static final PhaseResult INVALID = new PhaseResult(0, 0, 0, 0, 0, 0, 0, true);
+
     private final double totalTimeSec;
     private final double dryingTimeSec;
     private final double maillardTimeSec;

@@ -92,6 +92,14 @@ public final class AppController {
     void onSample(double bt, double et, double rorBT, double rorET, double timeSec);
   }
 
+  /** Functional interface for phase result updates (e.g. PhasesCanvasPanel refresh). */
+  @FunctionalInterface
+  public interface PhaseListener {
+    void onPhase(PhaseResult r);
+  }
+
+  private final List<PhaseListener> phaseListeners = new CopyOnWriteArrayList<>();
+
   public AppController(
       RoastSession session,
       Sampling sampling,
@@ -303,6 +311,22 @@ public final class AppController {
   /** Unregisters a sample listener. */
   public void removeSampleListener(SampleListener listener) {
     sampleListeners.remove(listener);
+  }
+
+  /** Registers a listener for phase result updates. */
+  public void addPhaseListener(PhaseListener listener) {
+    if (listener != null) phaseListeners.add(listener);
+  }
+
+  /** Unregisters a phase listener. */
+  public void removePhaseListener(PhaseListener listener) {
+    phaseListeners.remove(listener);
+  }
+
+  private void notifyPhaseListeners(PhaseResult r) {
+    for (PhaseListener l : phaseListeners) {
+      l.onPhase(r);
+    }
   }
 
   /**
@@ -590,6 +614,7 @@ public final class AppController {
     RoastStats stats = Statistics.compute(profile);
     PhasesConfig config = phasesSettings != null ? phasesSettings.toConfig() : null;
     PhaseResult phase = Phases.compute(profile, config);
+    notifyPhaseListeners(phase);
     double dtr = Calculator.developmentTimeRatio(phase);
     double auc = displaySettings != null ? Calculator.areaUnderCurve(profile, displaySettings.getAucBaseTemp()) : 0.0;
     double baseTempC = displaySettings != null ? displaySettings.getAucBaseTemp() : Double.NaN;
@@ -757,6 +782,7 @@ public final class AppController {
     RoastStats stats = Statistics.compute(profile);
     PhasesConfig config = phasesSettings != null ? phasesSettings.toConfig() : null;
     PhaseResult phase = Phases.compute(profile, config);
+    notifyPhaseListeners(phase);
     double dtr = Calculator.developmentTimeRatio(phase);
     double auc = displaySettings != null ? Calculator.areaUnderCurve(profile, displaySettings.getAucBaseTemp()) : 0.0;
     double baseTempC = displaySettings != null ? displaySettings.getAucBaseTemp() : Double.NaN;

@@ -53,6 +53,7 @@ public final class ControlsPanel extends VBox {
 
     private Button button(String text, EventType type) {
         Button b = new Button(text);
+        b.getStyleClass().add("event-button");
         b.setOnAction(e -> {
             if (appController != null) appController.markEvent(type);
         });
@@ -61,6 +62,7 @@ public final class ControlsPanel extends VBox {
 
     private Slider slider(String name, String key) {
         Slider s = new Slider(0, 100, 0);
+        s.getStyleClass().add("controls-slider");
         s.setShowTickMarks(true);
         s.setShowTickLabels(true);
         s.setMajorTickUnit(25);

@@ -46,6 +46,7 @@ import org.artisan.device.ModbusDeviceChannel;
 import org.artisan.device.ModbusPortConfig;
 import org.artisan.device.SerialDeviceChannel;
 import org.artisan.device.SerialPortConfig;
+import org.artisan.device.S7Config;
 import org.artisan.device.SimulatorConfig;
 import org.artisan.device.StubDevice;
 import org.artisan.controller.EventButtonConfigPersistence;
@@ -57,6 +58,7 @@ import org.artisan.model.EventButtonConfig;
 import org.artisan.model.EventEntry;
 import org.artisan.model.EventType;
 import org.artisan.model.BackgroundProfile;
+import org.artisan.model.PhaseResult;
 import org.artisan.model.ProfileData;
 import org.artisan.model.CanvasData;
 import org.artisan.model.Roastlog;
@@ -73,6 +75,7 @@ import org.artisan.view.NotificationLevel;
 import org.artisan.view.ProductionReportDialog;
 import org.artisan.view.RankingReportDialog;
 import org.artisan.view.RoastReportDialog;
+import org.artisan.view.S7Dialog;
 import org.artisan.view.SimulatorDialog;
 import org.artisan.view.TransposerDialog;
 
@@ -113,6 +116,7 @@ public final class MainWindow extends Application {
   private BlePortConfig blePortConfig;
   private DeviceConfig deviceConfig;
   private SimulatorConfig simulatorConfig;
+  private S7Config s7Config;
   private AillioR1Config aillioR1Config;
   private CommController commController;
 
@@ -166,6 +170,8 @@ public final class MainWindow extends Application {
     deviceConfig.load();
     simulatorConfig = new SimulatorConfig();
     SimulatorConfig.loadFromPreferences(simulatorConfig);
+    s7Config = new S7Config();
+    S7Config.loadFromPreferences(s7Config);
     aillioR1Config = new AillioR1Config();
     AillioR1Config.loadFromPreferences(aillioR1Config);
     commController = new CommController();
@@ -290,6 +296,8 @@ public final class MainWindow extends Application {
     portsItem.setOnAction(e -> openPortsDialog(root));
     MenuItem deviceItem = new MenuItem("Device...");
     deviceItem.setOnAction(e -> openDevicesDialog(root));
+    MenuItem s7Item = new MenuItem("S7 PLC...");
+    s7Item.setOnAction(e -> openS7Dialog(root));
     MenuItem phasesItem = new MenuItem("Phases");
     phasesItem.setOnAction(e -> openPhasesDialog(root, chartController));
     MenuItem backgroundItem = new MenuItem("Background...");
@@ -304,7 +312,7 @@ public final class MainWindow extends Application {
     replayItem.setOnAction(e -> openReplayDialog(root));
     MenuItem pidItem = new MenuItem("PID...");
     pidItem.setOnAction(e -> openPidDialog(root));
-    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
+    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, s7Item, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
 
     Menu helpMenu = new Menu("Help");
     MenuItem aboutItem = new MenuItem("About Artisan Java...");
@@ -326,11 +334,13 @@ public final class MainWindow extends Application {
 
     Node chartView = chartController.getView();
     chartController.startUpdateTimer();
+    PhasesCanvasPanel phasesCanvasPanel = new PhasesCanvasPanel(PhaseResult.INVALID);
+    appController.addPhaseListener(result -> phasesCanvasPanel.refresh(result));
     ControlsPanel controlsPanel = new ControlsPanel(appController);
     TitledPane controlsTitled = new TitledPane("Controls", controlsPanel);
     controlsTitled.setCollapsible(true);
     controlsTitled.setExpanded(false);
-    VBox centerWithControls = new VBox(chartView, controlsTitled);
+    VBox centerWithControls = new VBox(chartView, phasesCanvasPanel, controlsTitled);
     VBox.setVgrow(chartView, javafx.scene.layout.Priority.ALWAYS);
 
     statusBar = new Label("BT: —  ET: —  RoR: —");
@@ -378,6 +388,11 @@ public final class MainWindow extends Application {
     appController.refreshStatistics();
 
     Scene scene = new Scene(overlayRoot, 1000, 600);
+    try {
+      scene.getStylesheets().add(getClass().getResource("/org/artisan/view/styles.css").toExternalForm());
+    } catch (Exception e) {
+      // styles.css optional
+    }
     primaryStage.setScene(scene);
     registerAccelerators(scene, root, chartController);
     updateWindowTitle();
@@ -779,6 +794,12 @@ public final class MainWindow extends Application {
     DevicesDialog dialog = new DevicesDialog(owner, appController,
         serialPortConfig, modbusPortConfig, deviceConfig, simulatorConfig, aillioR1Config);
     dialog.showAndWait();
+  }
+
+  private void openS7Dialog(BorderPane root) {
+    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
+    if (owner == null) return;
+    new S7Dialog(owner, s7Config).showAndWait();
   }
 
   private void openColorsDialog(BorderPane root, RoastChartController chartController) {

@@ -1,0 +1,24 @@
+/* Artisan view styles */
+
+.lcd-panel {
+  -fx-background-color: #1a1a1a;
+  -fx-font-family: monospace;
+}
+
+.event-button {
+  -fx-background-color: #2a3a4a;
+  -fx-text-fill: white;
+  -fx-font-size: 11px;
+}
+
+.event-button:hover {
+  -fx-background-color: #3a5a7a;
+}
+
+.controls-slider .track {
+  -fx-background-color: #3a4a5a;
+}
+
+.artisan-toolbar {
+  -fx-background-color: #232d3a;
+}

@@ -73,6 +73,23 @@ public class CropsterConverterTest {
         assertFalse(pd.getTemp2().isEmpty());
     }
 
+    @Test
+    void importFromCropster_skipsBadRow() throws Exception {
+        // CSV with one bad time row ("abc") among valid rows -> returns non-null ProfileData with only valid rows
+        Path in = tempDir.resolve("in.csv");
+        Files.writeString(in, "Time,BT\n0,200\nabc,201\n1,202\n2,203\n", StandardCharsets.UTF_8);
+        ProfileData pd = CropsterConverter.importFromCropster(in);
+        assertNotNull(pd);
+        assertEquals(3, pd.getTimex().size());
+        assertEquals(3, pd.getTemp2().size());
+        assertEquals(0.0, pd.getTimex().get(0), 1e-9);
+        assertEquals(1.0, pd.getTimex().get(1), 1e-9);
+        assertEquals(2.0, pd.getTimex().get(2), 1e-9);
+        assertEquals(200.0, pd.getTemp2().get(0), 1e-9);
+        assertEquals(202.0, pd.getTemp2().get(1), 1e-9);
+        assertEquals(203.0, pd.getTemp2().get(2), 1e-9);
+    }
+
     private static ProfileData simpleProfile() {
         ProfileData pd = new ProfileData();
         List<Double> tx = new ArrayList<>();

@@ -81,9 +81,9 @@ public final class CropsterConverter {
                 String[] row = splitCsvLine(line);
                 if (timeIdx >= row.length || btIdx >= row.length) continue;
                 Double t = parseTimeSeconds(row[timeIdx]);
-                if (t == null) return null;
+                if (t == null) { continue; }
                 Double btV = parseDouble(row[btIdx]);
-                if (btV == null) return null;
+                if (btV == null) { continue; }
                 timex.add(t);
                 bt.add(btV);
                 if (et != null) {
