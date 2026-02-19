@@ -14,6 +14,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -69,15 +70,19 @@ import org.artisan.view.LargeLCDsDialog;
 import org.artisan.view.LogViewer;
 import org.artisan.view.NotificationLevel;
 import org.artisan.view.ProductionReportDialog;
+import org.artisan.view.RankingReportDialog;
 import org.artisan.view.RoastReportDialog;
 import org.artisan.view.SimulatorDialog;
 import org.artisan.view.TransposerDialog;
 
+import java.awt.Desktop;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 /**
@@ -112,6 +117,11 @@ public final class MainWindow extends Application {
 
   @Override
   public void start(Stage primaryStage) {
+    if (!org.artisan.Launcher.tryAcquireLock()) {
+      new Alert(Alert.AlertType.WARNING, "Artisan Java is already running.").showAndWait();
+      Platform.exit();
+      return;
+    }
     final Stage stage = primaryStage;
     appSettings = AppSettings.load();
     displaySettings = DisplaySettings.load();
@@ -257,7 +267,9 @@ public final class MainWindow extends Application {
     roastReportItem.setOnAction(e -> new RoastReportDialog(stage, appController).showAndWait());
     MenuItem productionReportItem = new MenuItem("Production Report...");
     productionReportItem.setOnAction(e -> new ProductionReportDialog(stage, appController).showAndWait());
-    roastMenu.getItems().addAll(propertiesItem, cupProfileItem, batchesItem, roastReportItem, productionReportItem);
+    MenuItem rankingReportItem = new MenuItem("Ranking Report...");
+    rankingReportItem.setOnAction(e -> new RankingReportDialog(stage, appController).showAndWait());
+    roastMenu.getItems().addAll(propertiesItem, cupProfileItem, batchesItem, roastReportItem, productionReportItem, rankingReportItem);
     Menu toolsMenu = new Menu("Tools");
     MenuItem comparatorItem = new MenuItem("Comparator...");
     comparatorItem.setOnAction(e -> appController.openComparator(stage));
@@ -293,7 +305,22 @@ public final class MainWindow extends Application {
     MenuItem pidItem = new MenuItem("PID...");
     pidItem.setOnAction(e -> openPidDialog(root));
     configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
-    menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu);
+
+    Menu helpMenu = new Menu("Help");
+    MenuItem aboutItem = new MenuItem("About Artisan Java...");
+    aboutItem.setOnAction(e -> new PlatformDialog(stage).showAndWait());
+    MenuItem logViewerItem = new MenuItem("Open Log Viewer");
+    logViewerItem.setOnAction(e -> new LogViewer(stage).show());
+    MenuItem githubItem = new MenuItem("GitHub Repository");
+    githubItem.setOnAction(e -> {
+      try {
+        Desktop.getDesktop().browse(URI.create("https://github.com/ilakunah-tech/artisan-java"));
+      } catch (Exception ex) {
+        new Alert(Alert.AlertType.ERROR, "Could not open URL: " + ex.getMessage()).showAndWait();
+      }
+    });
+    helpMenu.getItems().addAll(aboutItem, logViewerItem, githubItem);
+    menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu, helpMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
 
@@ -352,6 +379,7 @@ public final class MainWindow extends Application {
 
     Scene scene = new Scene(overlayRoot, 1000, 600);
     primaryStage.setScene(scene);
+    registerAccelerators(scene, root, chartController);
     updateWindowTitle();
     primaryStage.setOnCloseRequest(e -> {
       if (fileSession.isDirty()) {
@@ -379,9 +407,15 @@ public final class MainWindow extends Application {
       appController.stopSampling();
       autoSave.stop();
       appSettings.save();
+      org.artisan.Launcher.releaseLock();
       Platform.exit();
     });
     primaryStage.show();
+  }
+
+  @Override
+  public void stop() {
+    org.artisan.Launcher.releaseLock();
   }
 
   private Menu buildViewMenu(BorderPane root, RoastChartController chartController) {
@@ -510,13 +544,8 @@ public final class MainWindow extends Application {
       alert.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
       if (alert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
     }
-    appController.getSession().reset();
-    if (appController.getChartController() != null) {
-      appController.getChartController().setRoastTitle(null);
-      appController.getChartController().updateChart();
-    }
-    appController.refreshStatistics();
-    fileSession.markNew();
+    appController.newRoast();
+    updateWindowTitle();
   }
 
   private void doOpen(BorderPane root, RoastChartController chartController) {
@@ -880,16 +909,24 @@ public final class MainWindow extends Application {
     chartController.updateChart();
   }
 
+  private void registerAccelerators(Scene scene, BorderPane root, RoastChartController chartController) {
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+N"), () -> doNew(root));
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+O"), () -> doOpen(root, chartController));
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+S"), this::doSave);
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+Shift+S"), this::doSaveAs);
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+Z"), () ->
+        Logger.getLogger(MainWindow.class.getName()).info("Undo not yet implemented"));
+    scene.getAccelerators().put(KeyCombination.keyCombination("F5"), this::toggleSampling);
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+P"), () -> openPidDialog(root));
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+D"), () -> openDevicesDialog(root));
+  }
+
   private void toggleSampling() {
-    samplingOn = !samplingOn;
+    appController.toggleSampling();
+    samplingOn = (appController.getCommController() != null && appController.getCommController().isRunning())
+        || (appController.getSampling() != null && appController.getSampling().isRunning());
     if (appController.getChartController() != null) {
       appController.getChartController().setLiveRecording(samplingOn);
-    }
-    if (samplingOn) {
-      appController.startSampling();
-      appController.notifyUser("Sampling started", NotificationLevel.INFO);
-    } else {
-      appController.stopSampling();
     }
   }
 

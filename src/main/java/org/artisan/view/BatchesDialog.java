@@ -72,6 +72,9 @@ public final class BatchesDialog extends ArtisanDialog {
         colLoss.setCellValueFactory(cb -> new javafx.beans.property.SimpleStringProperty(
                 String.format("%.1f%%", cb.getValue().weightLossPercent())));
 
+        TableColumn<Batch, Number> colColor = new TableColumn<>("Color");
+        colColor.setCellValueFactory(cb -> new javafx.beans.property.SimpleIntegerProperty(cb.getValue().getRoastColor()));
+
         TableColumn<Batch, Number> colTime = new TableColumn<>("Time");
         colTime.setCellValueFactory(cb -> new javafx.beans.property.SimpleDoubleProperty(cb.getValue().getTotalRoastTimeSec()));
 
@@ -81,7 +84,7 @@ public final class BatchesDialog extends ArtisanDialog {
         TableColumn<Batch, Boolean> colExported = new TableColumn<>("Exported");
         colExported.setCellValueFactory(cb -> new javafx.beans.property.SimpleBooleanProperty(cb.getValue().isExported()));
 
-        table.getColumns().addAll(colNum, colTitle, colDate, colGreen, colRoasted, colLoss, colTime, colNotes, colExported);
+        table.getColumns().addAll(colNum, colTitle, colDate, colGreen, colRoasted, colLoss, colColor, colTime, colNotes, colExported);
 
         Button newBtn = new Button("New Batch");
         newBtn.setOnAction(e -> {
@@ -106,6 +109,7 @@ public final class BatchesDialog extends ArtisanDialog {
             copy.setGreenWeight(sel.getGreenWeight());
             copy.setRoastedWeight(sel.getRoastedWeight());
             copy.setTotalRoastTimeSec(sel.getTotalRoastTimeSec());
+            copy.setRoastColor(sel.getRoastColor());
             copy.setProfilePath(sel.getProfilePath());
             copy.setNotes(sel.getNotes());
             copy.setExported(sel.isExported());

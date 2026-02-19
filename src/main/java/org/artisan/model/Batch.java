@@ -18,6 +18,7 @@ public final class Batch {
     private String profilePath;
     private String notes;
     private boolean exported;
+    private int roastColor;
 
     public Batch() {
         this.batchNumber = 0;
@@ -29,6 +30,7 @@ public final class Batch {
         this.profilePath = null;
         this.notes = "";
         this.exported = false;
+        this.roastColor = 0;
     }
 
     public int getBatchNumber() { return batchNumber; }
@@ -58,6 +60,10 @@ public final class Batch {
     public boolean isExported() { return exported; }
     public void setExported(boolean exported) { this.exported = exported; }
 
+    /** Roast color (0–100, proxy for quality). Used by ranking report. */
+    public int getRoastColor() { return roastColor; }
+    public void setRoastColor(int roastColor) { this.roastColor = Math.max(0, Math.min(100, roastColor)); }
+
     /** Weight loss %: (green - roasted) / green * 100. Returns 0 if greenWeight <= 0. */
     public double weightLossPercent() {
         if (greenWeight <= 0) return 0.0;
@@ -76,6 +82,7 @@ public final class Batch {
         m.put("profilePath", profilePath != null ? profilePath : "");
         m.put("notes", getNotes());
         m.put("exported", String.valueOf(exported));
+        m.put("roastColor", String.valueOf(roastColor));
         return m;
     }
 
@@ -89,6 +96,7 @@ public final class Batch {
                 && Double.compare(batch.roastedWeight, roastedWeight) == 0
                 && Double.compare(batch.totalRoastTimeSec, totalRoastTimeSec) == 0
                 && exported == batch.exported
+                && roastColor == batch.roastColor
                 && Objects.equals(title, batch.title)
                 && Objects.equals(date, batch.date)
                 && Objects.equals(profilePath, batch.profilePath)
@@ -97,6 +105,6 @@ public final class Batch {
 
     @Override
     public int hashCode() {
-        return Objects.hash(batchNumber, title, date, greenWeight, roastedWeight, totalRoastTimeSec, profilePath, notes, exported);
+        return Objects.hash(batchNumber, title, date, greenWeight, roastedWeight, totalRoastTimeSec, profilePath, notes, exported, roastColor);
     }
 }

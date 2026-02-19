@@ -391,6 +391,34 @@ public final class AppController {
   }
 
   /**
+   * Resets session, clears profile data, refreshes chart and statistics, marks file session as new.
+   * Call from MainWindow after user confirms discarding unsaved changes (if dirty).
+   */
+  public void newRoast() {
+    session.reset();
+    if (chartController != null) {
+      chartController.setRoastTitle(null);
+      chartController.updateChart();
+    }
+    refreshStatistics();
+    if (fileSession != null) fileSession.markNew();
+  }
+
+  /**
+   * Toggles sampling: if running, stops and notifies; otherwise starts and notifies.
+   */
+  public void toggleSampling() {
+    boolean running = (commController != null && commController.isRunning()) || sampling.isRunning();
+    if (running) {
+      stopSampling();
+      notifyUser("Sampling stopped", NotificationLevel.INFO);
+    } else {
+      startSampling();
+      notifyUser("Sampling started", NotificationLevel.INFO);
+    }
+  }
+
+  /**
    * Marks an event of the given type at the current timex index.
    * Logs at FINE and adds EventEntry via session mark methods. Call from ControlsPanel buttons.
    */

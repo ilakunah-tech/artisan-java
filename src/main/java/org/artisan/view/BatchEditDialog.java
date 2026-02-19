@@ -37,6 +37,7 @@ public final class BatchEditDialog extends ArtisanDialog {
     private Spinner<Double> greenSpinner;
     private Spinner<Double> roastedSpinner;
     private Spinner<Double> totalTimeSpinner;
+    private Spinner<Integer> roastColorSpinner;
     private TextField profilePathField;
     private TextArea notesArea;
     private CheckBox exportedCheckBox;
@@ -93,6 +94,13 @@ public final class BatchEditDialog extends ArtisanDialog {
         grid.add(totalTimeSpinner, 1, row);
         row++;
 
+        grid.add(new Label("Roast color (0–100):"), 0, row);
+        roastColorSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, 100, this.batch.getRoastColor(), 1));
+        roastColorSpinner.setEditable(true);
+        grid.add(roastColorSpinner, 1, row);
+        row++;
+
         grid.add(new Label("Profile path:"), 0, row);
         HBox profileRow = new HBox(6);
         profilePathField = new TextField(this.batch.getProfilePath() != null ? this.batch.getProfilePath() : "");
@@ -144,6 +152,7 @@ public final class BatchEditDialog extends ArtisanDialog {
         batch.setGreenWeight(green);
         batch.setRoastedWeight(roasted);
         batch.setTotalRoastTimeSec(totalTimeSpinner.getValue());
+        batch.setRoastColor(roastColorSpinner.getValue());
         batch.setProfilePath(profilePathField.getText() != null && !profilePathField.getText().isBlank()
                 ? profilePathField.getText().trim() : null);
         batch.setNotes(notesArea.getText() != null ? notesArea.getText() : "");

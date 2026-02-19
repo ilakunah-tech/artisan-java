@@ -38,7 +38,7 @@ public final class RoastReport {
         double totalTime = stats != null && !stats.isEmpty() ? stats.getTotalTimeSec() : 0.0;
         sb.append(String.format("  %-12s %.1f s%n", "Total time:", totalTime));
         double chargeTemp = tempAtIndex(pd, 0);
-        double dropTemp = tempAtIndex(pd, 6);
+        double dropTemp = getDropTemp(pd);
         if (Double.isFinite(chargeTemp)) sb.append(String.format("  %-12s %.1f °C%n", "Charge temp:", chargeTemp));
         if (Double.isFinite(dropTemp)) sb.append(String.format("  %-12s %.1f °C%n", "Drop temp:", dropTemp));
         double rorPeak = rorPeakFromProfile(pd);
@@ -77,7 +77,10 @@ public final class RoastReport {
         if (stats != null && !stats.isEmpty()) {
             sb.append(String.format("  %-12s %.1f °C%n", "Mean BT:", stats.getMeanBt()));
             sb.append(String.format("  %-12s %.1f °C%n", "Mean ET:", stats.getMeanEt()));
-            sb.append(String.format("  %-12s %.1f s%n", "AUC (time):", stats.getTotalTimeSec()));
+            sb.append(String.format("  %-12s %.1f °C·s%n", "AUC:",
+                    Calculator.computeAUC(pd != null ? pd.getTimex() : null,
+                            pd != null ? pd.getTemp2() : null,
+                            100.0, 0.0, stats.getTotalTimeSec())));
         } else {
             sb.append("  (no statistics)\n");
         }
@@ -87,6 +90,16 @@ public final class RoastReport {
 
     private static String nullToEmpty(String s) {
         return s != null ? s : "";
+    }
+
+    private static double getDropTemp(ProfileData pd) {
+        double fromIndex = tempAtIndex(pd, 6);
+        if (Double.isFinite(fromIndex)) return fromIndex;
+        if (pd == null) return Double.NaN;
+        List<Double> temp2 = pd.getTemp2();
+        if (temp2 == null || temp2.isEmpty()) return Double.NaN;
+        Double last = temp2.get(temp2.size() - 1);
+        return last != null ? last : Double.NaN;
     }
 
     private static double tempAtIndex(ProfileData pd, int timeindexSlot) {
