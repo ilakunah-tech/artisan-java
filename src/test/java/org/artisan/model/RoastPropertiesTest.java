@@ -2,81 +2,109 @@ package org.artisan.model;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RoastPropertiesTest {
 
     @Test
-    void builderConstruction() {
-        LocalDate date = LocalDate.of(2025, 2, 18);
-        RoastProperties p = RoastProperties.builder()
-                .beanName("Ethiopian Yirgacheffe")
-                .roastDate(date)
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .moisturePercent(12.5)
-                .densityGramsPerLiter(380.0)
-                .colorWholeBean(65)
-                .colorGround(72)
-                .batchPrefix("R-")
-                .batchNumber(101)
-                .roastNotes("Light roast")
-                .cuppingNotes("Floral, citrus")
-                .build();
-
-        assertEquals("Ethiopian Yirgacheffe", p.getBeanName());
-        assertEquals(date, p.getRoastDate());
-        assertEquals(500.0, p.getWeightInGrams());
-        assertEquals(425.0, p.getWeightOutGrams());
-        assertEquals(12.5, p.getMoisturePercent());
-        assertEquals(380.0, p.getDensityGramsPerLiter());
-        assertEquals(65, p.getColorWholeBean());
-        assertEquals(72, p.getColorGround());
-        assertEquals("R-", p.getBatchPrefix());
-        assertEquals(101, p.getBatchNumber());
-        assertEquals("Light roast", p.getRoastNotes());
-        assertEquals("Floral, citrus", p.getCuppingNotes());
+    void defaultValues() {
+        RoastProperties p = RoastProperties.defaults();
+        assertNotNull(p);
+        assertEquals("", p.getTitle());
+        assertEquals("", p.getNotes());
+        assertEquals("", p.getRoastDate());
+        assertEquals("", p.getBeanOrigin());
+        assertEquals("", p.getOperator());
+        assertEquals(0.0, p.getGreenWeight());
+        assertEquals(0.0, p.getRoastedWeight());
+        assertEquals(0.0, p.getMoisture());
+        assertEquals(0.0, p.getDensity());
+        assertEquals(0, p.getRoastColor());
+        assertNotNull(p.getCustomLabels());
+        assertTrue(p.getCustomLabels().isEmpty());
     }
 
     @Test
-    void weightLossPercentCalculation() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .build();
+    void saveLoadRoundtrip() {
+        RoastProperties p = new RoastProperties();
+        p.setTitle("My Roast");
+        p.setNotes("Tasty");
+        p.setRoastDate("2025-02-19");
+        p.setBeanOrigin("Ethiopia");
+        p.setBeanVariety("Heirloom");
+        p.setBeanProcess("Washed");
+        p.setBeanGrade("Grade 1");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(420.0);
+        p.setMoisture(12.0);
+        p.setDensity(380.0);
+        p.setRoastColor(65);
+        p.setOperator("Jane");
+        p.getCustomLabels().add("lot=123");
+        p.getCustomLabels().add("farm=Yirg");
+        p.save();
+        RoastProperties loaded = new RoastProperties();
+        loaded.load();
+        assertEquals(p.getTitle(), loaded.getTitle());
+        assertEquals(p.getNotes(), loaded.getNotes());
+        assertEquals(p.getRoastDate(), loaded.getRoastDate());
+        assertEquals(p.getBeanOrigin(), loaded.getBeanOrigin());
+        assertEquals(p.getBeanVariety(), loaded.getBeanVariety());
+        assertEquals(p.getBeanProcess(), loaded.getBeanProcess());
+        assertEquals(p.getBeanGrade(), loaded.getBeanGrade());
+        assertEquals(p.getGreenWeight(), loaded.getGreenWeight());
+        assertEquals(p.getRoastedWeight(), loaded.getRoastedWeight());
+        assertEquals(p.getMoisture(), loaded.getMoisture());
+        assertEquals(p.getDensity(), loaded.getDensity());
+        assertEquals(p.getRoastColor(), loaded.getRoastColor());
+        assertEquals(p.getOperator(), loaded.getOperator());
+        assertEquals(p.getCustomLabels(), loaded.getCustomLabels());
+    }
+
+    @Test
+    void toMapContainsAllKeys() {
+        RoastProperties p = new RoastProperties();
+        p.setTitle("T");
+        p.getCustomLabels().add("a=b");
+        Map<String, String> m = p.toMap();
+        assertTrue(m.containsKey("title"));
+        assertTrue(m.containsKey("notes"));
+        assertTrue(m.containsKey("roastDate"));
+        assertTrue(m.containsKey("beanOrigin"));
+        assertTrue(m.containsKey("beanVariety"));
+        assertTrue(m.containsKey("beanProcess"));
+        assertTrue(m.containsKey("beanGrade"));
+        assertTrue(m.containsKey("greenWeight"));
+        assertTrue(m.containsKey("roastedWeight"));
+        assertTrue(m.containsKey("moisture"));
+        assertTrue(m.containsKey("density"));
+        assertTrue(m.containsKey("roastColor"));
+        assertTrue(m.containsKey("operator"));
+        assertTrue(m.containsKey("customLabel_0"));
+    }
+
+    @Test
+    void weightLossCalculation() {
+        RoastProperties p = new RoastProperties();
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(400.0);
         double loss = p.weightLossPercent();
-        // (500 - 425) / 500 * 100 = 15.0
-        assertEquals(15.0, loss, 0.001);
+        // (500 - 400) / 500 * 100 = 20.0
+        assertEquals(20.0, loss, 0.001);
     }
 
     @Test
-    void weightLossPercentZeroWhenWeightInZero() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(0.0)
-                .weightOutGrams(0.0)
-                .build();
-        assertEquals(0.0, p.weightLossPercent(), 0.001);
-    }
-
-    @Test
-    void nullSafetyInBuilder() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName(null)
-                .batchPrefix(null)
-                .roastNotes(null)
-                .cuppingNotes(null)
-                .weightInGrams(100.0)
-                .weightOutGrams(85.0)
-                .build();
-        assertNotNull(p.getBeanName());
+    void getBeanNameReturnsTitleOrOrigin() {
+        RoastProperties p = new RoastProperties();
         assertEquals("", p.getBeanName());
-        assertEquals("", p.getBatchPrefix());
-        assertEquals("", p.getRoastNotes());
-        assertEquals("", p.getCuppingNotes());
+        p.setTitle("My Roast");
+        assertEquals("My Roast", p.getBeanName());
+        p.setTitle("");
+        p.setBeanOrigin("Ethiopia");
+        assertEquals("Ethiopia", p.getBeanName());
     }
 }

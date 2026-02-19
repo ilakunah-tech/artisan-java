@@ -2,7 +2,6 @@ package org.artisan.model;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,14 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RoastPropertiesValidatorTest {
 
     private static RoastProperties validProps() {
-        return RoastProperties.builder()
-                .beanName("Ethiopian")
-                .roastDate(LocalDate.now())
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .moisturePercent(12.0)
-                .densityGramsPerLiter(380.0)
-                .build();
+        RoastProperties p = new RoastProperties();
+        p.setTitle("Ethiopian");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(425.0);
+        p.setMoisture(12.0);
+        p.setDensity(380.0);
+        return p;
     }
 
     @Test
@@ -28,23 +26,21 @@ class RoastPropertiesValidatorTest {
     }
 
     @Test
-    void negativeWeightInReturnsError() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(-1.0)
-                .weightOutGrams(100.0)
-                .build();
+    void zeroWeightInReturnsError() {
+        RoastProperties p = new RoastProperties();
+        p.setTitle("B");
+        p.setGreenWeight(0.0);
+        p.setRoastedWeight(100.0);
         List<String> errors = RoastPropertiesValidator.validate(p);
         assertTrue(errors.stream().anyMatch(e -> e.toLowerCase().contains("weight in")));
     }
 
     @Test
     void weightOutGreaterThanWeightInReturnsError() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(400.0)
-                .weightOutGrams(450.0)
-                .build();
+        RoastProperties p = new RoastProperties();
+        p.setTitle("B");
+        p.setGreenWeight(400.0);
+        p.setRoastedWeight(450.0);
         List<String> errors = RoastPropertiesValidator.validate(p);
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).toLowerCase().contains("weight out"));
@@ -52,42 +48,39 @@ class RoastPropertiesValidatorTest {
 
     @Test
     void moistureOutOfRangeReturnsError() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .moisturePercent(150.0)
-                .build();
+        RoastProperties p = new RoastProperties();
+        p.setTitle("B");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(425.0);
+        p.setMoisture(150.0);
         List<String> errors = RoastPropertiesValidator.validate(p);
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).toLowerCase().contains("moisture"));
 
-        p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .moisturePercent(-1.0)
-                .build();
+        p = new RoastProperties();
+        p.setTitle("B");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(425.0);
+        p.setMoisture(-1.0);
         errors = RoastPropertiesValidator.validate(p);
         assertEquals(1, errors.size());
     }
 
     @Test
     void emptyBeanNameReturnsError() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("")
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .build();
+        RoastProperties p = new RoastProperties();
+        p.setTitle("");
+        p.setBeanOrigin("");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(425.0);
         List<String> errors = RoastPropertiesValidator.validate(p);
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).toLowerCase().contains("bean"));
 
-        p = RoastProperties.builder()
-                .beanName("   ")
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .build();
+        p = new RoastProperties();
+        p.setTitle("   ");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(425.0);
         errors = RoastPropertiesValidator.validate(p);
         assertEquals(1, errors.size());
     }
@@ -101,12 +94,11 @@ class RoastPropertiesValidatorTest {
 
     @Test
     void negativeDensityReturnsError() {
-        RoastProperties p = RoastProperties.builder()
-                .beanName("B")
-                .weightInGrams(500.0)
-                .weightOutGrams(425.0)
-                .densityGramsPerLiter(-1.0)
-                .build();
+        RoastProperties p = new RoastProperties();
+        p.setTitle("B");
+        p.setGreenWeight(500.0);
+        p.setRoastedWeight(425.0);
+        p.setDensity(-1.0);
         List<String> errors = RoastPropertiesValidator.validate(p);
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).toLowerCase().contains("density"));

@@ -17,7 +17,9 @@ import org.artisan.model.EventType;
 import org.artisan.model.PhaseResult;
 import org.artisan.model.Phases;
 import org.artisan.model.PhasesConfig;
+import org.artisan.model.CupProfile;
 import org.artisan.model.ProfileData;
+import org.artisan.model.RoastProperties;
 import org.artisan.model.RoastStats;
 import org.artisan.model.Roastlog;
 import org.artisan.model.Sampling;
@@ -61,6 +63,8 @@ public final class AppController {
   private SamplingConfig samplingConfig;
   private CommController commController;
   private final PIDControl pidControl;
+  private final RoastProperties roastProperties;
+  private final CupProfile cupProfile;
   private double lastSampleBt = Double.NaN;
   private double lastSampleTimeSec = Double.NaN;
   private static final Logger LOG = Logger.getLogger(AppController.class.getName());
@@ -89,6 +93,41 @@ public final class AppController {
     this.eventReplay = new EventReplay();
     this.pidControl = new PIDControl();
     this.pidControl.loadConfig();
+    this.roastProperties = new RoastProperties();
+    this.roastProperties.load();
+    this.cupProfile = new CupProfile();
+    this.cupProfile.load();
+  }
+
+  public RoastProperties getRoastProperties() {
+    return roastProperties;
+  }
+
+  /**
+   * Called when roast properties are updated (e.g. from Roast Properties dialog).
+   * Saves to Preferences, logs at FINE, and notifies listener (e.g. MainWindow updates title).
+   */
+  public void onRoastPropertiesChanged(RoastProperties props) {
+    if (props != null) {
+      props.save();
+      session.setProperties(props);
+      LOG.log(Level.FINE, "Roast properties updated: title={0}", props.getTitle());
+    }
+  }
+
+  public CupProfile getCupProfile() {
+    return cupProfile;
+  }
+
+  /**
+   * Called when cup profile is updated (e.g. from Cup Profile dialog).
+   * Saves to Preferences and logs at FINE.
+   */
+  public void onCupProfileChanged(CupProfile p) {
+    if (p != null) {
+      p.save();
+      LOG.log(Level.FINE, "Cup profile updated: total={0}", p.getTotal());
+    }
   }
 
   public PIDControl getPidControl() {

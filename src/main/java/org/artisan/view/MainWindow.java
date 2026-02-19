@@ -210,7 +210,11 @@ public final class MainWindow extends Application {
     colorsBtn.setOnAction(e -> openColorsDialog(root, chartController));
     Button pidBtn = new Button("\u2699 PID");
     pidBtn.setOnAction(e -> openPidDialog(root));
-    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn);
+    Button propertiesBtn = new Button("Properties");
+    propertiesBtn.setOnAction(e -> openRoastPropertiesDialog(root));
+    Button cupProfileBtn = new Button("Cup Profile");
+    cupProfileBtn.setOnAction(e -> openCupProfileDialog(root));
+    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn);
 
     customEventButtonsBox = new HBox(6);
     rebuildCustomEventButtons();
@@ -221,6 +225,12 @@ public final class MainWindow extends Application {
     MenuBar menuBar = new MenuBar();
     Menu fileMenu = buildFileMenu(root, chartController);
     Menu viewMenu = buildViewMenu(root, chartController);
+    Menu roastMenu = new Menu("Roast");
+    MenuItem propertiesItem = new MenuItem("Properties...");
+    propertiesItem.setOnAction(e -> openRoastPropertiesDialog(root));
+    MenuItem cupProfileItem = new MenuItem("Cup Profile...");
+    cupProfileItem.setOnAction(e -> openCupProfileDialog(root));
+    roastMenu.getItems().addAll(propertiesItem, cupProfileItem);
     Menu configMenu = new Menu("Config");
     MenuItem axesItem = new MenuItem("Axes...");
     axesItem.setOnAction(e -> openAxesDialog(root, chartController));
@@ -245,7 +255,7 @@ public final class MainWindow extends Application {
     MenuItem pidItem = new MenuItem("PID...");
     pidItem.setOnAction(e -> openPidDialog(root));
     configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
-    menuBar.getMenus().addAll(fileMenu, viewMenu, configMenu);
+    menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, configMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
 
@@ -603,6 +613,8 @@ public final class MainWindow extends Application {
     Path p = fileSession.getCurrentFilePath();
     String name = p != null && p.getFileName() != null ? p.getFileName().toString() : "New Roast";
     String title = base + " — " + name;
+    String roastTitle = appController.getRoastProperties().getTitle();
+    if (roastTitle != null && !roastTitle.isBlank()) title += " — " + roastTitle;
     if (fileSession.isDirty()) title += " *";
     primaryStage.setTitle(title);
   }
@@ -760,6 +772,20 @@ public final class MainWindow extends Application {
     Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
     if (owner == null) return;
     PIDDialog dialog = new PIDDialog(owner, appController);
+    dialog.showAndWait();
+  }
+
+  private void openRoastPropertiesDialog(BorderPane root) {
+    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
+    if (owner == null) return;
+    RoastPropertiesDialog dialog = new RoastPropertiesDialog(owner, appController, this::updateWindowTitle);
+    dialog.showAndWait();
+  }
+
+  private void openCupProfileDialog(BorderPane root) {
+    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
+    if (owner == null) return;
+    CupProfileDialog dialog = new CupProfileDialog(owner, appController);
     dialog.showAndWait();
   }
 

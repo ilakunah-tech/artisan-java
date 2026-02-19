@@ -3,12 +3,34 @@ package org.artisan.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import javafx.scene.control.Alert;
+import javafx.stage.Window;
+
 /**
  * Validates a RoastProperties instance.
  */
 public final class RoastPropertiesValidator {
 
     private RoastPropertiesValidator() {
+    }
+
+    /**
+     * Validates the given RoastProperties and, if there are errors, shows an alert on the given window.
+     *
+     * @param owner the owner window for the alert (can be null)
+     * @param p     the instance to validate
+     * @return true if valid (no errors); false if errors were shown
+     */
+    public static boolean showErrors(Window owner, RoastProperties p) {
+        List<String> errors = validate(p);
+        if (errors.isEmpty()) return true;
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Roast Properties");
+        alert.setHeaderText("Please correct the following:");
+        alert.setContentText(String.join("\n", errors));
+        if (owner != null) alert.initOwner(owner);
+        alert.showAndWait();
+        return false;
     }
 
     /**
