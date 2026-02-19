@@ -60,6 +60,7 @@ public final class AppController {
   private EventReplay eventReplay;
   private SamplingConfig samplingConfig;
   private CommController commController;
+  private final PIDControl pidControl;
   private double lastSampleBt = Double.NaN;
   private double lastSampleTimeSec = Double.NaN;
   private static final Logger LOG = Logger.getLogger(AppController.class.getName());
@@ -86,6 +87,12 @@ public final class AppController {
       if (chartController != null) chartController.updateChart();
     });
     this.eventReplay = new EventReplay();
+    this.pidControl = new PIDControl();
+    this.pidControl.loadConfig();
+  }
+
+  public PIDControl getPidControl() {
+    return pidControl;
   }
 
   public EventReplay getEventReplay() {
@@ -377,9 +384,13 @@ public final class AppController {
   /**
    * Called after each sample (e.g. from the same callback that invokes chartController.onSample).
    * Runs AutoDRY/AutoFCs when thresholds are crossed (once per CHARGE), then computes stats and
-   * invokes statisticsUpdateConsumer if set.
+   * invokes statisticsUpdateConsumer if set. If PID is running, runs pidControl.tick and logs output.
    */
   public void afterSample(Sample s) {
+    if (pidControl.isRunning()) {
+      double output = pidControl.tick(s.bt(), s.timeSec());
+      LOG.log(Level.FINER, "PID output: {0}", output);
+    }
     int idx = currentTimexIndex();
     if (phasesSettings != null) {
       if (phasesSettings.isAutoDRY() && !autoDryTriggered && s.bt() >= phasesSettings.getDryEndTempC()) {

@@ -208,7 +208,9 @@ public final class MainWindow extends Application {
     deviceBtn.setOnAction(e -> openDeviceSettings(root));
     Button colorsBtn = new Button("Colors");
     colorsBtn.setOnAction(e -> openColorsDialog(root, chartController));
-    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn);
+    Button pidBtn = new Button("\u2699 PID");
+    pidBtn.setOnAction(e -> openPidDialog(root));
+    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn);
 
     customEventButtonsBox = new HBox(6);
     rebuildCustomEventButtons();
@@ -240,7 +242,9 @@ public final class MainWindow extends Application {
     autosaveItem.setOnAction(e -> openAutoSaveDialog(root));
     MenuItem replayItem = new MenuItem("Replay...");
     replayItem.setOnAction(e -> openReplayDialog(root));
-    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem);
+    MenuItem pidItem = new MenuItem("PID...");
+    pidItem.setOnAction(e -> openPidDialog(root));
+    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
     menuBar.getMenus().addAll(fileMenu, viewMenu, configMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
@@ -749,6 +753,13 @@ public final class MainWindow extends Application {
     Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
     if (owner == null) return;
     EventReplayDialog dialog = new EventReplayDialog(owner, appController.getEventReplay());
+    dialog.showAndWait();
+  }
+
+  private void openPidDialog(BorderPane root) {
+    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
+    if (owner == null) return;
+    PIDDialog dialog = new PIDDialog(owner, appController);
     dialog.showAndWait();
   }
 
