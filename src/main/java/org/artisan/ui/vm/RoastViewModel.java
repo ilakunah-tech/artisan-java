@@ -17,6 +17,7 @@ public final class RoastViewModel {
     private final DoubleProperty rorET = new SimpleDoubleProperty(Double.NaN);
     private final DoubleProperty deltaBT = new SimpleDoubleProperty(Double.NaN);
     private final DoubleProperty elapsedSec = new SimpleDoubleProperty(0.0);
+    private final DoubleProperty devTimeSec = new SimpleDoubleProperty(Double.NaN);
     private final StringProperty phaseName = new SimpleStringProperty("");
     private final StringProperty connectionStatus = new SimpleStringProperty("Disconnected");
     private final BooleanProperty samplingActive = new SimpleBooleanProperty(false);
@@ -31,6 +32,7 @@ public final class RoastViewModel {
     public DoubleProperty rorETProperty() { return rorET; }
     public DoubleProperty deltaBTProperty() { return deltaBT; }
     public DoubleProperty elapsedSecProperty() { return elapsedSec; }
+    public DoubleProperty devTimeSecProperty() { return devTimeSec; }
     public StringProperty phaseNameProperty() { return phaseName; }
     public StringProperty connectionStatusProperty() { return connectionStatus; }
     public BooleanProperty samplingActiveProperty() { return samplingActive; }
@@ -45,6 +47,7 @@ public final class RoastViewModel {
     public double getRorET() { return rorET.get(); }
     public double getDeltaBT() { return deltaBT.get(); }
     public double getElapsedSec() { return elapsedSec.get(); }
+    public double getDevTimeSec() { return devTimeSec.get(); }
     public String getPhaseName() { return phaseName.get(); }
     public String getConnectionStatus() { return connectionStatus.get(); }
     public boolean isSamplingActive() { return samplingActive.get(); }
@@ -58,6 +61,7 @@ public final class RoastViewModel {
     public void setRorET(double v) { rorET.set(v); }
     public void setDeltaBT(double v) { deltaBT.set(v); }
     public void setElapsedSec(double v) { elapsedSec.set(v); }
+    public void setDevTimeSec(double v) { devTimeSec.set(v); }
     public void setPhaseName(String v) { phaseName.set(v != null ? v : ""); }
     public void setConnectionStatus(String v) { connectionStatus.set(v != null ? v : ""); }
     public void setSamplingActive(boolean v) { samplingActive.set(v); }

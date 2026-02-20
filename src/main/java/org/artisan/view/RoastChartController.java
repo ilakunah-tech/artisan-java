@@ -5,7 +5,6 @@ import java.util.List;
 
 import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 
 import org.artisan.controller.BackgroundSettings;
@@ -241,15 +240,7 @@ public final class RoastChartController {
     }
 
     private void applyGlowEffect() {
-        try {
-            Color btColor = colorConfig.getCurveBT();
-            if (btColor == null) btColor = Color.RED;
-            DropShadow glow = new DropShadow();
-            glow.setRadius(6);
-            glow.setSpread(0.3);
-            glow.setColor(Color.color(btColor.getRed(), btColor.getGreen(), btColor.getBlue(), 0.4));
-            chartFactory.getChart().getCanvas().setEffect(glow);
-        } catch (Exception ignored) {}
+        /* No glow — Cropster RI5 style: reduced visual noise. */
     }
 
     // ── Axis Config ───────────────────────────────────────────────────

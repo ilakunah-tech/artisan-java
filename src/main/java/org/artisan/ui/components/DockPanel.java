@@ -32,6 +32,10 @@ public final class DockPanel extends VBox {
     private Runnable onRedock;
 
     public DockPanel(String panelId, String title, Node content) {
+        this(panelId, title, content, (Node[]) null);
+    }
+
+    public DockPanel(String panelId, String title, Node content, Node... titleBarExtras) {
         this.panelId = panelId;
         getStyleClass().add(STYLE_DOCK);
 
@@ -56,7 +60,13 @@ public final class DockPanel extends VBox {
         titleBar.setMinHeight(TITLE_HEIGHT);
         titleBar.setPadding(new Insets(0, 8, 0, 8));
         HBox.setHgrow(titleLabel, Priority.ALWAYS);
-        titleBar.getChildren().addAll(titleLabel, collapseBtn, detachBtn);
+        titleBar.getChildren().add(titleLabel);
+        if (titleBarExtras != null) {
+            for (Node n : titleBarExtras) {
+                if (n != null) titleBar.getChildren().add(n);
+            }
+        }
+        titleBar.getChildren().addAll(collapseBtn, detachBtn);
 
         contentBox = new VBox(content);
         contentBox.getStyleClass().add("content");

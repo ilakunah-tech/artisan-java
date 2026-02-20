@@ -66,6 +66,10 @@ public final class ChartFactory {
         chart = new XYChart(xAxis, tempAxis);
         chart.setAnimated(false);
         chart.setLegendVisible(false);
+        chart.getStyleClass().add("ri5-chart");
+        xAxis.getStyleClass().add("ri5-axis");
+        tempAxis.getStyleClass().add("ri5-axis");
+        rorAxis.getStyleClass().add("ri5-axis");
 
         Zoomer zoomer = new Zoomer();
         chart.getPlugins().add(zoomer);

@@ -35,16 +35,18 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
     private AxisConfig axisConfig;
 
     public PrecisionCrosshairPlugin() {
-        crosshairV.getStrokeDashArray().addAll(6.0, 4.0);
-        crosshairH.getStrokeDashArray().addAll(6.0, 4.0);
+        crosshairV.getStrokeDashArray().addAll(4.0, 4.0);
+        crosshairH.getStrokeDashArray().addAll(4.0, 4.0);
+        crosshairV.setStrokeWidth(1);
+        crosshairH.setStrokeWidth(1);
         crosshairV.setMouseTransparent(true);
         crosshairH.setMouseTransparent(true);
         snapDot.setMouseTransparent(true);
         readoutBg.setMouseTransparent(true);
         readoutText.setMouseTransparent(true);
-        readoutText.setStyle("-fx-font-size: 11px;");
-        readoutBg.setArcWidth(6);
-        readoutBg.setArcHeight(6);
+        readoutText.setStyle("-fx-font-size: 10px; -fx-font-weight: 500;");
+        readoutBg.setArcWidth(8);
+        readoutBg.setArcHeight(8);
         getChartChildren().addAll(crosshairV, crosshairH, snapDot, readoutBg, readoutText);
         hideAll();
 
@@ -153,7 +155,7 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
         String text = String.format("%d:%02d  BT: %s%s  ET: %s%s  ΔBT: %s  ΔET: %s",
                 totalSec / 60, totalSec % 60, btStr, unitStr, etStr, unitStr, deltaBTStr, deltaETStr);
         readoutText.setText(text);
-        readoutText.setFill(markersColor != null ? markersColor : Color.WHITE);
+        readoutText.setFill(Color.WHITESMOKE);
 
         double textW = readoutText.getLayoutBounds().getWidth();
         double textH = readoutText.getLayoutBounds().getHeight();
@@ -161,11 +163,13 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
         double ry = my - textH - 10;
         if (ry < plotY) ry = my + 16;
 
-        readoutBg.setX(rx - 4);
-        readoutBg.setY(ry - textH + 2);
-        readoutBg.setWidth(textW + 8);
-        readoutBg.setHeight(textH + 6);
-        readoutBg.setFill(Color.color(0, 0, 0, 0.7));
+        readoutBg.setX(rx - 6);
+        readoutBg.setY(ry - textH);
+        readoutBg.setWidth(textW + 12);
+        readoutBg.setHeight(textH + 8);
+        readoutBg.setFill(Color.color(0.15, 0.15, 0.18, 0.92));
+        readoutBg.setStroke(Color.color(1, 1, 1, 0.15));
+        readoutBg.setStrokeWidth(1);
         readoutBg.setVisible(true);
         readoutText.setX(rx);
         readoutText.setY(ry);

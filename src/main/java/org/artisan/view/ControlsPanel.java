@@ -5,6 +5,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -12,8 +14,8 @@ import org.artisan.controller.AppController;
 import org.artisan.model.EventType;
 
 /**
- * Inline panel: event buttons and sliders (Gas, Air, Drum).
- * "Show controls" toggle collapses/expands the sliders area.
+ * Event chips (pill buttons) and sliders (Gas, Air, Drum).
+ * "Show controls" toggle lives in card header; this panel exposes it.
  */
 public final class ControlsPanel extends VBox {
 
@@ -26,24 +28,26 @@ public final class ControlsPanel extends VBox {
 
     public ControlsPanel(AppController appController) {
         this.appController = appController;
-        setSpacing(12);
+        setSpacing(10);
         setPadding(new Insets(0));
 
-        HBox eventRow = new HBox(8);
-        eventRow.getChildren().addAll(
-            button("CHARGE", EventType.CHARGE),
-            button("TP", EventType.TP),
-            button("DRY END", EventType.DRY_END),
-            button("FC START", EventType.FC_START),
-            button("FC END", EventType.FC_END),
-            button("SC START", EventType.SC_START),
-            button("SC END", EventType.SC_END),
-            button("DROP", EventType.DROP)
+        FlowPane eventChips = new FlowPane(6, 6);
+        eventChips.getStyleClass().add("ri5-event-chips");
+        eventChips.getChildren().addAll(
+            eventChip("Charge", EventType.CHARGE),
+            eventChip("TP", EventType.TP),
+            eventChip("Dry End", EventType.DRY_END),
+            eventChip("FC Start", EventType.FC_START),
+            eventChip("FC End", EventType.FC_END),
+            eventChip("SC Start", EventType.SC_START),
+            eventChip("SC End", EventType.SC_END),
+            eventChip("Drop", EventType.DROP)
         );
 
-        showControlsToggle = new ToggleButton("Show controls");
+        showControlsToggle = new ToggleButton("Controls");
         showControlsToggle.setSelected(true);
-        showControlsToggle.getStyleClass().add("ri5-controls-toggle-inline");
+        showControlsToggle.getStyleClass().addAll("ri5-controls-toggle-compact");
+        showControlsToggle.setTooltip(new Tooltip("Show/hide sliders (C)"));
 
         gasSlider = slider("Gas", "Gas");
         airSlider = slider("Air", "Air");
@@ -62,7 +66,11 @@ public final class ControlsPanel extends VBox {
             sliderContent.setVisible(show);
         });
 
-        getChildren().addAll(eventRow, showControlsToggle, sliderContent);
+        getChildren().addAll(eventChips, sliderContent);
+    }
+
+    public ToggleButton getShowControlsToggle() {
+        return showControlsToggle;
     }
 
     /** Sets whether the sliders area is visible. Call to sync with LayoutState. */
@@ -72,9 +80,9 @@ public final class ControlsPanel extends VBox {
         sliderContent.setVisible(visible);
     }
 
-    private Button button(String text, EventType type) {
-        Button b = new Button(text);
-        b.getStyleClass().add("event-button");
+    private Button eventChip(String label, EventType type) {
+        Button b = new Button(label);
+        b.getStyleClass().add("ri5-event-chip");
         b.setOnAction(e -> {
             if (appController != null) appController.markEvent(type);
         });

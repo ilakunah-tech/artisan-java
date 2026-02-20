@@ -298,38 +298,7 @@ public final class EventMarkerPlugin extends ChartPlugin {
             }
         }
 
-        // (H) Legend
-        if (displaySettings != null && displaySettings.isShowLegend()) {
-            Color legendBg = colorConfig.getPaletteColor("legendbg");
-            double legendAlpha = colorConfig.getPaletteAlpha("legendbg");
-            Color legendBorder = colorConfig.getPaletteColor("legendborder");
-            Color textColor = colorConfig.getPaletteColor("text");
-            if (textColor == null) textColor = Color.BLACK;
-            int row = 0;
-            boolean visET = displaySettings.isVisibleET();
-            boolean visBT = displaySettings.isVisibleBT();
-            boolean visDeltaET = displaySettings.isVisibleDeltaET();
-            boolean visDeltaBT = displaySettings.isVisibleDeltaBT();
-            if (visET) row++;
-            if (visBT) row++;
-            if (visDeltaET) row++;
-            if (visDeltaBT) row++;
-            double boxH = row > 0 ? 12 + row * 14 : 22;
-            Rectangle legendRect = new Rectangle(plotX + 8, plotY + 8, 140, boxH);
-            legendRect.setFill(legendBg != null
-                    ? Color.color(legendBg.getRed(), legendBg.getGreen(), legendBg.getBlue(), Double.isFinite(legendAlpha) ? legendAlpha : 0.8)
-                    : Color.color(1, 1, 1, 0.8));
-            legendRect.setStroke(legendBorder != null ? legendBorder : Color.GRAY);
-            legendRect.setMouseTransparent(true);
-            addNode(legendRect);
-            row = 0;
-            double lx = plotX + 12;
-            double ly = plotY + 18;
-            if (visET) { addLegendRow(lx, ly + row * 14, colorConfig.getCurveET(), "ET", textColor); row++; }
-            if (visBT) { addLegendRow(lx, ly + row * 14, colorConfig.getCurveBT(), "BT", textColor); row++; }
-            if (visDeltaET) { addLegendRow(lx, ly + row * 14, colorConfig.getCurveDeltaET(), "ΔET", textColor); row++; }
-            if (visDeltaBT) { addLegendRow(lx, ly + row * 14, colorConfig.getCurveDeltaBT(), "ΔBT", textColor); row++; }
-        }
+        /* Legend removed: Curves card is the only legend (Cropster RI5 style). */
     }
 
     private void addVerticalMarker(Axis xAxis, List<Double> timex, int idx,
@@ -351,20 +320,6 @@ public final class EventMarkerPlugin extends ChartPlugin {
         lab.setY(plotY + 12);
         lab.setMouseTransparent(true);
         addNode(lab);
-    }
-
-    private void addLegendRow(double x, double y, Color lineColor, String label, Color textColor) {
-        Line seg = new Line(x, y - 2, x + 16, y - 2);
-        seg.setStroke(lineColor != null ? lineColor : Color.GRAY);
-        seg.setMouseTransparent(true);
-        addNode(seg);
-        Text t = new Text(label);
-        t.setFill(textColor);
-        t.setStyle("-fx-font-size: 10px;");
-        t.setX(x + 20);
-        t.setY(y);
-        t.setMouseTransparent(true);
-        addNode(t);
     }
 
     private void addNode(javafx.scene.Node node) {

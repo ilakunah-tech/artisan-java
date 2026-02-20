@@ -30,6 +30,7 @@ import org.artisan.ui.state.UIPreferences;
 public final class AppShell {
 
     private final BorderPane root;
+    private final HBox topBar;
     private final StackPane contentArea;
     private final ToggleButton preRoastNav;
     private final ToggleButton roastLiveNav;
@@ -58,7 +59,7 @@ public final class AppShell {
         root = new BorderPane();
         root.getStyleClass().add("ri5-root");
 
-        HBox topBar = new HBox(12);
+        topBar = new HBox(12);
         topBar.getStyleClass().add("ri5-topbar");
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(8, 12, 8, 12));
@@ -98,6 +99,7 @@ public final class AppShell {
         HBox.setMargin(machineLabel, new Insets(0, 0, 0, 16));
         HBox.setMargin(connectionLabel, new Insets(0, 0, 0, 24));
 
+        root.setTop(topBar);
         contentArea = new StackPane();
         contentArea.setMinSize(0, 0);
         preRoastScreen = new PreRoastScreen(appController, this.uiPreferences, this.preferencesStore);
@@ -128,7 +130,6 @@ public final class AppShell {
             updateRoastLiveEnabled();
             switchToRoastLive();
         });
-        root.setTop(topBar);
         root.setCenter(contentArea);
 
         updateConnectionStatus();
@@ -137,6 +138,11 @@ public final class AppShell {
 
     public BorderPane getRoot() {
         return root;
+    }
+
+    /** Prepends a node to the top bar (e.g. menu overflow button). */
+    public void addLeadingToTopBar(javafx.scene.Node node) {
+        if (topBar != null) topBar.getChildren().add(0, node);
     }
 
     public void setOnSettings(Runnable onSettings) {

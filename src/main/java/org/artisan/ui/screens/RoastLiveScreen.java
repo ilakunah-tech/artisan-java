@@ -78,12 +78,18 @@ public final class RoastLiveScreen {
             ((Region) chartView).setMinSize(0, 0);
         }
         PhasesCanvasPanel phasesPanel = new PhasesCanvasPanel(PhaseResult.INVALID);
+        if (chartController != null) {
+            phasesPanel.setOnMarkerClick((id, timeSec) -> {
+                /* Optional: center chart on marker time; axis config controls visible range */
+            });
+        }
         if (appController != null) {
             appController.addPhaseListener(result -> javafx.application.Platform.runLater(() -> {
                 phasesPanel.refresh(result);
                 double elapsed = viewModel.getElapsedSec();
                 String phaseName = phaseNameFromResult(result, elapsed);
                 viewModel.setPhaseName(phaseName);
+                viewModel.setDevTimeSec(result != null && !result.isInvalid() ? result.getDevelopmentTimeSec() : Double.NaN);
                 statusBar.setPhase(phaseName);
             }));
         }
@@ -113,13 +119,19 @@ public final class RoastLiveScreen {
         legendDockPanel.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_LEGEND));
         addPanelInOrder(legendDockPanel, panelOrder);
 
-        btReadoutTile = new ReadoutTile("BT", viewModel.btProperty(), "%.1f", "bt");
-        etReadoutTile = new ReadoutTile("ET", viewModel.etProperty(), "%.1f", "et");
-        rorReadoutTile = new ReadoutTile("RoR", viewModel.rorBTProperty(), "%.1f", "ror");
+        btReadoutTile = new ReadoutTile("BT", viewModel.btProperty(), "%.1f", "bt", "°C");
+        etReadoutTile = new ReadoutTile("ET", viewModel.etProperty(), "%.1f", "et", "°C");
+        rorReadoutTile = new ReadoutTile("RoR", viewModel.rorBTProperty(), "%.1f", "ror", "°C/min");
+        ReadoutTile timeTile = new ReadoutTile("Time", viewModel.elapsedSecProperty(), "%.1f", null, "",
+            sec -> String.format("%d:%02d", (int)(sec / 60), (int)(sec % 60)));
+        ReadoutTile devTimeTile = new ReadoutTile("Dev Time", viewModel.devTimeSecProperty(), "%.1f", null, "",
+            sec -> Double.isFinite(sec) && sec >= 0 ? String.format("%d:%02d min", (int)(sec / 60), (int)(sec % 60)) : "—");
         if (uiPreferences != null) {
             btReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
             etReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
             rorReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
+            timeTile.setReadoutSize(uiPreferences.getReadoutSize());
+            devTimeTile.setReadoutSize(uiPreferences.getReadoutSize());
         }
         GridPane readoutsGrid = new GridPane();
         readoutsGrid.setHgap(8);
@@ -127,20 +139,38 @@ public final class RoastLiveScreen {
         readoutsGrid.add(btReadoutTile, 0, 0);
         readoutsGrid.add(etReadoutTile, 1, 0);
         readoutsGrid.add(rorReadoutTile, 0, 1);
+        readoutsGrid.add(timeTile, 1, 1);
+        readoutsGrid.add(devTimeTile, 0, 2);
         GridPane.setHgrow(btReadoutTile, javafx.scene.layout.Priority.ALWAYS);
         GridPane.setHgrow(etReadoutTile, javafx.scene.layout.Priority.ALWAYS);
         GridPane.setHgrow(rorReadoutTile, javafx.scene.layout.Priority.ALWAYS);
+        GridPane.setHgrow(timeTile, javafx.scene.layout.Priority.ALWAYS);
+        GridPane.setHgrow(devTimeTile, javafx.scene.layout.Priority.ALWAYS);
         DockPanel readoutsDock = new DockPanel(LayoutState.PANEL_READOUTS, "Readouts", readoutsGrid);
         readoutsDock.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_READOUTS));
         addPanelInOrder(readoutsDock, panelOrder);
 
-        Node controlsContent = appController != null ? new org.artisan.view.ControlsPanel(appController) : new VBox();
-        controlsDockPanel = new DockPanel(LayoutState.PANEL_CONTROLS, "Controls", controlsContent);
+        org.artisan.view.ControlsPanel controlsPanel = appController != null ? new org.artisan.view.ControlsPanel(appController) : null;
+        Node controlsContent = controlsPanel != null ? controlsPanel : new VBox();
+        controlsDockPanel = new DockPanel(LayoutState.PANEL_CONTROLS, "Controls", controlsContent,
+            controlsPanel != null ? controlsPanel.getShowControlsToggle() : null);
         controlsDockPanel.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_CONTROLS));
         controlsDockPanel.setVisible(controlsVisible);
         addPanelInOrder(controlsDockPanel, panelOrder);
 
         eventLogPanel = new EventLogPanel();
+        if (appController != null) {
+            eventLogPanel.setOnQuickAdd(label -> {
+                var cd = appController.getSession().getCanvasData();
+                var timex = cd.getTimex();
+                if (!timex.isEmpty()) {
+                    int idx = timex.size() - 1;
+                    double bt = idx < cd.getTemp2().size() ? cd.getTemp2().get(idx) : 0;
+                    appController.addCustomEvent(EventType.CUSTOM, 0, idx, bt, label);
+                    if (chartController != null) chartController.updateChart();
+                }
+            });
+        }
         DockPanel eventLogDock = new DockPanel(LayoutState.PANEL_EVENT_LOG, "Event Log", eventLogPanel);
         eventLogDock.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_EVENT_LOG));
         addPanelInOrder(eventLogDock, panelOrder);

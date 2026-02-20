@@ -13,6 +13,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCombination;
@@ -250,7 +251,6 @@ public final class MainWindow extends Application {
     UIPreferences.Density density = uiPreferences != null ? uiPreferences.getDensity() : UIPreferences.Density.COMFORTABLE;
     root.getStyleClass().add(density == UIPreferences.Density.COMPACT ? "ri5-density-compact" : "ri5-density-comfortable");
 
-    MenuBar menuBar = new MenuBar();
     Menu fileMenu = buildFileMenu(root, chartController);
     Menu viewMenu = buildViewMenu(root, chartController);
     Menu roastMenu = new Menu("Roast");
@@ -329,11 +329,16 @@ public final class MainWindow extends Application {
       }
     });
     helpMenu.getItems().addAll(shortcutsItem, aboutItem, qrCodeItem, logViewerItem, githubItem);
-    menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu, helpMenu);
+
+    MenuButton menuOverflowBtn = new MenuButton("\u2630");
+    menuOverflowBtn.setTooltip(new javafx.scene.control.Tooltip("Menu"));
+    menuOverflowBtn.getStyleClass().add("ri5-menu-overflow");
+    menuOverflowBtn.getItems().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu, helpMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
 
     appShell = new AppShell(primaryStage, appController, chartController, displaySettings, uiPreferences, preferencesStore);
+    appShell.addLeadingToTopBar(menuOverflowBtn);
     appShell.setOnCurveVisibilitySync(() -> syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences));
     appShell.setOnSettings(() -> openDeviceSettings(root));
     appShell.setOnResetLayout(this::doResetLayout);
@@ -343,8 +348,7 @@ public final class MainWindow extends Application {
     demoRunner = new DemoRunner(appController);
     appShell.setDemoRunner(demoRunner);
 
-    VBox topArea = new VBox(menuBar, appShell.getRoot().getTop());
-    root.setTop(topArea);
+    root.setTop(appShell.getRoot().getTop());
     StackPane centerWithOverlay = new StackPane(appShell.getRoot().getCenter());
     centerWithOverlay.setMinSize(0, 0);
     BorderPane.setAlignment(centerWithOverlay, javafx.geometry.Pos.CENTER);

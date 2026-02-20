@@ -2,7 +2,9 @@ package org.artisan.ui.components;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -12,47 +14,47 @@ import org.artisan.controller.DisplaySettings;
 import java.util.function.Consumer;
 
 /**
- * Curve legend: each row has a colored line indicator, name, and toggle.
- * Replaces the default checkbox list with a legend-list style.
+ * Curve legend: each row has a colored line indicator, label, and toggle switch.
+ * Cropster RI5 style: toggle switches instead of checkboxes; hover/selection focus dims other rows.
  */
 public final class CurveLegendPanel extends VBox {
 
-    private final CheckBox btCheck;
-    private final CheckBox etCheck;
-    private final CheckBox deltaBTCheck;
-    private final CheckBox deltaETCheck;
+    private final ToggleButton btToggle;
+    private final ToggleButton etToggle;
+    private final ToggleButton deltaBTToggle;
+    private final ToggleButton deltaETToggle;
+    private final HBox btRow;
+    private final HBox etRow;
+    private final HBox deltaBTRow;
+    private final HBox deltaETRow;
     private DisplaySettings displaySettings;
     private Runnable onVisibilityChanged;
 
     public CurveLegendPanel(DisplaySettings displaySettings) {
         this.displaySettings = displaySettings;
         getStyleClass().add("curve-legend-panel");
-        setSpacing(8);
+        setSpacing(6);
         setPadding(new Insets(0));
 
-        btCheck = createLegendRow("BT", getColorHex(displaySettings, "bt"), displaySettings != null && displaySettings.isVisibleBT());
-        etCheck = createLegendRow("ET", getColorHex(displaySettings, "et"), displaySettings != null && displaySettings.isVisibleET());
-        deltaBTCheck = createLegendRow("RoR (ΔBT)", getColorHex(displaySettings, "deltabt"), displaySettings != null && displaySettings.isVisibleDeltaBT());
-        deltaETCheck = createLegendRow("ΔET", getColorHex(displaySettings, "deltaet"), displaySettings != null && displaySettings.isVisibleDeltaET());
+        btRow = legendRow("BT", getColorHex(displaySettings, "bt"), displaySettings != null && displaySettings.isVisibleBT());
+        etRow = legendRow("ET", getColorHex(displaySettings, "et"), displaySettings != null && displaySettings.isVisibleET());
+        deltaBTRow = legendRow("RoR (ΔBT)", getColorHex(displaySettings, "deltabt"), displaySettings != null && displaySettings.isVisibleDeltaBT());
+        deltaETRow = legendRow("ΔET", getColorHex(displaySettings, "deltaet"), displaySettings != null && displaySettings.isVisibleDeltaET());
 
-        Consumer<Boolean> sync = v -> {
-            if (onVisibilityChanged != null) onVisibilityChanged.run();
-        };
-        btCheck.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleBT(btCheck.isSelected()); sync.accept(true); });
-        etCheck.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleET(etCheck.isSelected()); sync.accept(true); });
-        deltaBTCheck.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleDeltaBT(deltaBTCheck.isSelected()); sync.accept(true); });
-        deltaETCheck.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleDeltaET(deltaETCheck.isSelected()); sync.accept(true); });
+        btToggle = (ToggleButton) btRow.getChildren().get(2);
+        etToggle = (ToggleButton) etRow.getChildren().get(2);
+        deltaBTToggle = (ToggleButton) deltaBTRow.getChildren().get(2);
+        deltaETToggle = (ToggleButton) deltaETRow.getChildren().get(2);
 
-        String btHex = getColorHex(this.displaySettings, "bt");
-        String etHex = getColorHex(this.displaySettings, "et");
-        String deltabtHex = getColorHex(this.displaySettings, "deltabt");
-        String deltaetHex = getColorHex(this.displaySettings, "deltaet");
-        getChildren().addAll(
-            legendRow(btCheck, btHex),
-            legendRow(etCheck, etHex),
-            legendRow(deltaBTCheck, deltabtHex),
-            legendRow(deltaETCheck, deltaetHex)
-        );
+        Consumer<Boolean> sync = v -> { if (onVisibilityChanged != null) onVisibilityChanged.run(); };
+        btToggle.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleBT(btToggle.isSelected()); sync.accept(true); });
+        etToggle.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleET(etToggle.isSelected()); sync.accept(true); });
+        deltaBTToggle.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleDeltaBT(deltaBTToggle.isSelected()); sync.accept(true); });
+        deltaETToggle.setOnAction(e -> { if (displaySettings != null) displaySettings.setVisibleDeltaET(deltaETToggle.isSelected()); sync.accept(true); });
+
+        setupFocusDimming(btRow, etRow, deltaBTRow, deltaETRow);
+
+        getChildren().addAll(btRow, etRow, deltaBTRow, deltaETRow);
     }
 
     private static String getColorHex(DisplaySettings ds, String key) {
@@ -66,36 +68,56 @@ public final class CurveLegendPanel extends VBox {
         }
     }
 
-    private CheckBox createLegendRow(String label, String colorHex, boolean selected) {
-        CheckBox cb = new CheckBox(label);
-        cb.setSelected(selected);
-        cb.getStyleClass().add("curve-legend-toggle");
-        return cb;
-    }
-
-    private HBox legendRow(CheckBox check, String colorHex) {
+    private HBox legendRow(String label, String colorHex, boolean selected) {
         Region line = new Region();
-        line.setMinSize(24, 3);
-        line.setPrefSize(24, 3);
+        line.setMinSize(20, 3);
+        line.setPrefSize(20, 3);
         line.setMaxHeight(3);
-        line.setStyle("-fx-background-color: " + colorHex + "; -fx-background-radius: 2;");
+        line.setStyle("-fx-background-color: " + (colorHex != null ? colorHex : "#6B7280") + "; -fx-background-radius: 2;");
         line.getStyleClass().add("curve-legend-line");
 
-        HBox row = new HBox(10);
+        Label lbl = new Label(label);
+        lbl.getStyleClass().add("curve-legend-label");
+
+        ToggleButton toggle = new ToggleButton();
+        toggle.setSelected(selected);
+        toggle.getStyleClass().addAll("curve-legend-switch", "curve-legend-toggle");
+        toggle.setMinWidth(36);
+        toggle.setPrefWidth(36);
+        toggle.setMaxWidth(36);
+        toggle.setMinHeight(20);
+        toggle.setPrefHeight(20);
+
+        HBox row = new HBox(8);
         row.getStyleClass().add("curve-legend-row");
         row.setAlignment(Pos.CENTER_LEFT);
-        row.getChildren().addAll(line, check);
-        HBox.setHgrow(check, Priority.ALWAYS);
+        row.getChildren().addAll(line, lbl, toggle);
+        HBox.setHgrow(lbl, Priority.ALWAYS);
         return row;
+    }
+
+    private void setupFocusDimming(HBox... rows) {
+        for (HBox row : rows) {
+            row.setOnMouseEntered(e -> {
+                for (HBox r : rows) r.getStyleClass().remove("curve-legend-row-focused");
+                for (HBox r : rows) if (r != row) r.getStyleClass().add("curve-legend-row-dimmed");
+            });
+            row.setOnMouseExited(e -> {
+                for (HBox r : rows) {
+                    r.getStyleClass().remove("curve-legend-row-focused");
+                    r.getStyleClass().remove("curve-legend-row-dimmed");
+                }
+            });
+        }
     }
 
     public void setDisplaySettings(DisplaySettings displaySettings) {
         this.displaySettings = displaySettings;
         if (displaySettings != null) {
-            btCheck.setSelected(displaySettings.isVisibleBT());
-            etCheck.setSelected(displaySettings.isVisibleET());
-            deltaBTCheck.setSelected(displaySettings.isVisibleDeltaBT());
-            deltaETCheck.setSelected(displaySettings.isVisibleDeltaET());
+            btToggle.setSelected(displaySettings.isVisibleBT());
+            etToggle.setSelected(displaySettings.isVisibleET());
+            deltaBTToggle.setSelected(displaySettings.isVisibleDeltaBT());
+            deltaETToggle.setSelected(displaySettings.isVisibleDeltaET());
         }
     }
 
@@ -107,13 +129,10 @@ public final class CurveLegendPanel extends VBox {
     public void refreshColors(DisplaySettings ds) {
         if (ds == null) return;
         this.displaySettings = ds;
-        java.util.List<javafx.scene.Node> children = getChildren();
-        if (children.size() >= 4) {
-            updateRowColor((HBox) children.get(0), ds.getPaletteCurveBT());
-            updateRowColor((HBox) children.get(1), ds.getPaletteCurveET());
-            updateRowColor((HBox) children.get(2), ds.getPaletteCurveDeltaBT());
-            updateRowColor((HBox) children.get(3), ds.getPaletteCurveDeltaET());
-        }
+        updateRowColor(btRow, ds.getPaletteCurveBT());
+        updateRowColor(etRow, ds.getPaletteCurveET());
+        updateRowColor(deltaBTRow, ds.getPaletteCurveDeltaBT());
+        updateRowColor(deltaETRow, ds.getPaletteCurveDeltaET());
     }
 
     private void updateRowColor(HBox row, String colorHex) {
