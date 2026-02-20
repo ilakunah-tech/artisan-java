@@ -61,7 +61,9 @@ public final class RoastLiveScreen {
         this.viewModel = new RoastViewModel();
 
         root = new BorderPane();
+        root.setMinSize(0, 0);
         mainSplit = new SplitPane();
+        mainSplit.setMinSize(0, 0);
         dockContainer = new VBox(8);
         dockContainer.getStyleClass().add("ri5-dock-container");
         dockContainer.setMinWidth(LayoutState.MIN_DOCK_WIDTH);
@@ -72,6 +74,9 @@ public final class RoastLiveScreen {
         panelManager.setLayoutState(uiPreferences != null ? uiPreferences.getLayoutState() : new LayoutState());
 
         Node chartView = chartController != null ? chartController.getView() : new Pane();
+        if (chartView instanceof Region) {
+            ((Region) chartView).setMinSize(0, 0);
+        }
         PhasesCanvasPanel phasesPanel = new PhasesCanvasPanel(PhaseResult.INVALID);
         if (appController != null) {
             appController.addPhaseListener(result -> javafx.application.Platform.runLater(() -> {
@@ -85,6 +90,7 @@ public final class RoastLiveScreen {
 
         VBox centerContent = new VBox(chartView, phasesPanel);
         centerContent.getStyleClass().add("ri5-chart-container");
+        centerContent.setMinSize(0, 0);
         VBox.setVgrow(chartView, Priority.ALWAYS);
         centerContent.setSpacing(4);
 

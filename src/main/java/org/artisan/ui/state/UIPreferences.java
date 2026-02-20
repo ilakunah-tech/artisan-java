@@ -120,11 +120,12 @@ public final class UIPreferences {
     }
 
     public double getMainDividerPosition() {
-        return mainDividerPosition <= 0 || mainDividerPosition > 1 ? 0.75 : mainDividerPosition;
+        double v = mainDividerPosition <= 0 || mainDividerPosition > 1 ? 0.75 : mainDividerPosition;
+        return Math.max(0.1, Math.min(0.9, v));
     }
 
     public void setMainDividerPosition(double mainDividerPosition) {
-        this.mainDividerPosition = Math.max(0.1, Math.min(0.95, mainDividerPosition));
+        this.mainDividerPosition = Math.max(0.1, Math.min(0.9, mainDividerPosition));
     }
 
     /** Returns shortcuts map; if null returns copy of DEFAULT_SHORTCUTS. */

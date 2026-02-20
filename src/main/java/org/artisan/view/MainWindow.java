@@ -239,19 +239,16 @@ public final class MainWindow extends Application {
     });
 
     BorderPane root = new BorderPane();
-    StackPane overlayRoot = new StackPane(root);
-    appController.setMainRoot(overlayRoot);
-
     primaryStage = primaryStage;
 
     syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences);
 
-    overlayRoot.getStyleClass().add("ri5-root");
+    root.getStyleClass().add("ri5-root");
     if ("light".equals(uiPreferences != null ? uiPreferences.getTheme() : null)) {
-      overlayRoot.getStyleClass().add("ri5-light");
+      root.getStyleClass().add("ri5-light");
     }
     UIPreferences.Density density = uiPreferences != null ? uiPreferences.getDensity() : UIPreferences.Density.COMFORTABLE;
-    overlayRoot.getStyleClass().add(density == UIPreferences.Density.COMPACT ? "ri5-density-compact" : "ri5-density-comfortable");
+    root.getStyleClass().add(density == UIPreferences.Density.COMPACT ? "ri5-density-compact" : "ri5-density-comfortable");
 
     MenuBar menuBar = new MenuBar();
     Menu fileMenu = buildFileMenu(root, chartController);
@@ -309,6 +306,7 @@ public final class MainWindow extends Application {
     MenuItem pidItem = new MenuItem("PID...");
     pidItem.setOnAction(e -> openPidDialog(root));
     MenuItem resetLayoutItem = new MenuItem("Reset Layout...");
+    resetLayoutItem.setAccelerator(javafx.scene.input.KeyCombination.keyCombination("Ctrl+Shift+R"));
     resetLayoutItem.setOnAction(e -> doResetLayout());
     configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, s7Item, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem, new SeparatorMenuItem(), resetLayoutItem);
 
@@ -345,12 +343,17 @@ public final class MainWindow extends Application {
     demoRunner = new DemoRunner(appController);
     appShell.setDemoRunner(demoRunner);
 
-    root.setTop(new VBox(menuBar, appShell.getRoot().getTop()));
-    root.setCenter(appShell.getRoot().getCenter());
+    VBox topArea = new VBox(menuBar, appShell.getRoot().getTop());
+    root.setTop(topArea);
+    StackPane centerWithOverlay = new StackPane(appShell.getRoot().getCenter());
+    centerWithOverlay.setMinSize(0, 0);
+    BorderPane.setAlignment(centerWithOverlay, javafx.geometry.Pos.CENTER);
+    root.setCenter(centerWithOverlay);
+    appController.setMainRoot(centerWithOverlay);
 
     appController.refreshStatistics();
 
-    Scene scene = new Scene(overlayRoot, 1000, 600);
+    Scene scene = new Scene(root, 1000, 600);
     try {
       scene.getStylesheets().add(getClass().getResource("/org/artisan/view/styles.css").toExternalForm());
     } catch (Exception e) {
@@ -973,6 +976,7 @@ public final class MainWindow extends Application {
     scene.getAccelerators().put(KeyCombination.keyCombination("F5"), this::toggleSampling);
     scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+P"), () -> openPidDialog(root));
     scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+D"), () -> openDevicesDialog(root));
+    scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+Shift+R"), this::doResetLayout);
   }
 
   private void toggleSampling() {

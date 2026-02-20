@@ -35,6 +35,26 @@ public final class PreferencesStore {
         return path;
     }
 
+    private static LayoutState.WindowBounds validateDetachedBounds(double x, double y, double w, double h) {
+        double safeW = Math.max(200, Math.min(1200, w));
+        double safeH = Math.max(150, Math.min(900, h));
+        double safeX = Math.max(-safeW + 50, Math.min(4000, x));
+        double safeY = Math.max(-safeH + 50, Math.min(2000, y));
+        return new LayoutState.WindowBounds(safeX, safeY, safeW, safeH);
+    }
+
+    /** Returns true if the loaded layout would produce a usable UI. Used for startup safeguard. */
+    public static boolean isLayoutUsable(UIPreferences prefs) {
+        if (prefs == null) return false;
+        double div = prefs.getMainDividerPosition();
+        if (div < 0.05 || div > 0.95) return false;
+        LayoutState layout = prefs.getLayoutState();
+        if (layout == null) return false;
+        double dockW = layout.getDockWidth();
+        if (dockW < LayoutState.MIN_DOCK_WIDTH - 1 || dockW > LayoutState.MAX_DOCK_WIDTH + 1) return false;
+        return true;
+    }
+
     /** Loads preferences; returns defaults if file missing or invalid. Schema versioning: unknown keys ignored; future versions get defaults for new fields. */
     public UIPreferences load() {
         UIPreferences prefs = new UIPreferences();
@@ -66,13 +86,15 @@ public final class PreferencesStore {
             prefs.setVisibleET(obj.path("visibleET").asBoolean(true));
             prefs.setVisibleDeltaBT(obj.path("visibleDeltaBT").asBoolean(true));
             prefs.setVisibleDeltaET(obj.path("visibleDeltaET").asBoolean(true));
-            prefs.setMainDividerPosition(obj.path("mainDividerPosition").asDouble(0.75));
+            double divPos = obj.path("mainDividerPosition").asDouble(0.75);
+            prefs.setMainDividerPosition(Math.max(0.1, Math.min(0.9, divPos)));
 
             LayoutState layout = new LayoutState();
             JsonNode layoutNode = obj.get("layout");
             if (layoutNode != null && layoutNode.isObject()) {
                 ObjectNode layoutObj = (ObjectNode) layoutNode;
-                layout.setDockWidth(layoutObj.path("dockWidth").asDouble(LayoutState.DEFAULT_DOCK_WIDTH));
+                double dockW = layoutObj.path("dockWidth").asDouble(LayoutState.DEFAULT_DOCK_WIDTH);
+                layout.setDockWidth(Math.max(LayoutState.MIN_DOCK_WIDTH, Math.min(LayoutState.MAX_DOCK_WIDTH, dockW)));
                 layout.setControlsVisible(layoutObj.path("controlsVisible").asBoolean(true));
                 JsonNode orderNode = layoutObj.get("panelOrder");
                 if (orderNode != null && orderNode.isArray()) {
@@ -97,7 +119,7 @@ public final class PreferencesStore {
                     boundsNode.fields().forEachRemaining(e -> {
                         JsonNode b = e.getValue();
                         if (b.isObject()) {
-                            LayoutState.WindowBounds wb = new LayoutState.WindowBounds(
+                            LayoutState.WindowBounds wb = validateDetachedBounds(
                                 b.path("x").asDouble(100),
                                 b.path("y").asDouble(100),
                                 b.path("width").asDouble(300),
@@ -108,6 +130,10 @@ public final class PreferencesStore {
                 }
             }
             prefs.setLayoutState(layout);
+
+            if (!isLayoutUsable(prefs)) {
+                resetLayout(prefs);
+            }
 
             JsonNode shortcutsNode = obj.get("shortcuts");
             if (shortcutsNode != null && shortcutsNode.isObject()) {

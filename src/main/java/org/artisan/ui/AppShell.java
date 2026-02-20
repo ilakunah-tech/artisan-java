@@ -99,12 +99,15 @@ public final class AppShell {
         HBox.setMargin(connectionLabel, new Insets(0, 0, 0, 24));
 
         contentArea = new StackPane();
+        contentArea.setMinSize(0, 0);
         preRoastScreen = new PreRoastScreen(appController, this.uiPreferences, this.preferencesStore);
         roastLiveScreen = new RoastLiveScreen(primaryStage, appController, chartController,
             displaySettings, this.uiPreferences, this.preferencesStore);
 
         contentArea.getChildren().add(preRoastScreen.getRoot());
         contentArea.getChildren().add(roastLiveScreen.getRoot());
+        javafx.scene.layout.StackPane.setAlignment(preRoastScreen.getRoot(), javafx.geometry.Pos.TOP_LEFT);
+        javafx.scene.layout.StackPane.setAlignment(roastLiveScreen.getRoot(), javafx.geometry.Pos.TOP_LEFT);
         roastLiveScreen.getRoot().setVisible(false);
 
         preRoastNav.setOnAction(e -> {

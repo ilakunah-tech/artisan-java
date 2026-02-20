@@ -110,6 +110,27 @@ class UISmokeTest extends ApplicationTest {
     }
 
     @Test
+    void badPreferences_clampedOrReset(@TempDir Path dir) throws Exception {
+        Path prefsDir = dir.resolve(".artisan-java");
+        Files.createDirectories(prefsDir);
+        Path prefsFile = prefsDir.resolve("ui-preferences.json");
+        Files.writeString(prefsFile, "{\"mainDividerPosition\":0,\"theme\":\"light\",\"layout\":{\"dockWidth\":99999}}");
+        String prev = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", dir.toString());
+            PreferencesStore store = new PreferencesStore();
+            UIPreferences loaded = store.load();
+            double div = loaded.getMainDividerPosition();
+            double dockW = loaded.getLayoutState().getDockWidth();
+            assertTrue(div >= 0.1 && div <= 0.9, "divider should be clamped: " + div);
+            assertTrue(dockW >= LayoutState.MIN_DOCK_WIDTH && dockW <= LayoutState.MAX_DOCK_WIDTH,
+                "dock width should be clamped: " + dockW);
+        } finally {
+            if (prev != null) System.setProperty("user.home", prev);
+        }
+    }
+
+    @Test
     void roastLiveScreen_applyLayoutFromPreferences_doesNotThrow() {
         interact(() -> {
             org.artisan.controller.RoastSession session = new org.artisan.controller.RoastSession();

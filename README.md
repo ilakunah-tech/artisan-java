@@ -44,9 +44,11 @@ The application uses a two-screen layout with a persistent top bar and navigatio
   Persisted: theme, density, readout size (S/M/L), curve visibility (BT, ET, ΔBT, ΔET), main divider position, layout (dock width, panel order, collapsed/detached per panel, detached window bounds), controls panel visibility, and keyboard shortcuts mapping (defaults stored; custom keys optional for future use).  
   Schema version is in the file; unknown keys are ignored; missing keys fall back to defaults.
 
-- **Reset Layout:** Settings → Reset Layout… resets layout to defaults and saves. Restart or switch screens to apply fully.
+- **Reset Layout:** Config → Reset Layout… (or **Ctrl+Shift+R**) resets layout to defaults and saves. Restart or switch screens to apply fully.
 
 - **Path:** On Windows: `C:\Users\<username>\.artisan-java\ui-preferences.json`. On macOS/Linux: `~/.artisan-java/ui-preferences.json`.
+
+- **Full reset:** Deleting `~/.artisan-java/ui-preferences.json` (or the file at the path above) resets all UI preferences to defaults on next startup.
 
 ### Keyboard shortcuts (Roast Live screen)
 

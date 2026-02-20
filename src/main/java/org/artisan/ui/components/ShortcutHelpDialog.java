@@ -14,6 +14,7 @@ import javafx.stage.Window;
 public final class ShortcutHelpDialog {
 
     private static final String[][] SHORTCUTS = {
+        { "Ctrl+Shift+R", "Reset layout to defaults" },
         { "Space", "Add event marker at current time (quick note)" },
         { "1", "Charge" },
         { "2", "Yellow / Dry end" },
