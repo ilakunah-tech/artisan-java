@@ -49,7 +49,7 @@ public final class PreferencesStore {
             ObjectNode obj = (ObjectNode) root;
             int fileVersion = obj.path("schemaVersion").asInt(UIPreferences.SCHEMA_VERSION);
             prefs.setSchemaVersion(Math.min(fileVersion, UIPreferences.SCHEMA_VERSION));
-            prefs.setTheme(obj.path("theme").asText("dark"));
+            prefs.setTheme(obj.path("theme").asText("light"));
             String dens = obj.path("density").asText("COMFORTABLE");
             try {
                 prefs.setDensity(UIPreferences.Density.valueOf(dens));

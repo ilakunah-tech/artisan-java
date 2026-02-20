@@ -32,8 +32,8 @@ dependencies {
     // AtlantaFX theme
     implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
 
-    // Chart-FX
-    implementation 'de.gsi.chart:chartfx-chart:11.2.7'
+    // Chart-FX (upgraded from de.gsi.chart:chartfx-chart:11.2.7)
+    implementation 'io.fair-acc:chartfx:11.3.1'
 
     // Serial port (COM)
     implementation 'com.fazecast:jSerialComm:2.10.4'

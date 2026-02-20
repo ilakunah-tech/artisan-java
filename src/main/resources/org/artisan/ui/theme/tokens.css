@@ -1,8 +1,7 @@
-/* RI5-like design tokens — spacing scale, separators, minimal shadow.
- * JavaFX does not resolve custom properties in other properties; use these as reference.
- * Spacing scale: 4, 8, 12, 16, 24 (xs, s, m, l, xl).
- * Separator: 1px solid; use #1e2124 (dark) / #e0e0e0 (light).
- * Shadow: minimal — avoid or use very subtle drop shadow.
+/* Cropster RI5–inspired design tokens — light theme brand palette
+ * Primary: #5680E9 | Primary alt: #5AB9EA | Soft accent: #84CEEB
+ * Lavender neutral: #C1C8E4 | Secondary violet: #8860D0
+ * Neutrals: #FFFFFF, #F6F8FC, #EEF2FA | Text: #1F2937 | Secondary text: #6B7280
  */
 
 .ri5-root {
@@ -11,9 +10,14 @@
     -ri5-spacing-m: 12;
     -ri5-spacing-l: 16;
     -ri5-spacing-xl: 24;
+    -ri5-radius-sm: 6;
+    -ri5-radius-md: 8;
+    -ri5-radius-lg: 12;
+    -ri5-shadow-sm: dropshadow(gaussian, rgba(31, 41, 55, 0.06), 4, 0, 0, 2);
+    -ri5-shadow-md: dropshadow(gaussian, rgba(31, 41, 55, 0.08), 8, 0, 0, 2);
 }
 
-/* Density: compact uses smaller padding; comfortable uses -ri5-spacing-m/l */
+/* Density: compact uses smaller padding */
 .ri5-root.ri5-density-compact {
     -ri5-panel-padding: 8;
 }

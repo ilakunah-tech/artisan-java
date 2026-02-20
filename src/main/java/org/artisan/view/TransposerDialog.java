@@ -20,10 +20,10 @@ import org.artisan.model.ProfileData;
 import org.artisan.model.Transposer;
 import org.artisan.model.TransposerParams;
 
-import de.gsi.chart.XYChart;
-import de.gsi.chart.axes.spi.DefaultNumericAxis;
-import de.gsi.chart.ui.geometry.Side;
-import de.gsi.dataset.spi.DoubleDataSet;
+import io.fair_acc.chartfx.XYChart;
+import io.fair_acc.chartfx.axes.spi.DefaultNumericAxis;
+import io.fair_acc.chartfx.ui.geometry.Side;
+import io.fair_acc.dataset.spi.DoubleDataSet;
 
 /**
  * Tools » Transposer: time/temp shift and scale; preview and apply to current profile.

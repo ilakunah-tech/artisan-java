@@ -43,6 +43,9 @@ public final class RoastLiveScreen {
     private DockPanel controlsDockPanel;
     private DockPanel legendDockPanel;
     private EventLogPanel eventLogPanel;
+    private ReadoutTile btReadoutTile;
+    private ReadoutTile etReadoutTile;
+    private ReadoutTile rorReadoutTile;
     private javafx.animation.AnimationTimer statusTimer;
     private boolean controlsVisible = true;
 
@@ -59,8 +62,8 @@ public final class RoastLiveScreen {
 
         root = new BorderPane();
         mainSplit = new SplitPane();
-        dockContainer = new VBox(4);
-        dockContainer.getStyleClass().add("ri5-dock-panel");
+        dockContainer = new VBox(8);
+        dockContainer.getStyleClass().add("ri5-dock-container");
         dockContainer.setMinWidth(LayoutState.MIN_DOCK_WIDTH);
         dockContainer.setPrefWidth(uiPreferences != null ? uiPreferences.getLayoutState().getDockWidth() : LayoutState.DEFAULT_DOCK_WIDTH);
         statusBar = new BottomStatusBar();
@@ -104,16 +107,24 @@ public final class RoastLiveScreen {
         legendDockPanel.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_LEGEND));
         addPanelInOrder(legendDockPanel, panelOrder);
 
-        ReadoutTile btTile = new ReadoutTile("BT (°C)", viewModel.btProperty(), "%.1f");
-        ReadoutTile etTile = new ReadoutTile("ET (°C)", viewModel.etProperty(), "%.1f");
-        ReadoutTile rorTile = new ReadoutTile("RoR", viewModel.rorBTProperty(), "%.1f");
+        btReadoutTile = new ReadoutTile("BT", viewModel.btProperty(), "%.1f", "bt");
+        etReadoutTile = new ReadoutTile("ET", viewModel.etProperty(), "%.1f", "et");
+        rorReadoutTile = new ReadoutTile("RoR", viewModel.rorBTProperty(), "%.1f", "ror");
         if (uiPreferences != null) {
-            btTile.setReadoutSize(uiPreferences.getReadoutSize());
-            etTile.setReadoutSize(uiPreferences.getReadoutSize());
-            rorTile.setReadoutSize(uiPreferences.getReadoutSize());
+            btReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
+            etReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
+            rorReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
         }
-        VBox readoutsBox = new VBox(8, btTile, etTile, rorTile);
-        DockPanel readoutsDock = new DockPanel(LayoutState.PANEL_READOUTS, "Readouts", readoutsBox);
+        GridPane readoutsGrid = new GridPane();
+        readoutsGrid.setHgap(8);
+        readoutsGrid.setVgap(8);
+        readoutsGrid.add(btReadoutTile, 0, 0);
+        readoutsGrid.add(etReadoutTile, 1, 0);
+        readoutsGrid.add(rorReadoutTile, 0, 1);
+        GridPane.setHgrow(btReadoutTile, javafx.scene.layout.Priority.ALWAYS);
+        GridPane.setHgrow(etReadoutTile, javafx.scene.layout.Priority.ALWAYS);
+        GridPane.setHgrow(rorReadoutTile, javafx.scene.layout.Priority.ALWAYS);
+        DockPanel readoutsDock = new DockPanel(LayoutState.PANEL_READOUTS, "Readouts", readoutsGrid);
         readoutsDock.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_READOUTS));
         addPanelInOrder(readoutsDock, panelOrder);
 
@@ -305,7 +316,21 @@ public final class RoastLiveScreen {
         }
     }
 
+    /** Refreshes curve legend colors when palette changes (e.g. from Colors dialog). */
+    public void refreshCurveLegendColors(org.artisan.controller.DisplaySettings ds) {
+        if (legendDockPanel == null || ds == null) return;
+        Node content = legendDockPanel.getContentNode();
+        if (content instanceof CurveLegendPanel) {
+            ((CurveLegendPanel) content).refreshColors(ds);
+        }
+    }
+
     public void onScreenShown() {
+        if (uiPreferences != null && btReadoutTile != null) {
+            btReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
+            etReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
+            rorReadoutTile.setReadoutSize(uiPreferences.getReadoutSize());
+        }
         if (statusTimer != null) statusTimer.start();
         if (chartController != null) chartController.startUpdateTimer();
         if (appController != null) {

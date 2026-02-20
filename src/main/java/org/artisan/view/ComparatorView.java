@@ -5,21 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.shape.Line;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -28,21 +21,24 @@ import org.artisan.model.ProfileData;
 import org.artisan.model.RoastComparator;
 import org.artisan.model.Roastlog;
 
-import de.gsi.chart.XYChart;
-import de.gsi.chart.axes.spi.DefaultNumericAxis;
-import de.gsi.chart.ui.geometry.Side;
-import de.gsi.dataset.spi.DoubleDataSet;
+import io.fair_acc.chartfx.XYChart;
+import io.fair_acc.chartfx.axes.spi.DefaultNumericAxis;
+import io.fair_acc.chartfx.renderer.spi.ErrorDataSetRenderer;
+import io.fair_acc.chartfx.ui.geometry.Side;
+import io.fair_acc.dataset.spi.DoubleDataSet;
 import javafx.scene.paint.Color;
 
 /**
- * Tools » Comparator: non-modal window with list of loaded profiles and BT chart.
- * Per-profile time offset; preferences comparator.* for position/size.
+ * Tools - Comparator: non-modal window with list of loaded profiles, dual-axis chart
+ * showing BT + ET on left axis and RoR on right axis, per-profile event markers
+ * and phase shading. Per-profile time offset; preferences comparator.* for position/size.
  */
 public final class ComparatorView {
 
     private static final String PREFS_NODE = "org/artisan/artisan-java";
     private static final String PREFIX = "comparator.";
     private static final int MAX_PROFILES = 8;
+    private static final int ROR_SMOOTH_WINDOW = 5;
     private static final Color[] PALETTE = {
         Color.web("#0a5c90"),
         Color.web("#cc0f50"),
@@ -53,14 +49,29 @@ public final class ComparatorView {
         Color.web("#008080"),
         Color.web("#804080")
     };
+    private static final String[] EVENT_NAMES = {"CHARGE", "DRY", "FCs", "FCe", "SCs", "SCe", "DROP", "COOL"};
 
     private final Stage stage;
     private final RoastComparator comparator = new RoastComparator();
     private final ObservableList<Double> timeOffsets = FXCollections.observableArrayList();
     private final ObservableList<String> fileNames = FXCollections.observableArrayList();
     private final ListView<String> listView;
+
     private final XYChart chart;
-    private final List<DoubleDataSet> dataSets = new ArrayList<>();
+    private final DefaultNumericAxis xAxis;
+    private final DefaultNumericAxis tempAxis;
+    private final DefaultNumericAxis rorAxis;
+    private final ErrorDataSetRenderer tempRenderer;
+    private final ErrorDataSetRenderer rorRenderer;
+    private final Pane overlayPane = new Pane();
+
+    private final List<DoubleDataSet> btSets = new ArrayList<>();
+    private final List<DoubleDataSet> etSets = new ArrayList<>();
+    private final List<DoubleDataSet> rorSets = new ArrayList<>();
+
+    private boolean showET = true;
+    private boolean showRoR = true;
+    private boolean showEvents = true;
 
     public ComparatorView(Window owner) {
         stage = new Stage();
@@ -70,7 +81,6 @@ public final class ComparatorView {
         listView = new ListView<>(fileNames);
         listView.setCellFactory(this::createCell);
         listView.setPrefWidth(280);
-        listView.getSelectionModel().selectedIndexProperty().addListener((a, b, c) -> {});
 
         Button addBtn = new Button("Add Profile");
         addBtn.setOnAction(e -> addProfile());
@@ -78,28 +88,71 @@ public final class ComparatorView {
         removeBtn.setOnAction(e -> removeSelected());
         Button clearBtn = new Button("Clear All");
         clearBtn.setOnAction(e -> clearAll());
-        VBox leftButtons = new VBox(6, addBtn, removeBtn, clearBtn);
 
-        VBox leftPanel = new VBox(8, listView, leftButtons);
+        CheckBox etCheck = new CheckBox("Show ET");
+        etCheck.setSelected(showET);
+        etCheck.selectedProperty().addListener((a, b, c) -> { showET = c; refreshChart(); });
+        CheckBox rorCheck = new CheckBox("Show RoR");
+        rorCheck.setSelected(showRoR);
+        rorCheck.selectedProperty().addListener((a, b, c) -> { showRoR = c; refreshChart(); });
+        CheckBox evtCheck = new CheckBox("Events");
+        evtCheck.setSelected(showEvents);
+        evtCheck.selectedProperty().addListener((a, b, c) -> { showEvents = c; refreshChart(); });
+
+        VBox leftPanel = new VBox(8, listView, addBtn, removeBtn, clearBtn,
+                new Separator(), etCheck, rorCheck, evtCheck);
         leftPanel.setPadding(new Insets(8));
         leftPanel.setMinWidth(200);
 
-        DefaultNumericAxis xAxis = new DefaultNumericAxis("Time (s)");
+        xAxis = new DefaultNumericAxis("Time (s)");
         xAxis.setSide(Side.BOTTOM);
-        DefaultNumericAxis yAxis = new DefaultNumericAxis("BT (°C)");
-        yAxis.setSide(Side.LEFT);
-        yAxis.setMin(0);
-        yAxis.setMax(250);
-        chart = new XYChart(xAxis, yAxis);
+        tempAxis = new DefaultNumericAxis("Temp (°C)");
+        tempAxis.setSide(Side.LEFT);
+        tempAxis.setMin(0);
+        tempAxis.setMax(250);
+
+        rorAxis = new DefaultNumericAxis("RoR (°C/min)");
+        rorAxis.setSide(Side.RIGHT);
+        rorAxis.setMin(-20);
+        rorAxis.setMax(50);
+
+        chart = new XYChart(xAxis, tempAxis);
+        chart.setAnimated(false);
         chart.setLegendVisible(true);
+
+        tempRenderer = new ErrorDataSetRenderer();
+        tempRenderer.getAxes().add(tempAxis);
+        rorRenderer = new ErrorDataSetRenderer();
+        rorRenderer.getAxes().add(rorAxis);
+
+        chart.getRenderers().clear();
+        chart.getRenderers().addAll(tempRenderer, rorRenderer);
+
         for (int i = 0; i < MAX_PROFILES; i++) {
-            DoubleDataSet ds = new DoubleDataSet("P" + (i + 1));
-            ds.setStyle("-fx-stroke: " + toHex(PALETTE[i % PALETTE.length]) + "; -fx-stroke-width: 2px;");
-            dataSets.add(ds);
-            chart.getDatasets().add(ds);
+            Color c = PALETTE[i % PALETTE.length];
+            String hex = toHex(c);
+
+            DoubleDataSet btDs = new DoubleDataSet("BT P" + (i + 1));
+            btDs.setStyle("-fx-stroke: " + hex + "; -fx-stroke-width: 2px;");
+            btSets.add(btDs);
+            tempRenderer.getDatasets().add(btDs);
+
+            DoubleDataSet etDs = new DoubleDataSet("ET P" + (i + 1));
+            Color lighter = c.deriveColor(0, 0.7, 1.3, 0.7);
+            etDs.setStyle("-fx-stroke: " + toHex(lighter) + "; -fx-stroke-width: 1px; -fx-stroke-dash-array: 6 4;");
+            etSets.add(etDs);
+            tempRenderer.getDatasets().add(etDs);
+
+            DoubleDataSet rorDs = new DoubleDataSet("ΔBT P" + (i + 1));
+            rorDs.setStyle("-fx-stroke: " + hex + "; -fx-stroke-width: 1px; -fx-stroke-dash-array: 2 3;");
+            rorSets.add(rorDs);
+            rorRenderer.getDatasets().add(rorDs);
         }
 
-        BorderPane chartPane = new BorderPane(chart);
+        overlayPane.setMouseTransparent(true);
+        StackPane chartStack = new StackPane(chart, overlayPane);
+
+        BorderPane chartPane = new BorderPane(chartStack);
         chartPane.setPadding(new Insets(8));
 
         ToolBar toolbar = new ToolBar();
@@ -111,10 +164,8 @@ public final class ComparatorView {
         root.setTop(toolbar);
         root.setLeft(leftPanel);
         root.setCenter(chartPane);
-        BorderPane.setMargin(chartPane, new Insets(0, 8, 8, 8));
-        HBox.setHgrow(chartPane, Priority.ALWAYS);
 
-        javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 500);
+        javafx.scene.Scene scene = new javafx.scene.Scene(root, 1000, 560);
         stage.setScene(scene);
 
         loadPreferences();
@@ -126,7 +177,6 @@ public final class ComparatorView {
             private final Spinner<Double> offsetSpinner = new Spinner<>(
                 new SpinnerValueFactory.DoubleSpinnerValueFactory(-600, 600, 0, 1));
             private final HBox box = new HBox(8);
-
             {
                 offsetSpinner.setEditable(true);
                 offsetSpinner.setPrefWidth(80);
@@ -139,7 +189,6 @@ public final class ComparatorView {
                 });
                 box.getChildren().add(offsetSpinner);
             }
-
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -191,18 +240,77 @@ public final class ComparatorView {
     }
 
     private void refreshChart() {
-        for (DoubleDataSet ds : dataSets) {
-            ds.clearData();
+        for (int i = 0; i < MAX_PROFILES; i++) {
+            btSets.get(i).clearData();
+            etSets.get(i).clearData();
+            rorSets.get(i).clearData();
         }
+        overlayPane.getChildren().clear();
+
         List<ProfileData> profiles = comparator.getProfiles();
-        for (int i = 0; i < profiles.size() && i < dataSets.size(); i++) {
+        for (int i = 0; i < profiles.size() && i < MAX_PROFILES; i++) {
             double offset = i < timeOffsets.size() ? timeOffsets.get(i) : 0;
             double[] time = comparator.getAlignedTime(i, offset);
             double[] bt = comparator.getAlignedBT(i, offset);
+            double[] et = comparator.getAlignedET(i, offset);
+            double[] ror = comparator.getAlignedRoRBT(i, offset, ROR_SMOOTH_WINDOW);
+
+            String name = comparator.getFilename(i);
             if (time.length > 0 && bt.length == time.length) {
-                dataSets.get(i).set(time, bt);
-                dataSets.get(i).setName(comparator.getFilename(i));
+                btSets.get(i).set(time, bt);
+                btSets.get(i).setName("BT " + name);
             }
+            if (showET && time.length > 0 && et.length == time.length) {
+                etSets.get(i).set(time, et);
+                etSets.get(i).setName("ET " + name);
+            }
+            if (showRoR && time.length > 0 && ror.length == time.length) {
+                rorSets.get(i).set(time, ror);
+                rorSets.get(i).setName("ΔBT " + name);
+            }
+
+            if (showEvents) {
+                drawEventMarkers(i, offset);
+            }
+        }
+    }
+
+    private void drawEventMarkers(int profileIndex, double offset) {
+        List<Integer> ti = comparator.getEventTimeindex(profileIndex);
+        if (ti == null || ti.isEmpty()) return;
+        ProfileData pd = comparator.getProfiles().get(profileIndex);
+        List<Double> timex = pd.getTimex();
+        if (timex == null || timex.isEmpty()) return;
+
+        Color color = PALETTE[profileIndex % PALETTE.length];
+        Color markerColor = Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.5);
+
+        double w = overlayPane.getWidth();
+        double h = overlayPane.getHeight();
+        if (w <= 0 || h <= 0) return;
+        double xMin = xAxis.getMin(), xMax = xAxis.getMax();
+        double xRange = xMax - xMin;
+        if (xRange <= 0) return;
+
+        for (int slot = 0; slot < Math.min(ti.size(), EVENT_NAMES.length); slot++) {
+            Integer idx = ti.get(slot);
+            if (idx == null || idx <= 0 || idx >= timex.size()) continue;
+            double tSec = timex.get(idx) + offset;
+            double xPx = (tSec - xMin) / xRange * w;
+            if (xPx < 0 || xPx > w) continue;
+            Line line = new Line(xPx, 0, xPx, h);
+            line.setStroke(markerColor);
+            line.getStrokeDashArray().addAll(4.0, 6.0);
+            line.setMouseTransparent(true);
+            overlayPane.getChildren().add(line);
+
+            Text label = new Text(EVENT_NAMES[slot]);
+            label.setFill(markerColor);
+            label.setStyle("-fx-font-size: 8px;");
+            label.setX(xPx + 2);
+            label.setY(12 + profileIndex * 10);
+            label.setMouseTransparent(true);
+            overlayPane.getChildren().add(label);
         }
     }
 

@@ -21,6 +21,10 @@ public final class CanvasData {
     private int fcStartIndex = -1;
     /** Index for FC END. */
     private int fcEndIndex = -1;
+    /** Index for SC START (Second Crack). */
+    private int scStartIndex = -1;
+    /** Index for SC END. */
+    private int scEndIndex = -1;
     /** Index for DROP. */
     private int dropIndex = -1;
 
@@ -29,6 +33,15 @@ public final class CanvasData {
     private final List<Double> temp2 = new ArrayList<>();
     private final List<Double> delta1 = new ArrayList<>();
     private final List<Double> delta2 = new ArrayList<>();
+
+    private final List<Double> extraTimex1 = new ArrayList<>();
+    private final List<Double> extraTemp1 = new ArrayList<>();
+    private final List<Double> extraTimex2 = new ArrayList<>();
+    private final List<Double> extraTemp2 = new ArrayList<>();
+    private final List<Double> extraTimex3 = new ArrayList<>();
+    private final List<Double> extraTemp3 = new ArrayList<>();
+    private final List<Double> extraTimex4 = new ArrayList<>();
+    private final List<Double> extraTemp4 = new ArrayList<>();
 
     /**
      * Appends one data point and computes deltas externally (caller uses RorCalculator).
@@ -80,10 +93,16 @@ public final class CanvasData {
         temp2.clear();
         delta1.clear();
         delta2.clear();
+        extraTimex1.clear(); extraTemp1.clear();
+        extraTimex2.clear(); extraTemp2.clear();
+        extraTimex3.clear(); extraTemp3.clear();
+        extraTimex4.clear(); extraTemp4.clear();
         chargeIndex = -1;
         dryEndIndex = 0;
         fcStartIndex = 0;
         fcEndIndex = 0;
+        scStartIndex = -1;
+        scEndIndex = -1;
         dropIndex = 0;
     }
 
@@ -105,6 +124,31 @@ public final class CanvasData {
     public int getFcEndIndex() { return fcEndIndex; }
     public void setFcEndIndex(int fcEndIndex) { this.fcEndIndex = fcEndIndex; }
 
+    public int getScStartIndex() { return scStartIndex; }
+    public void setScStartIndex(int scStartIndex) { this.scStartIndex = scStartIndex; }
+
+    public int getScEndIndex() { return scEndIndex; }
+    public void setScEndIndex(int scEndIndex) { this.scEndIndex = scEndIndex; }
+
     public int getDropIndex() { return dropIndex; }
     public void setDropIndex(int dropIndex) { this.dropIndex = dropIndex; }
+
+    public List<Double> getExtraTimex1() { return Collections.unmodifiableList(extraTimex1); }
+    public List<Double> getExtraTemp1()  { return Collections.unmodifiableList(extraTemp1); }
+    public List<Double> getExtraTimex2() { return Collections.unmodifiableList(extraTimex2); }
+    public List<Double> getExtraTemp2()  { return Collections.unmodifiableList(extraTemp2); }
+    public List<Double> getExtraTimex3() { return Collections.unmodifiableList(extraTimex3); }
+    public List<Double> getExtraTemp3()  { return Collections.unmodifiableList(extraTemp3); }
+    public List<Double> getExtraTimex4() { return Collections.unmodifiableList(extraTimex4); }
+    public List<Double> getExtraTemp4()  { return Collections.unmodifiableList(extraTemp4); }
+
+    public void addExtraDataPoint(int channel, double timeSec, double temp) {
+        switch (channel) {
+            case 1: extraTimex1.add(timeSec); extraTemp1.add(temp); break;
+            case 2: extraTimex2.add(timeSec); extraTemp2.add(temp); break;
+            case 3: extraTimex3.add(timeSec); extraTemp3.add(temp); break;
+            case 4: extraTimex4.add(timeSec); extraTemp4.add(temp); break;
+            default: break;
+        }
+    }
 }

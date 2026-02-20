@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -11,8 +12,8 @@ import org.artisan.controller.AppController;
 import org.artisan.model.EventType;
 
 /**
- * Inline panel below the chart: event buttons (CHARGE, TP, DRY END, FC START, FC END, SC START, SC END, DROP)
- * and sliders for Gas, Air, Drum (duty 0–100%). Calls appController.markEvent(EventType) and setControlOutput.
+ * Inline panel: event buttons and sliders (Gas, Air, Drum).
+ * "Show controls" toggle collapses/expands the sliders area.
  */
 public final class ControlsPanel extends VBox {
 
@@ -20,11 +21,13 @@ public final class ControlsPanel extends VBox {
     private final Slider gasSlider;
     private final Slider airSlider;
     private final Slider drumSlider;
+    private final VBox sliderContent;
+    private final ToggleButton showControlsToggle;
 
     public ControlsPanel(AppController appController) {
         this.appController = appController;
         setSpacing(12);
-        setPadding(new Insets(8));
+        setPadding(new Insets(0));
 
         HBox eventRow = new HBox(8);
         eventRow.getChildren().addAll(
@@ -38,6 +41,10 @@ public final class ControlsPanel extends VBox {
             button("DROP", EventType.DROP)
         );
 
+        showControlsToggle = new ToggleButton("Show controls");
+        showControlsToggle.setSelected(true);
+        showControlsToggle.getStyleClass().add("ri5-controls-toggle-inline");
+
         gasSlider = slider("Gas", "Gas");
         airSlider = slider("Air", "Air");
         drumSlider = slider("Drum", "Drum");
@@ -48,7 +55,21 @@ public final class ControlsPanel extends VBox {
             new VBox(4, new Label("Drum"), drumSlider)
         );
 
-        getChildren().addAll(eventRow, sliderRow);
+        sliderContent = new VBox(8, sliderRow);
+        showControlsToggle.setOnAction(e -> {
+            boolean show = showControlsToggle.isSelected();
+            sliderContent.setManaged(show);
+            sliderContent.setVisible(show);
+        });
+
+        getChildren().addAll(eventRow, showControlsToggle, sliderContent);
+    }
+
+    /** Sets whether the sliders area is visible. Call to sync with LayoutState. */
+    public void setSlidersVisible(boolean visible) {
+        showControlsToggle.setSelected(visible);
+        sliderContent.setManaged(visible);
+        sliderContent.setVisible(visible);
     }
 
     private Button button(String text, EventType type) {
@@ -62,7 +83,7 @@ public final class ControlsPanel extends VBox {
 
     private Slider slider(String name, String key) {
         Slider s = new Slider(0, 100, 0);
-        s.getStyleClass().add("controls-slider");
+        s.getStyleClass().addAll("controls-slider", "ri5-slider");
         s.setShowTickMarks(true);
         s.setShowTickLabels(true);
         s.setMajorTickUnit(25);

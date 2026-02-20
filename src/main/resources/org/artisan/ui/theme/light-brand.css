@@ -1,0 +1,345 @@
+/* Cropster RI5–inspired light theme with brand palette
+ * 80–90% white/neutral surfaces, brand color as accent only
+ * Primary: #5680E9 | Primary alt: #5AB9EA | Soft: #84CEEB | Lavender: #C1C8E4 | Violet: #8860D0
+ * App bg: #F6F8FC | Cards: white, border #EEF2FA, radius 12
+ */
+
+/* ========== Root and app background ========== */
+.ri5-root {
+    -fx-background-color: #F6F8FC;
+}
+
+/* ========== Top bar ========== */
+.ri5-topbar {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 8 12 8 12;
+    -fx-spacing: 12;
+    -fx-border-color: #EEF2FA;
+    -fx-border-width: 0 0 1 0;
+}
+
+.ri5-topbar .app-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1F2937;
+}
+
+.ri5-topbar .machine-indicator {
+    -fx-text-fill: #6B7280;
+    -fx-font-size: 12px;
+}
+
+.ri5-topbar .connection-status {
+    -fx-text-fill: #6B7280;
+    -fx-font-size: 12px;
+}
+
+.ri5-topbar .toggle-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6B7280;
+}
+
+.ri5-topbar .toggle-button:selected {
+    -fx-background-color: #EEF2FA;
+    -fx-text-fill: #5680E9;
+    -fx-background-radius: 6;
+}
+
+.ri5-topbar .toggle-button:hover {
+    -fx-background-color: #EEF2FA;
+}
+
+/* ========== Chart container ========== */
+.ri5-chart-container {
+    -fx-background-color: #FFFFFF;
+    -fx-min-height: 200;
+    -fx-padding: 8 8 4 8;
+    -fx-border-color: #EEF2FA;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.chart-pane {
+    -fx-background-color: transparent;
+}
+
+/* Dock container — light background, spacing between cards */
+.ri5-dock-container {
+    -fx-background-color: #F6F8FC;
+    -fx-padding: 8;
+    -fx-spacing: 8;
+}
+
+/* ========== Card-based sidebar — white cards on light app bg ========== */
+.ri5-dock-panel {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 0;
+    -fx-border-color: #EEF2FA;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(31, 41, 55, 0.04), 6, 0, 0, 1);
+}
+
+.ri5-dock-panel .title-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 10 12 10 12;
+    -fx-min-height: 36;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-insets: 0 12 0 12;
+}
+
+.ri5-dock-panel .title-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1F2937;
+}
+
+.ri5-dock-panel .content {
+    -fx-padding: 12;
+    -fx-background-color: transparent;
+}
+
+.ri5-dock-panel .icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6B7280;
+    -fx-padding: 4 6 4 6;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.ri5-dock-panel .icon-button:hover {
+    -fx-background-color: #EEF2FA;
+    -fx-text-fill: #5680E9;
+    -fx-background-radius: 6;
+}
+
+/* ========== Readout tiles — 2-col grid, accent bar ========== */
+.ri5-readout-tile {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 10 12 10 14;
+    -fx-background-radius: 8;
+    -fx-border-color: #EEF2FA;
+    -fx-border-width: 1 1 1 3;
+    -fx-border-radius: 8;
+}
+
+.ri5-readout-tile .value {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1F2937;
+}
+
+.ri5-readout-tile .label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #6B7280;
+}
+
+.ri5-readout-size-s .value { -fx-font-size: 16px; }
+.ri5-readout-size-m .value { -fx-font-size: 22px; }
+.ri5-readout-size-l .value { -fx-font-size: 28px; }
+
+/* Accent bar colors per curve — applied via inline or data-accent */
+.ri5-readout-tile.accent-bt { -fx-border-color: #EEF2FA #EEF2FA #EEF2FA #5680E9; }
+.ri5-readout-tile.accent-et { -fx-border-color: #EEF2FA #EEF2FA #EEF2FA #5AB9EA; }
+.ri5-readout-tile.accent-ror { -fx-border-color: #EEF2FA #EEF2FA #EEF2FA #8860D0; }
+
+/* ========== Curve legend — line indicator + toggle switch ========== */
+.curve-legend-panel {
+    -fx-spacing: 8;
+}
+
+.curve-legend-row {
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+}
+
+.curve-legend-line {
+    -fx-min-width: 24;
+    -fx-pref-height: 3;
+    -fx-background-radius: 2;
+}
+
+.curve-legend-panel .check-box {
+    -fx-text-fill: #1F2937;
+}
+
+/* ========== Slider controls ========== */
+.ri5-slider .track {
+    -fx-background-color: #EEF2FA;
+    -fx-background-radius: 4;
+}
+
+.ri5-slider .thumb {
+    -fx-background-color: #5680E9;
+}
+
+.ri5-slider .thumb:hover {
+    -fx-background-color: #5AB9EA;
+}
+
+.ri5-slider:focused .thumb {
+    -fx-background-color: #5680E9;
+}
+
+/* ========== Bottom status strip — thin, subtle ========== */
+.ri5-status-strip {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 6 12 6 12;
+    -fx-spacing: 16;
+    -fx-min-height: 28;
+    -fx-border-color: #EEF2FA;
+    -fx-border-width: 1 0 0 0;
+}
+
+.ri5-status-strip .ri5-controls-toggle {
+    -fx-min-width: 72;
+}
+
+.ri5-status-strip .ri5-end-button {
+    -fx-background-color: #5680E9;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 6;
+}
+
+.ri5-status-strip .ri5-end-button:hover {
+    -fx-background-color: #5AB9EA;
+}
+
+/* ========== Pre-roast screen ========== */
+.section-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1F2937;
+}
+
+.ri5-primary-button {
+    -fx-background-color: #5680E9;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+}
+
+.ri5-primary-button:hover {
+    -fx-background-color: #5AB9EA;
+}
+
+.ri5-summary-card {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 12;
+    -fx-border-color: #EEF2FA;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+}
+
+.ri5-recent-file-button {
+    -fx-alignment: center-left;
+    -fx-padding: 4 8 4 8;
+}
+
+.ri5-muted {
+    -fx-text-fill: #6B7280;
+    -fx-font-style: italic;
+}
+
+.ri5-warning {
+    -fx-text-fill: #B45309;
+}
+
+.ri5-error {
+    -fx-text-fill: #DC2626;
+}
+
+/* ========== Event buttons ========== */
+.event-button {
+    -fx-background-color: #EEF2FA;
+    -fx-text-fill: #1F2937;
+    -fx-font-size: 11px;
+    -fx-background-radius: 6;
+}
+
+.event-button:hover {
+    -fx-background-color: #C1C8E4;
+}
+
+/* ========== Menu bar ========== */
+.menu-bar {
+    -fx-background-color: #FFFFFF;
+}
+
+.menu-bar .label {
+    -fx-text-fill: #1F2937;
+}
+
+/* ========== Branded dialogs ========== */
+.artisan-dialog-root {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 16;
+}
+
+.dialog-pane {
+    -fx-background-color: #FFFFFF;
+}
+
+.artisan-dialog-root .button-bar {
+    -fx-padding: 12 0 0 0;
+}
+
+.artisan-dialog-root .button {
+    -fx-background-radius: 8;
+}
+
+.artisan-dialog-root .button:default {
+    -fx-background-color: #5680E9;
+    -fx-text-fill: #FFFFFF;
+}
+
+.artisan-dialog-root .button:default:hover {
+    -fx-background-color: #5AB9EA;
+}
+
+.artisan-dialog-root .button:cancel {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6B7280;
+    -fx-border-color: #EEF2FA;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
+.artisan-dialog-root .button:cancel:hover {
+    -fx-background-color: #F6F8FC;
+}
+
+/* Inline controls toggle in Controls card */
+.ri5-controls-toggle-inline {
+    -fx-background-color: #EEF2FA;
+    -fx-text-fill: #1F2937;
+    -fx-background-radius: 6;
+}
+
+.ri5-controls-toggle-inline:selected {
+    -fx-background-color: #5680E9;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* Event log list */
+.ri5-dock-panel .list-view {
+    -fx-background-color: transparent;
+}
+
+.ri5-dock-panel .list-cell {
+    -fx-text-fill: #1F2937;
+}
+
+.ri5-dock-panel .list-cell:odd {
+    -fx-background-color: #F6F8FC;
+}
+
+.ri5-dock-panel .text-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #EEF2FA;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}

@@ -138,10 +138,14 @@ public final class MainWindow extends Application {
   public void start(Stage primaryStage) {
     final Stage stage = primaryStage;
     appSettings = AppSettings.load();
+    preferencesStore = new PreferencesStore();
+    uiPreferences = preferencesStore.load();
     displaySettings = DisplaySettings.load();
     phasesSettings = PhasesSettings.load();
     backgroundSettings = BackgroundSettings.load();
-    applyAtlantaFXTheme(appSettings.isDarkTheme());
+    boolean useLightTheme = (uiPreferences != null && "light".equals(uiPreferences.getTheme()))
+        || (uiPreferences == null && !appSettings.isDarkTheme());
+    applyAtlantaFXTheme(!useLightTheme);
 
     fileSession = new FileSession();
     autoSave = new AutoSave();
@@ -151,8 +155,8 @@ public final class MainWindow extends Application {
     ArtisanTime timeclock = new ArtisanTime();
     Sampling sampling = new Sampling(timeclock);
     DevicePort device = new StubDevice();
-    ColorConfig colorConfig = new ColorConfig(appSettings.isDarkTheme()
-        ? ColorConfig.Theme.DARK : ColorConfig.Theme.LIGHT);
+    ColorConfig colorConfig = new ColorConfig(useLightTheme
+        ? ColorConfig.Theme.LIGHT : ColorConfig.Theme.DARK);
     syncColorConfigFromDisplaySettings(colorConfig, displaySettings);
     axisConfig = new AxisConfig();
     AxisConfig.loadFromPreferences(axisConfig);
@@ -240,14 +244,14 @@ public final class MainWindow extends Application {
 
     primaryStage = primaryStage;
 
-    preferencesStore = new PreferencesStore();
-    uiPreferences = preferencesStore.load();
     syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences);
 
     overlayRoot.getStyleClass().add("ri5-root");
     if ("light".equals(uiPreferences != null ? uiPreferences.getTheme() : null)) {
       overlayRoot.getStyleClass().add("ri5-light");
     }
+    UIPreferences.Density density = uiPreferences != null ? uiPreferences.getDensity() : UIPreferences.Density.COMFORTABLE;
+    overlayRoot.getStyleClass().add(density == UIPreferences.Density.COMPACT ? "ri5-density-compact" : "ri5-density-comfortable");
 
     MenuBar menuBar = new MenuBar();
     Menu fileMenu = buildFileMenu(root, chartController);
@@ -354,9 +358,9 @@ public final class MainWindow extends Application {
     }
     try {
       scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/tokens.css").toExternalForm());
-      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/ri5.css").toExternalForm());
+      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/light-brand.css").toExternalForm());
     } catch (Exception e) {
-      // RI5 theme optional
+      // theme optional
     }
     primaryStage.setScene(scene);
     registerAccelerators(scene, root, chartController);
@@ -799,6 +803,9 @@ public final class MainWindow extends Application {
         cc.updateChart();
       }
       appController.refreshStatistics();
+      if (appShell != null && appShell.getRoastLiveScreen() != null) {
+        appShell.getRoastLiveScreen().refreshCurveLegendColors(displaySettings);
+      }
     });
     dialog.showAndWait();
   }

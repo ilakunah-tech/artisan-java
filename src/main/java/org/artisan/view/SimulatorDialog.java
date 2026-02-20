@@ -18,10 +18,10 @@ import org.artisan.device.SimulatorConfig;
 import org.artisan.model.ProfileData;
 import org.artisan.model.RoastSimulator;
 
-import de.gsi.chart.XYChart;
-import de.gsi.chart.axes.spi.DefaultNumericAxis;
-import de.gsi.chart.ui.geometry.Side;
-import de.gsi.dataset.spi.DoubleDataSet;
+import io.fair_acc.chartfx.XYChart;
+import io.fair_acc.chartfx.axes.spi.DefaultNumericAxis;
+import io.fair_acc.chartfx.ui.geometry.Side;
+import io.fair_acc.dataset.spi.DoubleDataSet;
 
 /**
  * Tools » Simulator: generate synthetic roast profile; preview and load as profile.

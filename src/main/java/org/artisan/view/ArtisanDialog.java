@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.input.KeyCode;
@@ -64,6 +65,7 @@ public abstract class ArtisanDialog {
 
         Scene scene = new Scene(root);
         applyTheme();
+        applyBrandStylesheets(scene);
         stage = new Stage();
         stage.setScene(scene);
         stage.initOwner(owner);
@@ -87,6 +89,13 @@ public abstract class ArtisanDialog {
         } catch (Throwable t) {
             // AtlantaFX optional; Modena fallback
         }
+    }
+
+    private static void applyBrandStylesheets(Scene scene) {
+        try {
+            scene.getStylesheets().add(ArtisanDialog.class.getResource("/org/artisan/ui/theme/tokens.css").toExternalForm());
+            scene.getStylesheets().add(ArtisanDialog.class.getResource("/org/artisan/ui/theme/light-brand.css").toExternalForm());
+        } catch (Exception ignored) {}
     }
 
     /** Content to show in center of the dialog. */

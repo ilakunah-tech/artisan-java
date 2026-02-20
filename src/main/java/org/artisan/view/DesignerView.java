@@ -1,11 +1,11 @@
 package org.artisan.view;
 
-import de.gsi.chart.XYChart;
-import de.gsi.chart.axes.spi.DefaultNumericAxis;
-import de.gsi.chart.plugins.ParameterMeasurements;
-import de.gsi.chart.plugins.Zoomer;
-import de.gsi.chart.ui.geometry.Side;
-import de.gsi.dataset.spi.DoubleDataSet;
+import io.fair_acc.chartfx.XYChart;
+import io.fair_acc.chartfx.axes.spi.DefaultNumericAxis;
+import io.fair_acc.chartfx.plugins.ParameterMeasurements;
+import io.fair_acc.chartfx.plugins.Zoomer;
+import io.fair_acc.chartfx.ui.geometry.Side;
+import io.fair_acc.dataset.spi.DoubleDataSet;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;

@@ -84,6 +84,48 @@ public final class RoastComparator {
         return out;
     }
 
+    /**
+     * Returns ET (temp1) values for the profile at index.
+     */
+    public double[] getAlignedET(int index, double timeOffsetSeconds) {
+        if (index < 0 || index >= profiles.size()) return new double[0];
+        ProfileData p = profiles.get(index);
+        List<Double> temp1 = p.getTemp1();
+        if (temp1 == null || temp1.isEmpty()) return new double[0];
+        double[] out = new double[temp1.size()];
+        for (int i = 0; i < temp1.size(); i++) {
+            Double v = temp1.get(i);
+            out[i] = v != null ? v : 0.0;
+        }
+        return out;
+    }
+
+    /**
+     * Returns RoR of BT for the profile at index, computed with the given smoothing window.
+     */
+    public double[] getAlignedRoRBT(int index, double timeOffsetSeconds, int smoothWindow) {
+        if (index < 0 || index >= profiles.size()) return new double[0];
+        ProfileData p = profiles.get(index);
+        List<Double> timex = p.getTimex();
+        List<Double> temp2 = p.getTemp2();
+        if (timex == null || temp2 == null || timex.isEmpty()) return new double[0];
+        RorCalculator calc = new RorCalculator();
+        List<Double> ror = calc.computeRoRSmoothed(timex, temp2, smoothWindow);
+        RorCalculator.clampRoR(ror, RorCalculator.DEFAULT_MIN_ROR, RorCalculator.DEFAULT_MAX_ROR);
+        double[] out = new double[ror.size()];
+        for (int i = 0; i < ror.size(); i++) out[i] = ror.get(i);
+        return out;
+    }
+
+    /**
+     * Returns event timeindex list for the profile at the given index.
+     */
+    public List<Integer> getEventTimeindex(int index) {
+        if (index < 0 || index >= profiles.size()) return List.of();
+        List<Integer> ti = profiles.get(index).getTimeindex();
+        return ti != null ? ti : List.of();
+    }
+
     public void clear() {
         profiles.clear();
         filenames.clear();

@@ -18,8 +18,16 @@ public final class ReadoutTile extends VBox {
 
     public ReadoutTile(String labelText, javafx.beans.value.ObservableValue<Number> valueProperty,
                        String format) {
+        this(labelText, valueProperty, format, null);
+    }
+
+    public ReadoutTile(String labelText, javafx.beans.value.ObservableValue<Number> valueProperty,
+                       String format, String accentClass) {
         this.format = format != null ? format : "%.1f";
         getStyleClass().add("ri5-readout-tile");
+        if (accentClass != null && !accentClass.isEmpty()) {
+            getStyleClass().add("accent-" + accentClass);
+        }
         setAlignment(Pos.CENTER_LEFT);
         setPadding(new Insets(8, 12, 8, 12));
         setSpacing(2);

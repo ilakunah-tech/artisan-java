@@ -88,6 +88,22 @@ public final class CurveDefinition {
     }
   }
 
+  /**
+   * Generates a Chart-FX CSS style string from this curve's properties.
+   * Used to apply curve styling to DoubleDataSet instances.
+   */
+  public String toChartFxStyle() {
+    if (!visible) return "-fx-stroke: transparent; -fx-stroke-width: 0px;";
+    String hex = String.format("#%02x%02x%02x",
+        (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
+    StringBuilder sb = new StringBuilder();
+    sb.append("-fx-stroke: ").append(hex).append("; ");
+    sb.append("-fx-stroke-width: ").append((int) lineWidth).append("px;");
+    if (style == CurveStyle.DASHED) sb.append(" -fx-stroke-dash-array: 8 6;");
+    else if (style == CurveStyle.DOTTED) sb.append(" -fx-stroke-dash-array: 2 4;");
+    return sb.toString();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

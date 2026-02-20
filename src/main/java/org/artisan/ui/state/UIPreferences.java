@@ -34,7 +34,7 @@ public final class UIPreferences {
     public enum ReadoutSize { S, M, L }
 
     private int schemaVersion = SCHEMA_VERSION;
-    private String theme = "dark"; // "light" | "dark"
+    private String theme = "light"; // "light" | "dark"
     private Density density = Density.COMFORTABLE;
     private ReadoutSize readoutSize = ReadoutSize.M;
     private boolean visibleBT = true;

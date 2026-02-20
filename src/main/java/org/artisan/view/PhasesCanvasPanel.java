@@ -16,13 +16,14 @@ import org.artisan.model.PhaseResult;
  */
 public final class PhasesCanvasPanel extends Pane {
 
-    private static final double HEIGHT_PX = 40.0;
-    private static final String DRYING_COLOR = "#4FC3F7";
-    private static final String MAILLARD_COLOR = "#FFA726";
-    private static final String DEV_COLOR = "#66BB6A";
-    private static final double MIN_SEGMENT_WIDTH_FOR_LABEL = 40.0;
-    private static final String FONT_FAMILY = "Arial";
-    private static final double FONT_SIZE = 11.0;
+    private static final double HEIGHT_PX = 24.0;
+    /* Pastel fills: ~14% opacity of brand colors (Primary #5680E9, Primary alt #5AB9EA, Violet #8860D0) */
+    private static final String DRYING_COLOR = "#245680E9";
+    private static final String MAILLARD_COLOR = "#245AB9EA";
+    private static final String DEV_COLOR = "#248860D0";
+    private static final double MIN_SEGMENT_WIDTH_FOR_LABEL = 50.0;
+    private static final String FONT_FAMILY = "System";
+    private static final double FONT_SIZE = 10.0;
 
     private final Canvas canvas;
     private PhaseResult result;
@@ -68,12 +69,12 @@ public final class PhasesCanvasPanel extends Pane {
         gc.clearRect(0, 0, width, height);
 
         if (result.isInvalid() || result.getTotalTimeSec() <= 0) {
-            gc.setFill(Color.web("#333"));
+            gc.setFill(Color.web("#EEF2FA"));
             gc.fillRect(0, 0, width, height);
-            gc.setFill(Color.WHITE);
+            gc.setFill(Color.web("#6B7280"));
             gc.setFont(Font.font(FONT_FAMILY, FONT_SIZE));
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("No phase data", width / 2, height / 2 + 4);
+            gc.fillText("No phase data", width / 2, height / 2 + 3);
             return;
         }
 
@@ -89,14 +90,16 @@ public final class PhasesCanvasPanel extends Pane {
         gc.setFont(Font.font(FONT_FAMILY, FONT_SIZE));
         gc.setTextAlign(TextAlignment.CENTER);
 
+        gc.setFill(Color.web("#6B7280"));
+        gc.setFont(Font.font(FONT_FAMILY, FONT_SIZE));
+        gc.setTextAlign(TextAlignment.CENTER);
         if (dryingFrac > 0) {
             double segW = width * dryingFrac;
             gc.setFill(Color.web(DRYING_COLOR));
             gc.fillRect(x, 0, segW, height);
             if (segW >= MIN_SEGMENT_WIDTH_FOR_LABEL) {
-                gc.setFill(Color.WHITE);
                 int pct = (int) Math.round(result.getDryingPercent());
-                gc.fillText("Drying " + pct + "%", x + segW / 2, height / 2 + 4);
+                gc.fillText("Drying " + pct + "%", x + segW / 2, height / 2 + 3);
             }
             x += segW;
         }
@@ -105,9 +108,8 @@ public final class PhasesCanvasPanel extends Pane {
             gc.setFill(Color.web(MAILLARD_COLOR));
             gc.fillRect(x, 0, segW, height);
             if (segW >= MIN_SEGMENT_WIDTH_FOR_LABEL) {
-                gc.setFill(Color.WHITE);
                 int pct = (int) Math.round(result.getMaillardPercent());
-                gc.fillText("Maillard " + pct + "%", x + segW / 2, height / 2 + 4);
+                gc.fillText("Maillard " + pct + "%", x + segW / 2, height / 2 + 3);
             }
             x += segW;
         }
@@ -116,9 +118,8 @@ public final class PhasesCanvasPanel extends Pane {
             gc.setFill(Color.web(DEV_COLOR));
             gc.fillRect(x, 0, segW, height);
             if (segW >= MIN_SEGMENT_WIDTH_FOR_LABEL) {
-                gc.setFill(Color.WHITE);
                 int pct = (int) Math.round(result.getDevelopmentPercent());
-                gc.fillText("Dev " + pct + "%", x + segW / 2, height / 2 + 4);
+                gc.fillText("Dev " + pct + "%", x + segW / 2, height / 2 + 3);
             }
         }
     }
