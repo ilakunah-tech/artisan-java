@@ -1,0 +1,23 @@
+/* RI5-like design tokens — spacing scale, separators, minimal shadow.
+ * JavaFX does not resolve custom properties in other properties; use these as reference.
+ * Spacing scale: 4, 8, 12, 16, 24 (xs, s, m, l, xl).
+ * Separator: 1px solid; use #1e2124 (dark) / #e0e0e0 (light).
+ * Shadow: minimal — avoid or use very subtle drop shadow.
+ */
+
+.ri5-root {
+    -ri5-spacing-xs: 4;
+    -ri5-spacing-s: 8;
+    -ri5-spacing-m: 12;
+    -ri5-spacing-l: 16;
+    -ri5-spacing-xl: 24;
+}
+
+/* Density: compact uses smaller padding; comfortable uses -ri5-spacing-m/l */
+.ri5-root.ri5-density-compact {
+    -ri5-panel-padding: 8;
+}
+
+.ri5-root.ri5-density-comfortable {
+    -ri5-panel-padding: 12;
+}

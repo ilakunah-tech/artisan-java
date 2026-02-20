@@ -81,6 +81,11 @@ import org.artisan.view.S7Dialog;
 import org.artisan.view.SimulatorDialog;
 import org.artisan.view.StatusBar;
 import org.artisan.view.TransposerDialog;
+import org.artisan.ui.AppShell;
+import org.artisan.ui.DemoRunner;
+import org.artisan.ui.components.ShortcutHelpDialog;
+import org.artisan.ui.state.PreferencesStore;
+import org.artisan.ui.state.UIPreferences;
 
 import java.awt.Desktop;
 import java.io.BufferedWriter;
@@ -124,6 +129,10 @@ public final class MainWindow extends Application {
   private S7Config s7Config;
   private AillioR1Config aillioR1Config;
   private CommController commController;
+  private AppShell appShell;
+  private DemoRunner demoRunner;
+  private PreferencesStore preferencesStore;
+  private UIPreferences uiPreferences;
 
   @Override
   public void start(Stage primaryStage) {
@@ -229,59 +238,16 @@ public final class MainWindow extends Application {
     StackPane overlayRoot = new StackPane(root);
     appController.setMainRoot(overlayRoot);
 
-    HBox toolbarRow1 = new HBox(10);
-    Button onOff = new Button("ON");
-    onOff.setTooltip(new Tooltip("Start / Stop sampling (F5)"));
-    onOff.setOnAction(e -> toggleSampling());
-    Button charge = new Button("CHARGE");
-    charge.setTooltip(new Tooltip("Charge"));
-    charge.setOnAction(e -> appController.onChargeButton());
-    Button dryEnd = new Button("DRY END");
-    dryEnd.setTooltip(new Tooltip("Dry end"));
-    dryEnd.setOnAction(e -> appController.onDryEndButton());
-    Button fcStart = new Button("FC START");
-    fcStart.setTooltip(new Tooltip("First crack start"));
-    fcStart.setOnAction(e -> appController.onFcStartButton());
-    Button fcEnd = new Button("FC END");
-    fcEnd.setTooltip(new Tooltip("First crack end"));
-    fcEnd.setOnAction(e -> appController.onFcEndButton());
-    Button drop = new Button("DROP");
-    drop.setTooltip(new Tooltip("Drop"));
-    drop.setOnAction(e -> appController.onDropButton());
-    Button coolEnd = new Button("COOL END");
-    coolEnd.setTooltip(new Tooltip("Cool end"));
-    coolEnd.setOnAction(e -> appController.onCoolEndButton());
-    Button deviceBtn = new Button("\u2699 Device");
-    deviceBtn.setTooltip(new Tooltip("Device settings"));
-    deviceBtn.setOnAction(e -> openDeviceSettings(root));
-    Button colorsBtn = new Button("Colors");
-    colorsBtn.setTooltip(new Tooltip("Colors"));
-    colorsBtn.setOnAction(e -> openColorsDialog(root, chartController));
-    Button pidBtn = new Button("\u2699 PID");
-    pidBtn.setTooltip(new Tooltip("PID settings"));
-    pidBtn.setOnAction(e -> openPidDialog(root));
-    Button propertiesBtn = new Button("Properties");
-    propertiesBtn.setTooltip(new Tooltip("Roast properties"));
-    propertiesBtn.setOnAction(e -> openRoastPropertiesDialog(root));
-    Button cupProfileBtn = new Button("Cup Profile");
-    cupProfileBtn.setTooltip(new Tooltip("Cup profile"));
-    cupProfileBtn.setOnAction(e -> openCupProfileDialog(root));
-    Button comparatorBtn = new Button("Comparator");
-    comparatorBtn.setTooltip(new Tooltip("Comparator"));
-    comparatorBtn.setOnAction(e -> appController.openComparator(stage));
-    Button simulatorBtn = new Button("Simulator");
-    simulatorBtn.setTooltip(new Tooltip("Simulator"));
-    simulatorBtn.setOnAction(e -> new SimulatorDialog(stage, appController).showAndWait());
-    Button designerBtn = new Button("Designer");
-    designerBtn.setTooltip(new Tooltip("Designer"));
-    designerBtn.setOnAction(e -> appController.openDesigner(stage));
-    toolbarRow1.getChildren().addAll(onOff, charge, dryEnd, fcStart, fcEnd, drop, coolEnd, deviceBtn, colorsBtn, pidBtn, propertiesBtn, cupProfileBtn, comparatorBtn, simulatorBtn, designerBtn);
-
-    customEventButtonsBox = new HBox(6);
-    rebuildCustomEventButtons();
-    VBox toolbar = new VBox(4, toolbarRow1, customEventButtonsBox);
-
     primaryStage = primaryStage;
+
+    preferencesStore = new PreferencesStore();
+    uiPreferences = preferencesStore.load();
+    syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences);
+
+    overlayRoot.getStyleClass().add("ri5-root");
+    if ("light".equals(uiPreferences != null ? uiPreferences.getTheme() : null)) {
+      overlayRoot.getStyleClass().add("ri5-light");
+    }
 
     MenuBar menuBar = new MenuBar();
     Menu fileMenu = buildFileMenu(root, chartController);
@@ -338,9 +304,14 @@ public final class MainWindow extends Application {
     replayItem.setOnAction(e -> openReplayDialog(root));
     MenuItem pidItem = new MenuItem("PID...");
     pidItem.setOnAction(e -> openPidDialog(root));
-    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, s7Item, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem);
+    MenuItem resetLayoutItem = new MenuItem("Reset Layout...");
+    resetLayoutItem.setOnAction(e -> doResetLayout());
+    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, s7Item, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem, new SeparatorMenuItem(), resetLayoutItem);
 
     Menu helpMenu = new Menu("Help");
+    MenuItem shortcutsItem = new MenuItem("Keyboard Shortcuts...");
+    shortcutsItem.setAccelerator(javafx.scene.input.KeyCombination.keyCombination("F1"));
+    shortcutsItem.setOnAction(e -> ShortcutHelpDialog.show(stage));
     MenuItem aboutItem = new MenuItem("About Artisan Java...");
     aboutItem.setOnAction(e -> new PlatformDialog(stage).showAndWait());
     MenuItem qrCodeItem = new MenuItem("QR Code...");
@@ -355,64 +326,23 @@ public final class MainWindow extends Application {
         new Alert(Alert.AlertType.ERROR, "Could not open URL: " + ex.getMessage()).showAndWait();
       }
     });
-    helpMenu.getItems().addAll(aboutItem, qrCodeItem, logViewerItem, githubItem);
+    helpMenu.getItems().addAll(shortcutsItem, aboutItem, qrCodeItem, logViewerItem, githubItem);
     menuBar.getMenus().addAll(fileMenu, viewMenu, roastMenu, toolsMenu, configMenu, helpMenu);
 
     phasesLCD = new PhasesLCD(phasesSettings);
 
-    Node chartView = chartController.getView();
-    chartController.startUpdateTimer();
-    PhasesCanvasPanel phasesCanvasPanel = new PhasesCanvasPanel(PhaseResult.INVALID);
-    appController.addPhaseListener(result -> phasesCanvasPanel.refresh(result));
-    ControlsPanel controlsPanel = new ControlsPanel(appController);
-    TitledPane controlsTitled = new TitledPane("Controls", controlsPanel);
-    controlsTitled.setCollapsible(true);
-    controlsTitled.setExpanded(false);
-    VBox centerWithControls = new VBox(chartView, phasesCanvasPanel, controlsTitled);
-    VBox.setVgrow(chartView, javafx.scene.layout.Priority.ALWAYS);
+    appShell = new AppShell(primaryStage, appController, chartController, displaySettings, uiPreferences, preferencesStore);
+    appShell.setOnCurveVisibilitySync(() -> syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences));
+    appShell.setOnSettings(() -> openDeviceSettings(root));
+    appShell.setOnResetLayout(this::doResetLayout);
+    appShell.setOnOpenReplay(() -> openReplayDialog(root));
+    appShell.setOnOpenRecent(path -> openRecentFile(path, root, chartController));
+    appShell.setMachineName(deviceConfig.getActiveType() != null ? deviceConfig.getActiveType().getDisplayName() : "—");
+    demoRunner = new DemoRunner(appController);
+    appShell.setDemoRunner(demoRunner);
 
-    statusBar = new Label("BT: —  ET: —  RoR: —");
-    elapsedLabel = new Label("Elapsed: 0 s");
-    HBox status = new HBox(20, statusBar, elapsedLabel);
-
-    AnimationTimer statusTimer = new AnimationTimer() {
-      @Override
-      public void handle(long now) {
-        if (appController.getSession().getCanvasData().getTimex().isEmpty()) {
-          statusBar.setText("BT: —  ET: —  RoR: —");
-        } else {
-          var tx = appController.getSession().getCanvasData().getTimex();
-          var t1 = appController.getSession().getCanvasData().getTemp1();
-          var t2 = appController.getSession().getCanvasData().getTemp2();
-          var d1 = appController.getSession().getCanvasData().getDelta1();
-          int i = tx.size() - 1;
-          double bt = i < t2.size() ? t2.get(i) : 0;
-          double et = i < t1.size() ? t1.get(i) : 0;
-          double ror = i < d1.size() ? d1.get(i) : 0;
-          String line = String.format("BT: %.1f  ET: %.1f  RoR: %.1f", bt, et, ror);
-          if (samplingOn && appController.getCommController() != null && appController.getCommController().getActiveChannel() != null) {
-            line = appController.getCommController().getActiveChannel().getDescription() + "  |  " + line;
-          }
-          statusBar.setText(line);
-        }
-        if (samplingOn) {
-          double elapsed;
-          if (appController.getCommController() != null && appController.getCommController().isRunning()) {
-            elapsed = appController.getCommController().getElapsedMs() / 1000.0;
-          } else {
-            elapsed = appController.getSampling().getElapsedMs() / 1000.0;
-          }
-          elapsedLabel.setText(String.format("Elapsed: %.0f s", elapsed));
-        }
-        phasesLCD.update(appController.getSession().getCanvasData(), phasesSettings.toConfig());
-        statusBarComponent.setState(appController.getCurrentState());
-      }
-    };
-    statusTimer.start();
-
-    root.setTop(new VBox(menuBar, toolbar, phasesLCD));
-    root.setCenter(centerWithControls);
-    root.setBottom(new VBox(statisticsPanel, statusBarComponent, status));
+    root.setTop(new VBox(menuBar, appShell.getRoot().getTop()));
+    root.setCenter(appShell.getRoot().getCenter());
 
     appController.refreshStatistics();
 
@@ -421,6 +351,12 @@ public final class MainWindow extends Application {
       scene.getStylesheets().add(getClass().getResource("/org/artisan/view/styles.css").toExternalForm());
     } catch (Exception e) {
       // styles.css optional
+    }
+    try {
+      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/tokens.css").toExternalForm());
+      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/ri5.css").toExternalForm());
+    } catch (Exception e) {
+      // RI5 theme optional
     }
     primaryStage.setScene(scene);
     registerAccelerators(scene, root, chartController);
@@ -443,12 +379,22 @@ public final class MainWindow extends Application {
         }
       }
       appController.stopSampling();
+      if (demoRunner != null) demoRunner.stop();
+      if (appShell != null && appShell.getRoastLiveScreen() != null) {
+        appShell.getRoastLiveScreen().saveLayoutState();
+        appShell.getRoastLiveScreen().closeDetachedPanels();
+      }
       autoSave.stop();
       appSettings.save();
       org.artisan.Launcher.releaseLock();
       Platform.exit();
     });
     primaryStage.show();
+    Platform.runLater(() -> {
+      if (appShell != null && appShell.getRoastLiveScreen() != null) {
+        appShell.getRoastLiveScreen().restoreDetachedPanels();
+      }
+    });
   }
 
   @Override
@@ -654,6 +600,15 @@ public final class MainWindow extends Application {
     updateWindowTitle();
   }
 
+  /** Syncs curve visibility from UI preferences to display settings so chart and CurveLegendPanel stay in sync. */
+  private static void syncDisplaySettingsFromUIPreferences(DisplaySettings displaySettings, UIPreferences uiPreferences) {
+    if (displaySettings == null || uiPreferences == null) return;
+    displaySettings.setVisibleBT(uiPreferences.isVisibleBT());
+    displaySettings.setVisibleET(uiPreferences.isVisibleET());
+    displaySettings.setVisibleDeltaBT(uiPreferences.isVisibleDeltaBT());
+    displaySettings.setVisibleDeltaET(uiPreferences.isVisibleDeltaET());
+  }
+
   private void openRecentFile(Path path, BorderPane root, RoastChartController chartController) {
     if (fileSession.isDirty()) {
       Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -714,6 +669,15 @@ public final class MainWindow extends Application {
     } catch (IOException ex) {
       new Alert(Alert.AlertType.ERROR, "Save failed: " + ex.getMessage()).showAndWait();
     }
+  }
+
+  private void doResetLayout() {
+    preferencesStore.resetLayout(uiPreferences);
+    preferencesStore.save(uiPreferences);
+    if (appShell != null && appShell.getRoastLiveScreen() != null) {
+      appShell.getRoastLiveScreen().applyLayoutFromPreferences();
+    }
+    new Alert(Alert.AlertType.INFORMATION, "Layout reset to defaults.").showAndWait();
   }
 
   private void doExport(BorderPane root) {
@@ -813,6 +777,10 @@ public final class MainWindow extends Application {
     DevicesDialog dialog = new DevicesDialog(owner, appController,
         serialPortConfig, modbusPortConfig, deviceConfig, simulatorConfig, aillioR1Config);
     dialog.showAndWait();
+    if (appShell != null) {
+      appShell.setMachineName(deviceConfig.getActiveType() != null ? deviceConfig.getActiveType().getDisplayName() : "—");
+      appShell.refreshTopBar();
+    }
   }
 
   private void openS7Dialog(BorderPane root) {
@@ -868,6 +836,7 @@ public final class MainWindow extends Application {
     PortsDialog dialog = new PortsDialog(owner, serialPortConfig, modbusPortConfig, blePortConfig,
         commController, appController.getSamplingInterval());
     dialog.showAndWait();
+    if (appShell != null) appShell.refreshTopBar();
   }
 
   private void openPhasesDialog(BorderPane root, RoastChartController chartController) {

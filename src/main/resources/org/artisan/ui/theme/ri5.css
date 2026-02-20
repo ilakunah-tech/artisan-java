@@ -1,0 +1,251 @@
+/* Cropster RI5–inspired: data-first, minimal, high contrast */
+
+/* ========== App shell top bar ========== */
+.ri5-topbar {
+    -fx-background-color: #232629;
+    -fx-padding: 8 12 8 12;
+    -fx-spacing: 12;
+}
+
+.ri5-topbar .app-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.ri5-topbar .machine-indicator {
+    -fx-text-fill: #909090;
+    -fx-font-size: 12px;
+}
+
+.ri5-topbar .connection-status {
+    -fx-text-fill: #a0a0a0;
+    -fx-font-size: 12px;
+}
+
+/* ========== Chart area — large, clean; grid lines from ChartFX ========== */
+.ri5-chart-container {
+    -fx-background-color: #1e2124;
+    -fx-min-height: 200;
+    -fx-padding: 8 8 4 8;
+}
+
+.chart-pane {
+    -fx-background-color: transparent;
+}
+
+/* ========== Side panel container — clear headings, subtle dividers ========== */
+.ri5-dock-panel {
+    -fx-background-color: #2d3136;
+    -fx-padding: 0;
+    -fx-border-color: #1e2124;
+    -fx-border-width: 0 0 0 1;
+}
+
+.ri5-dock-panel .title-bar {
+    -fx-background-color: #232629;
+    -fx-padding: 6 8 6 8;
+    -fx-min-height: 28;
+    -fx-border-color: #1e2124;
+    -fx-border-width: 0 0 1 0;
+}
+
+.ri5-dock-panel .title-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e0e0e0;
+}
+
+.ri5-dock-panel .content {
+    -fx-padding: 8;
+    -fx-background-color: transparent;
+}
+
+/* Icon buttons in dock title bar — minimal, no heavy shadow */
+.ri5-dock-panel .icon-button {
+    -fx-background-color: transparent;
+    -fx-padding: 2 6 2 6;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.ri5-dock-panel .icon-button:hover {
+    -fx-background-color: #3d4146;
+    -fx-background-radius: 4;
+}
+
+/* ========== Readout tiles — high contrast numerals, muted labels ========== */
+.ri5-readout-tile {
+    -fx-background-color: #2d3136;
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #3d4146;
+    -fx-border-width: 1;
+}
+
+.ri5-readout-tile .value {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f0f0f0;
+}
+
+.ri5-readout-tile .label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #a0a0a0;
+}
+
+.ri5-readout-size-s .value { -fx-font-size: 16px; }
+.ri5-readout-size-m .value { -fx-font-size: 24px; }
+.ri5-readout-size-l .value { -fx-font-size: 32px; }
+
+/* ========== Curve legend panel — list with subtle separators ========== */
+.curve-legend-panel {
+    -fx-spacing: 6;
+}
+
+.curve-legend-panel .check-box {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* ========== Bottom status strip ========== */
+.ri5-status-strip {
+    -fx-background-color: #232629;
+    -fx-padding: 6 12 6 12;
+    -fx-spacing: 16;
+    -fx-min-height: 32;
+    -fx-border-color: #1e2124;
+    -fx-border-width: 1 0 0 0;
+}
+
+.ri5-status-strip .ri5-controls-toggle {
+    -fx-min-width: 72;
+}
+
+.ri5-status-strip .ri5-end-button {
+    -fx-background-color: #5a3a3a;
+    -fx-text-fill: #e8c0c0;
+}
+
+.ri5-status-strip .ri5-end-button:hover {
+    -fx-background-color: #6a4a4a;
+}
+
+/* ========== Pre-roast screen ========== */
+.section-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-text-fill: #e0e0e0;
+}
+
+.ri5-primary-button {
+    -fx-font-weight: bold;
+}
+
+.ri5-summary-card {
+    -fx-background-color: #2d3136;
+    -fx-background-radius: 4;
+    -fx-border-color: #3d4146;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+}
+
+.ri5-recent-file-button {
+    -fx-alignment: center-left;
+    -fx-padding: 4 8 4 8;
+}
+
+.ri5-muted {
+    -fx-text-fill: #808080;
+    -fx-font-style: italic;
+}
+
+/* Validation / warnings */
+.ri5-warning {
+    -fx-text-fill: #e0a030;
+}
+
+.ri5-error {
+    -fx-text-fill: #c04040;
+}
+
+/* ========== Light theme variant — apply when .ri5-light is on scene root ========== */
+.ri5-light .ri5-topbar {
+    -fx-background-color: #f0f0f0;
+}
+
+.ri5-light .ri5-topbar .app-name {
+    -fx-text-fill: #1a1a1a;
+}
+
+.ri5-light .ri5-topbar .machine-indicator {
+    -fx-text-fill: #505050;
+}
+
+.ri5-light .ri5-topbar .connection-status {
+    -fx-text-fill: #606060;
+}
+
+.ri5-light .ri5-chart-container {
+    -fx-background-color: #e8e8e8;
+}
+
+.ri5-light .ri5-dock-panel {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #d0d0d0;
+}
+
+.ri5-light .ri5-dock-panel .title-bar {
+    -fx-background-color: #eaeaea;
+    -fx-border-color: #d0d0d0;
+}
+
+.ri5-light .ri5-dock-panel .title-label {
+    -fx-text-fill: #1a1a1a;
+}
+
+.ri5-light .ri5-dock-panel .icon-button:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+.ri5-light .ri5-readout-tile {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #d0d0d0;
+}
+
+.ri5-light .ri5-readout-tile .value {
+    -fx-text-fill: #1a1a1a;
+}
+
+.ri5-light .ri5-readout-tile .label {
+    -fx-text-fill: #606060;
+}
+
+.ri5-light .curve-legend-panel .check-box {
+    -fx-text-fill: #1a1a1a;
+}
+
+.ri5-light .ri5-status-strip {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #d0d0d0;
+}
+
+.ri5-light .section-title {
+    -fx-text-fill: #1a1a1a;
+}
+
+.ri5-light .ri5-summary-card {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #d0d0d0;
+}
+
+.ri5-light .ri5-muted {
+    -fx-text-fill: #606060;
+}
+
+.ri5-light .ri5-warning {
+    -fx-text-fill: #b08020;
+}
+
+.ri5-light .ri5-error {
+    -fx-text-fill: #a03030;
+}

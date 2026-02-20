@@ -1,0 +1,16 @@
+{"sessionId":"1fabf9","hypothesisId":"A","location":"Launcher.java:main","message":"main entered","data":{},"timestamp":1771509440399}
+{"sessionId":"1fabf9","hypothesisId":"A","location":"Launcher.java:afterInstall","message":"after InMemoryLogHandler","data":{},"timestamp":1771509440457}
+{"sessionId":"1fabf9","hypothesisId":"A","location":"Launcher.java:beforeLaunch","message":"before Application.launch","data":{},"timestamp":1771509440460}
+{"sessionId":"1fabf9","hypothesisId":"B","location":"MainWindow.java:start","message":"start entered","data":{},"timestamp":1771509440837}
+{"sessionId":"1fabf9","hypothesisId":"D","location":"MainWindow.java:afterPrefsLoad","message":"after preferencesStore.load","data":{},"timestamp":1771509441626}
+{"sessionId":"1fabf9","hypothesisId":"C","location":"MainWindow.java:beforeAppShell","message":"before new AppShell","data":{},"timestamp":1771509441641}
+{"sessionId":"1fabf9","hypothesisId":"D","location":"AppShell.java:ctor","message":"AppShell ctor entered","data":{},"timestamp":1771509441642}
+{"sessionId":"1fabf9","hypothesisId":"D","location":"AppShell.java:beforePreRoast","message":"before PreRoastScreen","data":{},"timestamp":1771509441647}
+{"sessionId":"1fabf9","hypothesisId":"D","location":"AppShell.java:beforeRoastLive","message":"before RoastLiveScreen","data":{},"timestamp":1771509441666}
+{"sessionId":"1fabf9","hypothesisId":"D","location":"AppShell.java:afterRoastLive","message":"after RoastLiveScreen","data":{},"timestamp":1771509441707}
+{"sessionId":"1fabf9","hypothesisId":"C","location":"MainWindow.java:afterAppShell","message":"after new AppShell","data":{},"timestamp":1771509441708}
+{"sessionId":"1fabf9","hypothesisId":"E","location":"MainWindow.java:beforeShow","message":"before primaryStage.show","data":{},"timestamp":1771509441725}
+{"sessionId":"1fabf9","hypothesisId":"E","location":"MainWindow.java:afterShow","message":"after primaryStage.show","data":{},"timestamp":1771509442175}
+{"sessionId":"1fabf9","hypothesisId":"A","location":"Launcher.java:main","message":"main entered","data":{},"timestamp":1771509496024}
+{"sessionId":"1fabf9","hypothesisId":"A","location":"Launcher.java:afterInstall","message":"after InMemoryLogHandler","data":{},"timestamp":1771509496111}
+{"sessionId":"1fabf9","hypothesisId":"A","location":"Launcher.java:afterLaunch","message":"after Application.launch (normal exit)","data":{},"timestamp":1771509509013}

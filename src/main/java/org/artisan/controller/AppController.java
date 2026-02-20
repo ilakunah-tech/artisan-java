@@ -261,6 +261,11 @@ public final class AppController {
     this.fileSession = fileSession;
   }
 
+  /** File session for recent files and current path; may be null. */
+  public FileSession getFileSession() {
+    return fileSession;
+  }
+
   /** Current open file path as String, or null if none. */
   public String getCurrentFilePath() {
     if (fileSession == null) return null;
@@ -518,12 +523,21 @@ public final class AppController {
    */
   public void markEvent(EventType type) {
     if (type == null) return;
+    markEventAt(type, currentTimexIndex(), null);
+  }
+
+  /**
+   * Marks an event of the given type at a specific timex index (e.g. from chart click).
+   * Uses the same logic as markEvent but with the given index. Optional label for CUSTOM.
+   */
+  public void markEventAt(EventType type, int idx, String labelOrNote) {
+    if (type == null) return;
+    if (idx < 0) return;
     if (!session.isActive() && type != EventType.CHARGE) return;
-    LOG.log(Level.FINE, "Mark event: {0}", type);
-    int idx = currentTimexIndex();
-    double temp = idx >= 0 && idx < session.getCanvasData().getTemp2().size()
+    LOG.log(Level.FINE, "Mark event at index {0}: {1}", new Object[] { idx, type });
+    double temp = idx < session.getCanvasData().getTemp2().size()
         ? session.getCanvasData().getTemp2().get(idx) : 0.0;
-    String label = type.name().replace('_', ' ');
+    String label = labelOrNote != null && !labelOrNote.isBlank() ? labelOrNote : type.name().replace('_', ' ');
     if (type == EventType.CHARGE) {
       autoDryTriggered = false;
       autoFcsTriggered = false;

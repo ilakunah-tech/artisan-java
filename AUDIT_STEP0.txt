@@ -1,0 +1,35 @@
+=== STEP 0 — REPO AUDIT ===
+
+ENTRYPOINT:
+  Launcher.main() -> Application.launch(MainWindow.class).
+  MainWindow.start() builds single-window UI (menu, toolbar, chart, phases, controls, status).
+
+KEY PACKAGES/CLASSES TO TOUCH:
+  org.artisan.Launcher                    — entry; keep as-is, launch app
+  org.artisan.view.MainWindow             — refactor to use AppShell + screen switching
+  org.artisan.view.RoastChartController   — ChartFX; reuse getView(); add click-to-add-event
+  org.artisan.controller.AppController    — keep; UI binds/subscribes only
+  org.artisan.controller.RoastSession      — keep; CanvasData, EventList, RoastState
+  org.artisan.model.CanvasData            — keep; timex, temp1/2, delta1/2
+  org.artisan.model.EventEntry, EventList, EventType — keep
+  org.artisan.controller.DisplaySettings  — keep; add UI prefs alongside
+  org.artisan.controller.AppSettings      — keep
+  org.artisan.view.ControlsPanel          — reuse in Live screen right dock
+
+NAVIGATION:
+  Currently none — single screen only. Will add: Pre-Roast (default) | Roast Live.
+
+CHART:
+  ChartFX (de.gsi.chart.XYChart). RoastChartController: crosshair + tooltip on move;
+  event bar at bottom for dragging markers. No click-on-chart-body to add event yet.
+
+PREFERENCES:
+  AppSettings / DisplaySettings use java.util.prefs.Preferences node "org/artisan/artisan-java".
+  No JSON UI prefs yet — will add ~/.artisan-java/ui-preferences.json (or user.home).
+
+RISKS & MITIGATION:
+  1) Breaking roast/IO: Do not change AppController roast logic, CommController, DeviceManager.
+     UI only subscribes to observables / callbacks.
+  2) Chart: Reuse RoastChartController.getView() in RoastLiveScreen; add click-to-add-event
+     handler in chart area (delegate to session.getEvents().add) without changing core updateChart/onSample.
+  3) Threading: Keep Platform.runLater for sample/phase updates from background threads.

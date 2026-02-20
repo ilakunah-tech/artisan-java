@@ -101,8 +101,25 @@ public final class RoastChartController {
     private int draggedEventIndex = -1;
     private boolean liveRecording = false;
     private Runnable onEventMoved;
+    /** Callback when user clicks on chart body (to add event marker). */
+    private java.util.function.Consumer<ChartClickInfo> onChartBodyClick;
     /** Roast title for watermark (e.g. from ProfileData). */
     private String roastTitle;
+
+    /** Data passed to onChartBodyClick: time (sec), index, BT, ET at click position. */
+    public static final class ChartClickInfo {
+        public final double timeSec;
+        public final int timeIndex;
+        public final double bt;
+        public final double et;
+
+        public ChartClickInfo(double timeSec, int timeIndex, double bt, double et) {
+            this.timeSec = timeSec;
+            this.timeIndex = timeIndex;
+            this.bt = bt;
+            this.et = et;
+        }
+    }
 
     public RoastChartController(CanvasData canvasData, ColorConfig colorConfig, AxisConfig axisConfig) {
         this(canvasData, colorConfig, axisConfig, null);
@@ -323,20 +340,35 @@ public final class RoastChartController {
     }
 
     private void onMousePressed(MouseEvent e) {
-        if (liveRecording || eventList == null || e.getButton() != MouseButton.PRIMARY) return;
+        if (e.getButton() != MouseButton.PRIMARY) return;
         double w = pane.getWidth();
         double h = pane.getHeight();
         if (w <= 0 || h <= 0) return;
         double barY = h - SPECIAL_EVENT_BAR_HEIGHT;
-        if (e.getY() < barY) return;
         DefaultNumericAxis xAxis = (DefaultNumericAxis) chart.getXAxis();
         double xMin = xAxis.getMin();
         double xMax = xAxis.getMax();
         double xRange = xMax - xMin;
         if (xRange <= 0) return;
-        double scaleX = w / xRange;
         List<Double> timex = canvasData.getTimex();
-        if (timex.isEmpty()) return;
+
+        if (e.getY() < barY) {
+            if (onChartBodyClick != null && timex != null && !timex.isEmpty()) {
+                double mx = e.getX();
+                double scaleX = w / xRange;
+                double timeSec = xMin + mx / scaleX;
+                int idx = nearestTimeIndex(timex, timeSec);
+                if (idx >= 0) {
+                    double bt = idx < canvasData.getTemp2().size() ? canvasData.getTemp2().get(idx) : 0;
+                    double et = idx < canvasData.getTemp1().size() ? canvasData.getTemp1().get(idx) : 0;
+                    onChartBodyClick.accept(new ChartClickInfo(timeSec, idx, bt, et));
+                }
+            }
+            return;
+        }
+
+        if (liveRecording || eventList == null) return;
+        double scaleX = w / xRange;
         double mx = e.getX();
         for (int i = 0; i < eventList.size(); i++) {
             EventEntry ev = eventList.get(i);
@@ -348,6 +380,10 @@ public final class RoastChartController {
                 return;
             }
         }
+    }
+
+    public void setOnChartBodyClick(java.util.function.Consumer<ChartClickInfo> onChartBodyClick) {
+        this.onChartBodyClick = onChartBodyClick;
     }
 
     private void onMouseDragged(MouseEvent e) {
