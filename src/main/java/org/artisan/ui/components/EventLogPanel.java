@@ -29,8 +29,8 @@ public final class EventLogPanel extends VBox {
 
     public EventLogPanel() {
         setSpacing(6);
-        setPadding(new Insets(6));
-        setMinHeight(100);
+        setPadding(new Insets(0));
+        setMinHeight(120);
 
         quickAddField = new TextField();
         quickAddField.setPromptText("Add event (Enter)…");
@@ -47,6 +47,7 @@ public final class EventLogPanel extends VBox {
 
         listView = new ListView<>(items);
         listView.getStyleClass().add("ri5-event-log-list");
+        listView.setMinHeight(140);
         listView.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(EventEntry e, boolean empty) {

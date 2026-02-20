@@ -1,251 +1,323 @@
-/* Cropster RI5–inspired: data-first, minimal, high contrast */
+/* RI5-like light workspace theme */
 
-/* ========== App shell top bar ========== */
+.ri5-root {
+    -ri5-primary: #5680E9;
+    -ri5-primary-soft: #84CEEB;
+    -ri5-primary-alt: #5AB9EA;
+    -ri5-accent-soft: #C1C8E4;
+    -ri5-accent-strong: #8860D0;
+    -ri5-surface: #FFFFFF;
+    -ri5-surface-muted: #F7F9FD;
+    -ri5-border: #E9EEF8;
+    -ri5-text: #1F2937;
+    -ri5-text-muted: #6B7280;
+    -ri5-shadow-sm: dropshadow(gaussian, rgba(24, 39, 75, 0.06), 8, 0, 0, 2);
+    -ri5-radius: 12;
+    -ri5-space-1: 4;
+    -ri5-space-2: 8;
+    -ri5-space-3: 12;
+    -ri5-space-4: 16;
+    -ri5-space-5: 24;
+    -ri5-card-pad: 12;
+    -ri5-chip-pad-v: 4;
+    -ri5-chip-pad-h: 10;
+    -fx-background-color: -ri5-surface-muted;
+}
+
+.ri5-root.ri5-density-compact {
+    -ri5-card-pad: 8;
+    -ri5-chip-pad-v: 2;
+    -ri5-chip-pad-h: 8;
+}
+
+.ri5-root.ri5-density-comfortable {
+    -ri5-card-pad: 12;
+    -ri5-chip-pad-v: 4;
+    -ri5-chip-pad-h: 10;
+}
+
+.ri5-root,
+.ri5-root .label,
+.ri5-root .button,
+.ri5-root .text-field,
+.ri5-root .toggle-button {
+    -fx-font-family: "Segoe UI", "Inter", "System";
+}
+
 .ri5-topbar {
-    -fx-background-color: #232629;
+    -fx-background-color: linear-gradient(to bottom, #FFFFFF, #F9FBFF);
     -fx-padding: 8 12 8 12;
     -fx-spacing: 12;
+    -fx-border-color: transparent transparent -ri5-border transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .ri5-topbar .app-name {
-    -fx-font-weight: bold;
+    -fx-font-weight: 700;
     -fx-font-size: 14px;
+    -fx-text-fill: -ri5-text;
 }
 
-.ri5-topbar .machine-indicator {
-    -fx-text-fill: #909090;
-    -fx-font-size: 12px;
-}
-
+.ri5-topbar .machine-indicator,
 .ri5-topbar .connection-status {
-    -fx-text-fill: #a0a0a0;
+    -fx-text-fill: -ri5-text-muted;
     -fx-font-size: 12px;
 }
 
-/* ========== Chart area — large, clean; grid lines from ChartFX ========== */
-.ri5-chart-container {
-    -fx-background-color: #1e2124;
-    -fx-min-height: 200;
-    -fx-padding: 8 8 4 8;
+.ri5-topbar .toggle-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -ri5-text-muted;
+    -fx-padding: 6 10 6 10;
 }
 
-.chart-pane {
+.ri5-topbar .toggle-button:selected {
+    -fx-background-color: -ri5-accent-soft;
+    -fx-text-fill: -ri5-primary;
+    -fx-background-radius: 8;
+}
+
+.ri5-chart-container {
+    -fx-background-color: -ri5-surface;
+    -fx-padding: 8;
+}
+
+.ri5-bottom-bars {
+    -fx-background-color: -ri5-surface;
+    -fx-padding: 0 8 8 8;
+    -fx-spacing: 6;
+    -fx-border-color: -ri5-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.ri5-dock-scroll {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.ri5-dock-scroll > .viewport {
     -fx-background-color: transparent;
 }
 
-/* ========== Side panel container — clear headings, subtle dividers ========== */
+.ri5-dock-container {
+    -fx-background-color: transparent;
+    -fx-padding: 8;
+    -fx-spacing: 8;
+}
+
 .ri5-dock-panel {
-    -fx-background-color: #2d3136;
-    -fx-padding: 0;
-    -fx-border-color: #1e2124;
-    -fx-border-width: 0 0 0 1;
+    -fx-background-color: -ri5-surface;
+    -fx-background-radius: -ri5-radius;
+    -fx-border-color: -ri5-border;
+    -fx-border-radius: -ri5-radius;
+    -fx-border-width: 1;
+    -fx-effect: -ri5-shadow-sm;
 }
 
 .ri5-dock-panel .title-bar {
-    -fx-background-color: #232629;
-    -fx-padding: 6 8 6 8;
-    -fx-min-height: 28;
-    -fx-border-color: #1e2124;
+    -fx-padding: 0 10 0 12;
+    -fx-border-color: transparent transparent -ri5-border transparent;
     -fx-border-width: 0 0 1 0;
 }
 
 .ri5-dock-panel .title-label {
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #e0e0e0;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ri5-text;
 }
 
 .ri5-dock-panel .content {
-    -fx-padding: 8;
+    -fx-padding: -ri5-card-pad;
     -fx-background-color: transparent;
 }
 
-/* Icon buttons in dock title bar — minimal, no heavy shadow */
 .ri5-dock-panel .icon-button {
     -fx-background-color: transparent;
-    -fx-padding: 2 6 2 6;
-    -fx-font-size: 14px;
-    -fx-cursor: hand;
+    -fx-text-fill: -ri5-text-muted;
+    -fx-background-radius: 6;
+    -fx-padding: 4 6 4 6;
 }
 
 .ri5-dock-panel .icon-button:hover {
-    -fx-background-color: #3d4146;
-    -fx-background-radius: 4;
+    -fx-background-color: -ri5-accent-soft;
+    -fx-text-fill: -ri5-primary;
 }
 
-/* ========== Readout tiles — high contrast numerals, muted labels ========== */
+.dock-card-body-scroll {
+    -fx-background-color: transparent;
+}
+
+.dock-card-body-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
 .ri5-readout-tile {
-    -fx-background-color: #2d3136;
-    -fx-padding: 8 12 8 12;
-    -fx-background-radius: 4;
-    -fx-border-radius: 4;
-    -fx-border-color: #3d4146;
-    -fx-border-width: 1;
+    -fx-background-color: -ri5-surface;
+    -fx-padding: 10 12 10 14;
+    -fx-background-radius: 8;
+    -fx-border-color: -ri5-border -ri5-border -ri5-border -ri5-primary;
+    -fx-border-width: 1 1 1 3;
+    -fx-border-radius: 8;
+    -fx-min-width: 128;
+}
+
+.ri5-readout-tile .label {
+    -fx-font-size: 10px;
+    -fx-text-fill: -ri5-text-muted;
 }
 
 .ri5-readout-tile .value {
     -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #f0f0f0;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ri5-text;
 }
 
-.ri5-readout-tile .label {
+.ri5-readout-tile .unit {
     -fx-font-size: 11px;
-    -fx-text-fill: #a0a0a0;
+    -fx-text-fill: -ri5-text-muted;
 }
 
-.ri5-readout-size-s .value { -fx-font-size: 16px; }
+.ri5-readout-size-s .value { -fx-font-size: 18px; }
 .ri5-readout-size-m .value { -fx-font-size: 24px; }
-.ri5-readout-size-l .value { -fx-font-size: 32px; }
+.ri5-readout-size-l .value { -fx-font-size: 30px; }
 
-/* ========== Curve legend panel — list with subtle separators ========== */
-.curve-legend-panel {
-    -fx-spacing: 6;
+.curve-legend-row {
+    -fx-spacing: 8;
+    -fx-alignment: center-left;
 }
 
-.curve-legend-panel .check-box {
-    -fx-text-fill: #e0e0e0;
+.curve-legend-row-dimmed {
+    -fx-opacity: 0.45;
 }
 
-/* ========== Bottom status strip ========== */
+.curve-legend-switch:selected {
+    -fx-background-color: -ri5-primary;
+}
+
+.ri5-event-chip {
+    -fx-background-color: -ri5-accent-soft;
+    -fx-text-fill: -ri5-text;
+    -fx-font-size: 11px;
+    -fx-background-radius: 16;
+    -fx-padding: -ri5-chip-pad-v -ri5-chip-pad-h -ri5-chip-pad-v -ri5-chip-pad-h;
+}
+
+.ri5-event-chip:hover {
+    -fx-background-color: -ri5-primary-soft;
+}
+
+.ri5-controls-toggle-compact {
+    -fx-background-color: -ri5-accent-soft;
+    -fx-text-fill: -ri5-text;
+    -fx-background-radius: 8;
+}
+
+.ri5-controls-toggle-compact:selected {
+    -fx-background-color: -ri5-primary;
+    -fx-text-fill: white;
+}
+
+.ri5-slider .track {
+    -fx-background-color: -ri5-border;
+}
+
+.ri5-slider .thumb {
+    -fx-background-color: -ri5-primary;
+}
+
 .ri5-status-strip {
-    -fx-background-color: #232629;
+    -fx-background-color: -ri5-surface;
     -fx-padding: 6 12 6 12;
-    -fx-spacing: 16;
-    -fx-min-height: 32;
-    -fx-border-color: #1e2124;
+    -fx-spacing: 14;
+    -fx-border-color: -ri5-border;
     -fx-border-width: 1 0 0 0;
 }
 
-.ri5-status-strip .ri5-controls-toggle {
-    -fx-min-width: 72;
-}
-
 .ri5-status-strip .ri5-end-button {
-    -fx-background-color: #5a3a3a;
-    -fx-text-fill: #e8c0c0;
+    -fx-background-color: -ri5-primary;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
 }
 
 .ri5-status-strip .ri5-end-button:hover {
-    -fx-background-color: #6a4a4a;
+    -fx-background-color: -ri5-primary-alt;
 }
 
-/* ========== Pre-roast screen ========== */
+.ri5-status-strip .ri5-controls-toggle:selected {
+    -fx-background-color: -ri5-primary;
+    -fx-text-fill: white;
+}
+
+.ri5-event-log-list {
+    -fx-background-color: transparent;
+}
+
+.ri5-event-log-list .list-cell {
+    -fx-font-size: 11px;
+    -fx-text-fill: -ri5-text;
+}
+
+.ri5-event-log-list .list-cell:odd {
+    -fx-background-color: #F9FBFF;
+}
+
+.ri5-event-log-quickadd,
+.ri5-dock-panel .text-field {
+    -fx-background-color: -ri5-surface;
+    -fx-border-color: -ri5-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.ri5-dock-scroll .scroll-bar,
+.dock-card-body-scroll .scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.ri5-dock-scroll .scroll-bar .thumb,
+.dock-card-body-scroll .scroll-bar .thumb {
+    -fx-background-color: #CAD5EE;
+    -fx-background-radius: 999;
+}
+
+.ri5-menu-overflow {
+    -fx-background-color: transparent;
+    -fx-font-size: 18px;
+}
+
+.ri5-menu-overflow:hover {
+    -fx-background-color: -ri5-accent-soft;
+    -fx-background-radius: 8;
+}
+
 .section-title {
-    -fx-font-weight: bold;
     -fx-font-size: 13px;
-    -fx-text-fill: #e0e0e0;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ri5-text;
 }
 
 .ri5-primary-button {
-    -fx-font-weight: bold;
+    -fx-background-color: -ri5-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-background-radius: 8;
+}
+
+.ri5-primary-button:hover {
+    -fx-background-color: -ri5-primary-alt;
 }
 
 .ri5-summary-card {
-    -fx-background-color: #2d3136;
-    -fx-background-radius: 4;
-    -fx-border-color: #3d4146;
-    -fx-border-radius: 4;
+    -fx-background-color: -ri5-surface;
+    -fx-background-radius: -ri5-radius;
+    -fx-border-color: -ri5-border;
+    -fx-border-radius: -ri5-radius;
     -fx-border-width: 1;
 }
 
-.ri5-recent-file-button {
-    -fx-alignment: center-left;
-    -fx-padding: 4 8 4 8;
-}
-
-.ri5-muted {
-    -fx-text-fill: #808080;
-    -fx-font-style: italic;
-}
-
-/* Validation / warnings */
 .ri5-warning {
-    -fx-text-fill: #e0a030;
+    -fx-text-fill: #B45309;
 }
 
 .ri5-error {
-    -fx-text-fill: #c04040;
-}
-
-/* ========== Light theme variant — apply when .ri5-light is on scene root ========== */
-.ri5-light .ri5-topbar {
-    -fx-background-color: #f0f0f0;
-}
-
-.ri5-light .ri5-topbar .app-name {
-    -fx-text-fill: #1a1a1a;
-}
-
-.ri5-light .ri5-topbar .machine-indicator {
-    -fx-text-fill: #505050;
-}
-
-.ri5-light .ri5-topbar .connection-status {
-    -fx-text-fill: #606060;
-}
-
-.ri5-light .ri5-chart-container {
-    -fx-background-color: #e8e8e8;
-}
-
-.ri5-light .ri5-dock-panel {
-    -fx-background-color: #f5f5f5;
-    -fx-border-color: #d0d0d0;
-}
-
-.ri5-light .ri5-dock-panel .title-bar {
-    -fx-background-color: #eaeaea;
-    -fx-border-color: #d0d0d0;
-}
-
-.ri5-light .ri5-dock-panel .title-label {
-    -fx-text-fill: #1a1a1a;
-}
-
-.ri5-light .ri5-dock-panel .icon-button:hover {
-    -fx-background-color: #e0e0e0;
-}
-
-.ri5-light .ri5-readout-tile {
-    -fx-background-color: #f5f5f5;
-    -fx-border-color: #d0d0d0;
-}
-
-.ri5-light .ri5-readout-tile .value {
-    -fx-text-fill: #1a1a1a;
-}
-
-.ri5-light .ri5-readout-tile .label {
-    -fx-text-fill: #606060;
-}
-
-.ri5-light .curve-legend-panel .check-box {
-    -fx-text-fill: #1a1a1a;
-}
-
-.ri5-light .ri5-status-strip {
-    -fx-background-color: #f0f0f0;
-    -fx-border-color: #d0d0d0;
-}
-
-.ri5-light .section-title {
-    -fx-text-fill: #1a1a1a;
-}
-
-.ri5-light .ri5-summary-card {
-    -fx-background-color: #f5f5f5;
-    -fx-border-color: #d0d0d0;
-}
-
-.ri5-light .ri5-muted {
-    -fx-text-fill: #606060;
-}
-
-.ri5-light .ri5-warning {
-    -fx-text-fill: #b08020;
-}
-
-.ri5-light .ri5-error {
-    -fx-text-fill: #a03030;
+    -fx-text-fill: #DC2626;
 }

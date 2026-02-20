@@ -3,6 +3,7 @@ package org.artisan.ui.screens;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import org.artisan.controller.AppController;
@@ -193,6 +194,7 @@ public final class PreRoastScreen {
                 try {
                     uiPreferences.setDensity(UIPreferences.Density.valueOf(v.toUpperCase()));
                     savePreferencesIfStore();
+                    applyDensityClass();
                 } catch (Exception ignored) {}
             }
         });
@@ -219,6 +221,16 @@ public final class PreRoastScreen {
         if (preferencesStore != null) {
             preferencesStore.save(uiPreferences);
         }
+    }
+
+    private void applyDensityClass() {
+        Platform.runLater(() -> {
+            if (root.getScene() == null || root.getScene().getRoot() == null) return;
+            var classes = root.getScene().getRoot().getStyleClass();
+            classes.removeAll("ri5-density-compact", "ri5-density-comfortable");
+            classes.add(uiPreferences.getDensity() == UIPreferences.Density.COMPACT
+                ? "ri5-density-compact" : "ri5-density-comfortable");
+        });
     }
 
     private void makeSearchable(ComboBox<String> combo, String[] allItems) {

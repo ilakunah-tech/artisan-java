@@ -357,19 +357,20 @@ public final class MainWindow extends Application {
 
     appController.refreshStatistics();
 
-    Scene scene = new Scene(root, 1000, 600);
+    Scene scene = new Scene(root, 1366, 820);
     try {
       scene.getStylesheets().add(getClass().getResource("/org/artisan/view/styles.css").toExternalForm());
     } catch (Exception e) {
       // styles.css optional
     }
     try {
-      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/tokens.css").toExternalForm());
-      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/light-brand.css").toExternalForm());
+      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/ri5.css").toExternalForm());
     } catch (Exception e) {
       // theme optional
     }
     primaryStage.setScene(scene);
+    primaryStage.setMinWidth(1280);
+    primaryStage.setMinHeight(720);
     registerAccelerators(scene, root, chartController);
     updateWindowTitle();
     primaryStage.setOnCloseRequest(e -> {

@@ -7,7 +7,8 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import org.artisan.controller.AppController;
@@ -28,11 +29,12 @@ public final class ControlsPanel extends VBox {
 
     public ControlsPanel(AppController appController) {
         this.appController = appController;
-        setSpacing(10);
+        setSpacing(12);
         setPadding(new Insets(0));
 
         FlowPane eventChips = new FlowPane(6, 6);
         eventChips.getStyleClass().add("ri5-event-chips");
+        eventChips.setPrefWrapLength(260);
         eventChips.getChildren().addAll(
             eventChip("Charge", EventType.CHARGE),
             eventChip("TP", EventType.TP),
@@ -52,14 +54,17 @@ public final class ControlsPanel extends VBox {
         gasSlider = slider("Gas", "Gas");
         airSlider = slider("Air", "Air");
         drumSlider = slider("Drum", "Drum");
-        HBox sliderRow = new HBox(16);
-        sliderRow.getChildren().addAll(
-            new VBox(4, new Label("Gas"), gasSlider),
-            new VBox(4, new Label("Air"), airSlider),
-            new VBox(4, new Label("Drum"), drumSlider)
-        );
+        GridPane sliderGrid = new GridPane();
+        sliderGrid.setHgap(12);
+        sliderGrid.setVgap(10);
+        sliderGrid.add(sliderGroup("Gas", gasSlider), 0, 0);
+        sliderGrid.add(sliderGroup("Air", airSlider), 1, 0);
+        sliderGrid.add(sliderGroup("Drum", drumSlider), 0, 1);
+        GridPane.setHgrow(sliderGrid.getChildren().get(0), Priority.ALWAYS);
+        GridPane.setHgrow(sliderGrid.getChildren().get(1), Priority.ALWAYS);
+        GridPane.setHgrow(sliderGrid.getChildren().get(2), Priority.ALWAYS);
 
-        sliderContent = new VBox(8, sliderRow);
+        sliderContent = new VBox(8, sliderGrid);
         showControlsToggle.setOnAction(e -> {
             boolean show = showControlsToggle.isSelected();
             sliderContent.setManaged(show);
@@ -96,10 +101,21 @@ public final class ControlsPanel extends VBox {
         s.setShowTickLabels(true);
         s.setMajorTickUnit(25);
         s.setMinorTickCount(5);
-        s.setPrefWidth(120);
+        s.setBlockIncrement(5);
+        s.setPrefWidth(160);
+        s.setMinWidth(120);
+        s.setMaxWidth(Double.MAX_VALUE);
         s.valueProperty().addListener((a, b, c) -> {
             if (appController != null) appController.setControlOutput(key, s.getValue());
         });
         return s;
+    }
+
+    private VBox sliderGroup(String labelText, Slider slider) {
+        Label label = new Label(labelText);
+        VBox box = new VBox(4, label, slider);
+        box.getStyleClass().add("ri5-slider-group");
+        VBox.setVgrow(slider, Priority.NEVER);
+        return box;
     }
 }

@@ -8,6 +8,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 
 /**
  * Bottom status strip: phase, timer, connection status, controls toggle, end button, warnings.
@@ -26,7 +27,9 @@ public final class BottomStatusBar extends HBox {
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(16);
         setPadding(new Insets(6, 12, 6, 12));
-        setMinHeight(32);
+        setMinHeight(38);
+        setPrefHeight(38);
+        setMaxHeight(38);
 
         phaseLabel = new Label("—");
         timerLabel = new Label("0:00");
@@ -39,9 +42,12 @@ public final class BottomStatusBar extends HBox {
         endButton.getStyleClass().add("ri5-end-button");
         warningLabel = new Label("");
         warningLabel.getStyleClass().add("ri5-warning");
+        warningLabel.setManaged(false);
+        warningLabel.setVisible(false);
+        Region spacer = new Region();
 
-        HBox.setHgrow(phaseLabel, Priority.ALWAYS);
-        getChildren().addAll(phaseLabel, timerLabel, connectionLabel, controlsToggle, endButton, warningLabel);
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        getChildren().addAll(phaseLabel, timerLabel, connectionLabel, spacer, controlsToggle, endButton, warningLabel);
     }
 
     public void setPhase(String phase) {
@@ -61,7 +67,9 @@ public final class BottomStatusBar extends HBox {
 
     public void setWarning(String warning) {
         warningLabel.setText(warning != null ? warning : "");
-        warningLabel.setVisible(warning != null && !warning.isEmpty());
+        boolean show = warning != null && !warning.isEmpty();
+        warningLabel.setManaged(show);
+        warningLabel.setVisible(show);
     }
 
     /** Call when Controls panel visibility is toggled (e.g. by shortcut C). */

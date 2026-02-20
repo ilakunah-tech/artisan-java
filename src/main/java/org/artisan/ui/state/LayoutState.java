@@ -9,9 +9,9 @@ import java.util.List;
  */
 public final class LayoutState {
 
-    public static final double DEFAULT_DOCK_WIDTH = 280.0;
-    public static final double MIN_DOCK_WIDTH = 180.0;
-    public static final double MAX_DOCK_WIDTH = 500.0;
+    public static final double DEFAULT_DOCK_WIDTH = 340.0;
+    public static final double MIN_DOCK_WIDTH = 280.0;
+    public static final double MAX_DOCK_WIDTH = 640.0;
 
     /** Panel IDs for right dock (order preserved). */
     public static final String PANEL_LEGEND = "legend";

@@ -30,7 +30,9 @@ public final class RoastLiveScreen {
 
     private final BorderPane root;
     private final SplitPane mainSplit;
+    private final ScrollPane dockScrollPane;
     private final VBox dockContainer;
+    private final VBox bottomBars;
     private final BottomStatusBar statusBar;
     private final RoastViewModel viewModel;
     private final AppController appController;
@@ -62,13 +64,25 @@ public final class RoastLiveScreen {
 
         root = new BorderPane();
         root.setMinSize(0, 0);
+        root.getStyleClass().add("ri5-live-workspace");
         mainSplit = new SplitPane();
+        mainSplit.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
         mainSplit.setMinSize(0, 0);
         dockContainer = new VBox(8);
         dockContainer.getStyleClass().add("ri5-dock-container");
         dockContainer.setMinWidth(LayoutState.MIN_DOCK_WIDTH);
         dockContainer.setPrefWidth(uiPreferences != null ? uiPreferences.getLayoutState().getDockWidth() : LayoutState.DEFAULT_DOCK_WIDTH);
+        dockScrollPane = new ScrollPane(dockContainer);
+        dockScrollPane.getStyleClass().add("ri5-dock-scroll");
+        dockScrollPane.setFitToWidth(true);
+        dockScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        dockScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        dockScrollPane.setPannable(true);
+        dockScrollPane.setMinWidth(LayoutState.MIN_DOCK_WIDTH);
+        dockScrollPane.setPrefWidth(dockContainer.getPrefWidth());
         statusBar = new BottomStatusBar();
+        bottomBars = new VBox(6);
+        bottomBars.getStyleClass().add("ri5-bottom-bars");
         panelManager = new DetachablePanelManager();
         panelManager.setPrimaryWindow(primaryStage);
         panelManager.setLayoutState(uiPreferences != null ? uiPreferences.getLayoutState() : new LayoutState());
@@ -94,15 +108,15 @@ public final class RoastLiveScreen {
             }));
         }
 
-        VBox centerContent = new VBox(chartView, phasesPanel);
+        VBox centerContent = new VBox(chartView);
         centerContent.getStyleClass().add("ri5-chart-container");
         centerContent.setMinSize(0, 0);
         VBox.setVgrow(chartView, Priority.ALWAYS);
-        centerContent.setSpacing(4);
+        centerContent.setSpacing(0);
 
         controlsVisible = uiPreferences != null && uiPreferences.getLayoutState().isControlsVisible();
 
-        mainSplit.getItems().addAll(centerContent, dockContainer);
+        mainSplit.getItems().addAll(centerContent, dockScrollPane);
         mainSplit.setDividerPosition(0, uiPreferences != null ? uiPreferences.getMainDividerPosition() : 0.75);
 
         LayoutState layoutState = uiPreferences != null ? uiPreferences.getLayoutState() : new LayoutState();
@@ -133,20 +147,13 @@ public final class RoastLiveScreen {
             timeTile.setReadoutSize(uiPreferences.getReadoutSize());
             devTimeTile.setReadoutSize(uiPreferences.getReadoutSize());
         }
-        GridPane readoutsGrid = new GridPane();
-        readoutsGrid.setHgap(8);
-        readoutsGrid.setVgap(8);
-        readoutsGrid.add(btReadoutTile, 0, 0);
-        readoutsGrid.add(etReadoutTile, 1, 0);
-        readoutsGrid.add(rorReadoutTile, 0, 1);
-        readoutsGrid.add(timeTile, 1, 1);
-        readoutsGrid.add(devTimeTile, 0, 2);
-        GridPane.setHgrow(btReadoutTile, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(etReadoutTile, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(rorReadoutTile, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(timeTile, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(devTimeTile, javafx.scene.layout.Priority.ALWAYS);
-        DockPanel readoutsDock = new DockPanel(LayoutState.PANEL_READOUTS, "Readouts", readoutsGrid);
+        FlowPane readoutsFlow = new FlowPane();
+        readoutsFlow.setHgap(8);
+        readoutsFlow.setVgap(8);
+        readoutsFlow.setPrefWrapLength(320);
+        readoutsFlow.prefWrapLengthProperty().bind(dockContainer.widthProperty().subtract(24));
+        readoutsFlow.getChildren().addAll(btReadoutTile, etReadoutTile, rorReadoutTile, timeTile, devTimeTile);
+        DockPanel readoutsDock = new DockPanel(LayoutState.PANEL_READOUTS, "Readouts", readoutsFlow);
         readoutsDock.setCollapsed(layoutState.isPanelCollapsed(LayoutState.PANEL_READOUTS));
         addPanelInOrder(readoutsDock, panelOrder);
 
@@ -180,8 +187,15 @@ public final class RoastLiveScreen {
         panelManager.registerPanel(controlsDockPanel, dockContainer);
         panelManager.registerPanel(eventLogDock, dockContainer);
 
+        phasesPanel.setMinHeight(42);
+        phasesPanel.setPrefHeight(42);
+        phasesPanel.setMaxHeight(56);
+        bottomBars.getChildren().setAll(phasesPanel, statusBar);
+        VBox.setVgrow(phasesPanel, Priority.NEVER);
+        VBox.setVgrow(statusBar, Priority.NEVER);
+
         root.setCenter(mainSplit);
-        root.setBottom(statusBar);
+        root.setBottom(bottomBars);
 
         statusBar.setControlsVisible(controlsVisible);
         statusBar.setOnEndRoast(() -> {
@@ -336,18 +350,11 @@ public final class RoastLiveScreen {
     }
 
     private void focusEventLog() {
-        Node n = root.getCenter();
-        if (n instanceof SplitPane) {
-            for (Node child : ((SplitPane) n).getItems()) {
-                if (child instanceof VBox) {
-                    for (Node p : ((VBox) child).getChildren()) {
-                        if (p instanceof DockPanel && LayoutState.PANEL_EVENT_LOG.equals(((DockPanel) p).getPanelId())) {
-                            ((DockPanel) p).setCollapsed(false);
-                            if (eventLogPanel != null) eventLogPanel.requestFocusFilter();
-                            return;
-                        }
-                    }
-                }
+        for (Node p : dockContainer.getChildren()) {
+            if (p instanceof DockPanel && LayoutState.PANEL_EVENT_LOG.equals(((DockPanel) p).getPanelId())) {
+                ((DockPanel) p).setCollapsed(false);
+                if (eventLogPanel != null) eventLogPanel.requestFocusFilter();
+                return;
             }
         }
     }
@@ -383,10 +390,17 @@ public final class RoastLiveScreen {
     public void saveLayoutState() {
         if (uiPreferences == null || preferencesStore == null) return;
         LayoutState layout = uiPreferences.getLayoutState();
-        layout.setDockWidth(dockContainer.getWidth() > 0 ? dockContainer.getWidth() : layout.getDockWidth());
-        layout.setControlsVisible(controlsVisible);
         double[] div = mainSplit.getDividerPositions();
-        if (div != null && div.length > 0) uiPreferences.setMainDividerPosition(div[0]);
+        if (div != null && div.length > 0) {
+            double totalW = mainSplit.getWidth();
+            if (totalW > 0) {
+                layout.setDockWidth(Math.max(LayoutState.MIN_DOCK_WIDTH, totalW * (1.0 - div[0])));
+            }
+            uiPreferences.setMainDividerPosition(div[0]);
+        } else {
+            layout.setDockWidth(dockContainer.getWidth() > 0 ? dockContainer.getWidth() : layout.getDockWidth());
+        }
+        layout.setControlsVisible(controlsVisible);
         for (Node child : dockContainer.getChildren()) {
             if (child instanceof DockPanel) {
                 DockPanel panel = (DockPanel) child;
@@ -424,6 +438,7 @@ public final class RoastLiveScreen {
 
         mainSplit.setDividerPosition(0, uiPreferences.getMainDividerPosition());
         dockContainer.setPrefWidth(layout.getDockWidth());
+        dockScrollPane.setPrefWidth(layout.getDockWidth());
 
         controlsVisible = layout.isControlsVisible();
         if (controlsDockPanel != null) controlsDockPanel.setVisible(controlsVisible);

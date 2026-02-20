@@ -10,6 +10,8 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -28,6 +30,7 @@ import org.artisan.ui.state.UIPreferences;
  * center = current screen content.
  */
 public final class AppShell {
+    private static final double APP_BAR_HEIGHT = 56.0;
 
     private final BorderPane root;
     private final HBox topBar;
@@ -63,8 +66,11 @@ public final class AppShell {
         topBar.getStyleClass().add("ri5-topbar");
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(8, 12, 8, 12));
+        topBar.setMinHeight(APP_BAR_HEIGHT);
+        topBar.setPrefHeight(APP_BAR_HEIGHT);
+        topBar.setMaxHeight(APP_BAR_HEIGHT);
 
-        Label appName = new Label("Artisan Java");
+        Label appName = new Label("AJ  Artisan Java");
         appName.getStyleClass().add("app-name");
 
         machineLabel = new Label("—");
@@ -95,9 +101,11 @@ public final class AppShell {
         });
         settingsBtn.getItems().addAll(devicesItem, resetLayoutItem);
 
-        topBar.getChildren().addAll(appName, machineLabel, preRoastNav, roastLiveNav, connectionLabel, settingsBtn);
+        Region topSpacer = new Region();
+        HBox.setHgrow(topSpacer, Priority.ALWAYS);
+        topBar.getChildren().addAll(appName, machineLabel, preRoastNav, roastLiveNav, topSpacer, connectionLabel, settingsBtn);
         HBox.setMargin(machineLabel, new Insets(0, 0, 0, 16));
-        HBox.setMargin(connectionLabel, new Insets(0, 0, 0, 24));
+        HBox.setMargin(connectionLabel, new Insets(0, 0, 0, 8));
 
         root.setTop(topBar);
         contentArea = new StackPane();
