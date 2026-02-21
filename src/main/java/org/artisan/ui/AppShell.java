@@ -206,10 +206,12 @@ public final class AppShell {
 
     public void setTimerPreRoastMode() {
         rightReadoutPanel.setPreRoastMode(true);
+        roastLiveScreen.setPreRoastMode(true);
     }
 
     public void setTimerRoastingMode() {
         rightReadoutPanel.setPreRoastMode(false);
+        roastLiveScreen.setPreRoastMode(false);
     }
 
     public DemoRunner getDemoRunner() { return demoRunner; }

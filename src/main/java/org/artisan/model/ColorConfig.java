@@ -143,6 +143,12 @@ public final class ColorConfig {
         }
     }
 
+    /** Returns palette color only if explicitly set; null otherwise. */
+    public Color getPaletteColorOrNull(String key) {
+        if (key == null) return null;
+        return palette.get(key);
+    }
+
     /** Set palette color by key. */
     public void setPaletteColor(String key, Color color) {
         if (key == null) return;

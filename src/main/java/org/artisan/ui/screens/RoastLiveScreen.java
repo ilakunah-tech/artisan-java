@@ -4,6 +4,7 @@ import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -77,7 +78,13 @@ public final class RoastLiveScreen {
         startButton = new Button("Start");
         startButton.getStyleClass().add("btn-start");
         startButton.setOnAction(e -> { if (onStart != null) onStart.run(); });
-        startButton.visibleProperty().bind(viewModel.samplingActiveProperty().not());
+        startButton.visibleProperty().bind(Bindings.createBooleanBinding(
+            () -> !viewModel.isSamplingActive() || viewModel.isPreRoastActive(),
+            viewModel.samplingActiveProperty(), viewModel.preRoastActiveProperty()));
+        startButton.managedProperty().bind(startButton.visibleProperty());
+        startButton.textProperty().bind(Bindings.createStringBinding(
+            () -> viewModel.isPreRoastActive() ? "Charge" : "Start",
+            viewModel.preRoastActiveProperty()));
 
         HBox startWrapper = new HBox(startButton);
         startWrapper.setAlignment(Pos.CENTER);
@@ -356,6 +363,10 @@ public final class RoastLiveScreen {
 
     public void setRoastStateMachine(RoastStateMachine machine) {
         this.roastStateMachine = machine;
+    }
+
+    public void setPreRoastMode(boolean preRoast) {
+        viewModel.setPreRoastActive(preRoast);
     }
 
     private double computeElapsedSec(double timeSec) {

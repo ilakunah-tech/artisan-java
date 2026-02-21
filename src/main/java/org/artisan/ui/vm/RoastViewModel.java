@@ -45,6 +45,7 @@ public final class RoastViewModel {
     private final BooleanProperty smartPredictionsEnabled = new SimpleBooleanProperty(true);
     private final BooleanProperty bbtActive = new SimpleBooleanProperty(false);
     private final LongProperty bbpElapsedSeconds = new SimpleLongProperty(0);
+    private final BooleanProperty preRoastActive = new SimpleBooleanProperty(false);
     private final BooleanProperty replayMode = new SimpleBooleanProperty(false);
     private final ObservableList<EventEntry> events = FXCollections.observableArrayList();
     private final ObservableList<RoastEvent> roastEvents = FXCollections.observableArrayList();
@@ -76,6 +77,7 @@ public final class RoastViewModel {
     public BooleanProperty smartPredictionsEnabledProperty() { return smartPredictionsEnabled; }
     public BooleanProperty bbtActiveProperty() { return bbtActive; }
     public LongProperty bbpElapsedSecondsProperty() { return bbpElapsedSeconds; }
+    public BooleanProperty preRoastActiveProperty() { return preRoastActive; }
     public BooleanProperty replayModeProperty() { return replayMode; }
     public ObservableList<EventEntry> getEvents() { return events; }
     public ObservableList<RoastEvent> getRoastEvents() { return roastEvents; }
@@ -100,6 +102,7 @@ public final class RoastViewModel {
     public boolean isSmartPredictionsEnabled() { return smartPredictionsEnabled.get(); }
     public boolean isBbtActive() { return bbtActive.get(); }
     public long getBbpElapsedSeconds() { return bbpElapsedSeconds.get(); }
+    public boolean isPreRoastActive() { return preRoastActive.get(); }
     public boolean isReplayMode() { return replayMode.get(); }
 
     public void setBt(double v) { bt.set(v); }
@@ -122,6 +125,7 @@ public final class RoastViewModel {
     public void setSmartPredictionsEnabled(boolean v) { smartPredictionsEnabled.set(v); }
     public void setBbtActive(boolean v) { bbtActive.set(v); }
     public void setBbpElapsedSeconds(long v) { bbpElapsedSeconds.set(v); }
+    public void setPreRoastActive(boolean v) { preRoastActive.set(v); }
     public void setReplayMode(boolean v) { replayMode.set(v); }
 
     /** Replace events list with current snapshot from session. */

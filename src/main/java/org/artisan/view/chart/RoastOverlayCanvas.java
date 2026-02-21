@@ -4,6 +4,7 @@ import io.fair_acc.chartfx.XYChart;
 import io.fair_acc.chartfx.axes.Axis;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -114,8 +115,7 @@ public final class RoastOverlayCanvas extends Canvas {
             double et = (lastET != null && idx < lastET.size()) ? lastET.get(idx) : 0;
             onChartBodyClick.accept(new RoastChartController.ChartClickInfo(timeSec, idx, bt, et));
         });
-        chart.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-            if (e.getButton() != javafx.scene.input.MouseButton.SECONDARY) return;
+        chart.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (onChartRightClick == null || lastTimex == null || lastTimex.isEmpty()) return;
             javafx.scene.canvas.Canvas ic = chart.getCanvas();
             javafx.geometry.Bounds cb;
@@ -129,6 +129,7 @@ public final class RoastOverlayCanvas extends Canvas {
             double et = (lastET != null && idx < lastET.size()) ? lastET.get(idx) : Double.NaN;
             onChartRightClick.accept(new ChartRightClickInfo(timeSec, idx, bt, et,
                 e.getScreenX(), e.getScreenY()));
+            e.consume();
         });
     }
 
@@ -693,7 +694,7 @@ public final class RoastOverlayCanvas extends Canvas {
 
     private Color color(String key, Color fallback) {
         if (colorConfig == null) return fallback;
-        Color c = colorConfig.getPaletteColor(key);
+        Color c = colorConfig.getPaletteColorOrNull(key);
         return c != null ? c : fallback;
     }
 
