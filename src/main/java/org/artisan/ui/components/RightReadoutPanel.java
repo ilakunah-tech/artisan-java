@@ -28,6 +28,8 @@ public final class RightReadoutPanel extends VBox {
     private final Label colonLabel;
     private final Label secondsLabel;
     private final Label preLabel;
+    private static final Color TIMER_DEFAULT_COLOR = Color.web("#1A2B45");
+    private static final Color TIMER_PRE_COLOR = Color.web("#FFA500");
 
     public RightReadoutPanel(RoastViewModel vm) {
         getStyleClass().add("right-readout-panel");
@@ -47,6 +49,9 @@ public final class RightReadoutPanel extends VBox {
         colonLabel.getStyleClass().add("timer-label");
         secondsLabel = new Label("00.00");
         secondsLabel.getStyleClass().add("timer-label");
+        minutesLabel.setTextFill(TIMER_DEFAULT_COLOR);
+        colonLabel.setTextFill(TIMER_DEFAULT_COLOR);
+        secondsLabel.setTextFill(TIMER_DEFAULT_COLOR);
 
         minutesLabel.textProperty().bind(Bindings.createStringBinding(() -> {
             int mins = (int)(vm.getElapsedSec() / 60);
@@ -189,8 +194,8 @@ public final class RightReadoutPanel extends VBox {
     public void setPreRoastMode(boolean preRoast) {
         preLabel.setVisible(preRoast);
         preLabel.setManaged(preRoast);
-        Color c = preRoast ? Color.web("#FFA500") : null;
-        preLabel.setTextFill(preRoast ? Color.web("#FFA500") : null);
+        Color c = preRoast ? TIMER_PRE_COLOR : TIMER_DEFAULT_COLOR;
+        preLabel.setTextFill(preRoast ? TIMER_PRE_COLOR : TIMER_DEFAULT_COLOR);
         minutesLabel.setTextFill(c);
         colonLabel.setTextFill(c);
         secondsLabel.setTextFill(c);

@@ -131,7 +131,8 @@ public final class RoastLiveScreen {
                     viewModel.setEt(et);
                     viewModel.setRorBT(rorBT);
                     viewModel.setRorET(rorET);
-                    viewModel.setElapsedSec(computeElapsedSec(timeSec));
+                    double elapsedTimeSec = computeElapsedSec(timeSec);
+                    viewModel.setElapsedSec(elapsedTimeSec);
                     viewModel.setSamplingActive(true);
                 }));
 
@@ -183,6 +184,10 @@ public final class RoastLiveScreen {
                 viewModel.syncEvents(events, cd != null ? cd.getTimex() : null);
                 eventLogPanel.setTimex(appController.getSession().getCanvasData().getTimex());
                 eventLogPanel.setEvents(events);
+                if (cd != null && cd.getTimex() != null && !cd.getTimex().isEmpty()) {
+                    double latestTimeSec = cd.getTimex().get(cd.getTimex().size() - 1);
+                    viewModel.setElapsedSec(computeElapsedSec(latestTimeSec));
+                }
                 if (chartController != null) {
                     chartController.setLiveRecording(appController.getSession().isActive());
                 }
@@ -377,6 +382,10 @@ public final class RoastLiveScreen {
         if (timex == null || timex.isEmpty()) return timeSec;
         int chargeIdx = cd.getChargeIndex();
         if (roastStateMachine.getState() == RoastStateMachine.State.PRE_ROAST && chargeIdx < 0) {
+            double first = roastStateMachine.getPreRoastFirstTimeSec();
+            if (Double.isFinite(first)) {
+                return timeSec - first;
+            }
             return timex.get(timex.size() - 1) - timex.get(0);
         }
         if (chargeIdx >= 0 && chargeIdx < timex.size()) {

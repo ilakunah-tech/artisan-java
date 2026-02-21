@@ -69,6 +69,13 @@ import org.artisan.model.CanvasData;
 import org.artisan.model.Roastlog;
 import org.artisan.model.Sampling;
 import org.artisan.model.SamplingConfig;
+import org.artisan.model.importer.GiesenImporter;
+import org.artisan.model.importer.HiBeanImporter;
+import org.artisan.model.importer.LoringImporter;
+import org.artisan.model.importer.PetronciniImporter;
+import org.artisan.model.importer.RoestImporter;
+import org.artisan.model.importer.RubasseImporter;
+import org.artisan.model.importer.StrongholdImporter;
 import org.artisan.util.CropsterConverter;
 import org.artisan.view.BatchesDialog;
 import org.artisan.view.CalculatorDialog;
@@ -428,6 +435,7 @@ public final class MainWindow extends Application {
         }
       }
       appController.stopSampling();
+      if (appShell != null) appShell.shutdownWebLcd();
       if (demoRunner != null) demoRunner.stop();
       if (appShell != null && appShell.getRoastLiveScreen() != null) {
         appShell.getRoastLiveScreen().saveLayoutState();
@@ -549,16 +557,64 @@ public final class MainWindow extends Application {
     exportCropsterItem.setOnAction(e -> doExportToCropster());
     MenuItem importCropsterItem = new MenuItem("Import from Cropster CSV...");
     importCropsterItem.setOnAction(e -> doImportFromCropster());
+
+    Menu importMenu = new Menu("Import");
+    importMenu.getItems().addAll(
+        buildImportItem("HiBean JSON...",      "*.json", path -> HiBeanImporter.importFile(path)),
+        buildImportItem("Rubasse CSV...",      "*.csv",  path -> RubasseImporter.importFile(path)),
+        buildImportItem("Giesen CSV...",       "*.csv",  path -> GiesenImporter.importFile(path)),
+        buildImportItem("Loring CSV...",       "*.csv",  path -> LoringImporter.importFile(path)),
+        buildImportItem("Roest CSV...",        "*.csv",  path -> RoestImporter.importFile(path)),
+        buildImportItem("Petroncini CSV...",   "*.csv",  path -> PetronciniImporter.importFile(path)),
+        buildImportItem("Stronghold CSV/XLSX...", "*.csv;*.xlsx", path -> StrongholdImporter.importFile(path))
+    );
+
     MenuItem quitItem = new MenuItem("Quit");
     quitItem.setAccelerator(javafx.scene.input.KeyCombination.keyCombination("Ctrl+Q"));
     quitItem.setOnAction(e -> primaryStage.getOnCloseRequest().handle(new javafx.stage.WindowEvent(primaryStage, javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST)));
 
     fileMenu.getItems().addAll(newItem, openItem, saveItem, saveAsItem,
         new SeparatorMenuItem(), recentMenu, new SeparatorMenuItem(),
+        importMenu, new SeparatorMenuItem(),
         exportItem, exportCropsterItem, importCropsterItem,
         new SeparatorMenuItem(), quitItem);
     refreshRecentMenu(recentMenu, clearRecentItem, root, chartController);
     return fileMenu;
+  }
+
+  @FunctionalInterface
+  private interface ImportFunction {
+    ProfileData apply(java.nio.file.Path path) throws Exception;
+  }
+
+  private MenuItem buildImportItem(String label, String extensionFilter, ImportFunction importer) {
+    MenuItem item = new MenuItem(label);
+    item.setOnAction(e -> {
+      FileChooser chooser = new FileChooser();
+      String[] exts = extensionFilter.split(";");
+      for (String ext : exts) {
+        chooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter(ext.replace("*.", "").toUpperCase() + " files", ext.trim()));
+      }
+      java.io.File file = chooser.showOpenDialog(primaryStage);
+      if (file == null) return;
+      try {
+        ProfileData pd = importer.apply(file.toPath());
+        if (pd != null && appController != null) {
+          appController.loadSimulatedProfile(pd);
+          if (appController.getChartController() != null && pd.getTitle() != null) {
+            appController.getChartController().setRoastTitle(pd.getTitle());
+          }
+          fileSession.markDirty();
+          updateWindowTitle();
+        } else {
+          new Alert(Alert.AlertType.WARNING, "Could not import file.").showAndWait();
+        }
+      } catch (Exception ex) {
+        new Alert(Alert.AlertType.ERROR, "Import failed: " + ex.getMessage()).showAndWait();
+      }
+    });
+    return item;
   }
 
   private void doExportToCropster() {

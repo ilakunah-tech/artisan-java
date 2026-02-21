@@ -6,12 +6,15 @@ import java.util.prefs.Preferences;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
@@ -35,7 +38,9 @@ public final class LogViewer {
     private final TextArea textArea;
     private final ComboBox<String> filterCombo;
     private final InMemoryLogHandler handler;
+    private final Label errorCountLabel;
     private Timeline pollTimer;
+    private volatile boolean serialLoggingEnabled = false;
 
     public LogViewer(Window owner) {
         stage = new Stage();
@@ -56,6 +61,12 @@ public final class LogViewer {
         filterCombo.setValue("ALL");
         filterCombo.setOnAction(e -> refresh());
 
+        // Serial log ON/OFF — parity with Python serialLogDlg.serialcheckbox
+        CheckBox serialCheck = new CheckBox("Serial Log ON/OFF");
+        serialCheck.setTooltip(new javafx.scene.control.Tooltip("Enable/disable logging of serial communication"));
+        serialCheck.setSelected(serialLoggingEnabled);
+        serialCheck.selectedProperty().addListener((obs, o, n) -> serialLoggingEnabled = n);
+
         Button clearBtn = new Button("Clear");
         clearBtn.setOnAction(e -> {
             if (handler != null) handler.clear();
@@ -71,12 +82,20 @@ public final class LogViewer {
             }
         });
 
+        // Error count label — parity with Python errorDlg.elabel
+        errorCountLabel = new Label("Errors: 0");
+        errorCountLabel.setStyle("-fx-font-weight: bold;");
+
         ToolBar toolbar = new ToolBar();
-        toolbar.getItems().addAll(filterCombo, clearBtn, copyBtn);
+        toolbar.getItems().addAll(filterCombo, serialCheck, clearBtn, copyBtn);
+
+        HBox footer = new HBox(8, errorCountLabel);
+        footer.setPadding(new Insets(4, 8, 4, 8));
 
         BorderPane root = new BorderPane();
         root.setTop(toolbar);
         root.setCenter(textArea);
+        root.setBottom(footer);
         BorderPane.setMargin(textArea, new Insets(8));
 
         javafx.scene.Scene scene = new javafx.scene.Scene(root, 700, 500);
@@ -111,9 +130,13 @@ public final class LogViewer {
             }
         }
         String text = sb.toString();
+        long errorCount = records.stream()
+                .filter(r -> r != null && r.toUpperCase().contains("SEVERE"))
+                .count();
         Platform.runLater(() -> {
             textArea.setText(text);
             textArea.setScrollTop(Double.MAX_VALUE);
+            errorCountLabel.setText("Errors found: " + errorCount);
         });
     }
 
@@ -143,6 +166,16 @@ public final class LogViewer {
 
     public Stage getStage() {
         return stage;
+    }
+
+    /** Returns whether serial communication logging is currently enabled (parity with Python seriallogflag). */
+    public boolean isSerialLoggingEnabled() {
+        return serialLoggingEnabled;
+    }
+
+    /** Sets serial logging enabled state. */
+    public void setSerialLoggingEnabled(boolean enabled) {
+        this.serialLoggingEnabled = enabled;
     }
 
     private void loadPreferences() {

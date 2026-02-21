@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -31,6 +32,10 @@ public final class AutoSaveDialog extends ArtisanDialog {
     private TextField prefixField;
     private CheckBox addTimestampCheck;
     private CheckBox saveOnDropCheck;
+    private CheckBox saveImageCheck;
+    private ComboBox<String> imageFormatCombo;
+    private CheckBox addToRecentCheck;
+    private Label prefixPreviewLabel;
 
     public AutoSaveDialog(Window owner, AutoSave autoSave) {
         super(owner, true, false);
@@ -67,6 +72,22 @@ public final class AutoSaveDialog extends ArtisanDialog {
         saveOnDropCheck = new CheckBox("Save on DROP event");
         saveOnDropCheck.setSelected(autoSave.isSaveOnDrop());
 
+        saveImageCheck = new CheckBox("Save also image:");
+        saveImageCheck.setSelected(autoSave.isSaveImage());
+        imageFormatCombo = new ComboBox<>();
+        imageFormatCombo.getItems().addAll(org.artisan.controller.AutoSave.IMAGE_FORMATS);
+        imageFormatCombo.setValue(autoSave.getImageFormat());
+        imageFormatCombo.setDisable(!autoSave.isSaveImage());
+        saveImageCheck.selectedProperty().addListener((obs, o, n) -> imageFormatCombo.setDisable(!n));
+
+        addToRecentCheck = new CheckBox("Add to recent file list");
+        addToRecentCheck.setSelected(autoSave.isAddToRecentFiles());
+        addToRecentCheck.setTooltip(new javafx.scene.control.Tooltip("Add auto-saved filenames to the recent files list"));
+
+        prefixPreviewLabel = new Label(buildPreview());
+        prefixField.textProperty().addListener((obs, o, n) -> prefixPreviewLabel.setText(buildPreview()));
+        addTimestampCheck.selectedProperty().addListener((obs, o, n) -> prefixPreviewLabel.setText(buildPreview()));
+
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(8);
@@ -79,8 +100,13 @@ public final class AutoSaveDialog extends ArtisanDialog {
         grid.add(new HBox(8, savePathField, browseBtn), 1, row++);
         grid.add(new Label("Prefix:"), 0, row);
         grid.add(prefixField, 1, row++);
+        grid.add(new Label("Preview:"), 0, row);
+        grid.add(prefixPreviewLabel, 1, row++);
         grid.add(addTimestampCheck, 0, row++, 2, 1);
         grid.add(saveOnDropCheck, 0, row++, 2, 1);
+        grid.add(saveImageCheck, 0, row);
+        grid.add(imageFormatCombo, 1, row++);
+        grid.add(addToRecentCheck, 0, row++, 2, 1);
 
         Button restoreBtn = new Button("Restore Defaults");
         restoreBtn.setOnAction(e -> restoreDefaults());
@@ -116,6 +142,11 @@ public final class AutoSaveDialog extends ArtisanDialog {
         prefixField.setText(autoSave.getPrefix());
         addTimestampCheck.setSelected(autoSave.isAddTimestamp());
         saveOnDropCheck.setSelected(autoSave.isSaveOnDrop());
+        saveImageCheck.setSelected(autoSave.isSaveImage());
+        imageFormatCombo.setValue(autoSave.getImageFormat());
+        imageFormatCombo.setDisable(!autoSave.isSaveImage());
+        addToRecentCheck.setSelected(autoSave.isAddToRecentFiles());
+        prefixPreviewLabel.setText(buildPreview());
     }
 
     private void applyFromFields() {
@@ -126,6 +157,17 @@ public final class AutoSaveDialog extends ArtisanDialog {
         autoSave.setPrefix(prefixField.getText() != null ? prefixField.getText().trim() : "autosave");
         autoSave.setAddTimestamp(addTimestampCheck.isSelected());
         autoSave.setSaveOnDrop(saveOnDropCheck.isSelected());
+        autoSave.setSaveImage(saveImageCheck.isSelected());
+        autoSave.setImageFormat(imageFormatCombo.getValue());
+        autoSave.setAddToRecentFiles(addToRecentCheck.isSelected());
         autoSave.save();
+    }
+
+    private String buildPreview() {
+        String p = (prefixField != null && prefixField.getText() != null) ? prefixField.getText() : "autosave";
+        boolean ts = (addTimestampCheck != null) && addTimestampCheck.isSelected();
+        String name = p + "_<title>";
+        if (ts) name += "_yyyyMMdd_HHmmss";
+        return name + ".alog";
     }
 }

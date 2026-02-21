@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import org.artisan.controller.AppController;
 import org.artisan.controller.CommController;
 import org.artisan.model.ReferenceProfile;
+import org.artisan.ui.components.WebLcdServer;
 import org.artisan.ui.components.CustomTitleBar;
 import org.artisan.ui.components.LeftDrawer;
 import org.artisan.ui.components.LeftIconRail;
@@ -50,6 +51,7 @@ public final class AppShell {
     private final UIPreferences uiPreferences;
     private final PreferencesStore preferencesStore;
     private final Pane drawerOverlay;
+    private WebLcdServer webLcdServer;
 
     private Runnable onSettings;
     private Runnable onResetLayout;
@@ -91,6 +93,11 @@ public final class AppShell {
         leftDrawer = new LeftDrawer();
         loginOverlay = new LoginOverlay();
         settingsOverlay = new SettingsOverlay();
+        settingsOverlay.setOnImport(pd -> {
+            if (appController != null) {
+                appController.loadSimulatedProfile(pd);
+            }
+        });
         webOverlay = new WebOverlay();
 
         drawerOverlay = new Pane();
@@ -109,6 +116,12 @@ public final class AppShell {
             () -> {
                 webOverlay.toggle();
                 leftIconRail.setCloudActive(webOverlay.isVisible());
+                // start/stop WebLCD server together with the overlay
+                if (webOverlay.isVisible()) {
+                    startWebLcdServer();
+                } else {
+                    stopWebLcdServer();
+                }
             },
             () -> {
                 if (leftDrawer.isOpen()) {
@@ -121,13 +134,12 @@ public final class AppShell {
                 leftIconRail.setFlameActive(leftDrawer.isOpen());
             },
             () -> {
-                if (onSettings != null) {
-                    if (settingsOverlay.isVisible()) settingsOverlay.hide();
-                    onSettings.run();
+                if (settingsOverlay.isVisible()) {
+                    settingsOverlay.hide();
                     leftIconRail.setCupActive(false);
                 } else {
-                    settingsOverlay.toggle();
-                    leftIconRail.setCupActive(settingsOverlay.isVisible());
+                    settingsOverlay.showTab("Device");
+                    leftIconRail.setCupActive(true);
                 }
             }
         );
@@ -195,6 +207,39 @@ public final class AppShell {
 
         // Kept for API compatibility (not shown)
         preRoastScreen = new PreRoastScreen(appController, this.uiPreferences, this.preferencesStore);
+    }
+
+    private void startWebLcdServer() {
+        if (webLcdServer != null && webLcdServer.isRunning()) return;
+        webLcdServer = new WebLcdServer(8080);
+        try {
+            webLcdServer.start();
+            if (appController != null) {
+                final WebLcdServer srv = webLcdServer;
+                appController.addSampleListener((bt, et, rorBT, rorET, timeSec) -> {
+                    if (srv.isRunning()) {
+                        String json = String.format(
+                            "{\"bt\":%.1f,\"et\":%.1f,\"ror\":%.1f,\"time\":%.0f}",
+                            bt, et, rorBT, timeSec);
+                        srv.broadcast(json);
+                    }
+                });
+            }
+        } catch (Exception ex) {
+            webLcdServer = null;
+        }
+    }
+
+    private void stopWebLcdServer() {
+        if (webLcdServer != null) {
+            webLcdServer.stop();
+            webLcdServer = null;
+        }
+    }
+
+    /** Called on app close to release the server. */
+    public void shutdownWebLcd() {
+        stopWebLcdServer();
     }
 
     private void setDrawerOverlayVisible(boolean visible) {
@@ -290,8 +335,9 @@ public final class AppShell {
         if (preRoastScreen != null) preRoastScreen.refresh();
     }
 
-    /** Kept for API compatibility (was addLeadingToTopBar). No-op since top bar removed. */
-    public void addLeadingToTopBar(javafx.scene.Node node) { /* no-op */ }
+    /** No-op — this app uses icon-rail buttons instead of a menu bar. */
+    public void addLeadingToTopBar(javafx.scene.Node node) { /* intentionally empty */ }
+
 
     public PreRoastScreen getPreRoastScreen() { return preRoastScreen; }
 }

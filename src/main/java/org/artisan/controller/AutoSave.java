@@ -25,12 +25,18 @@ public final class AutoSave {
 
     private static final String PREF_NODE = "org/artisan/artisan-java";
     private static final String PREFIX = "autosave.";
-    private static final String KEY_ENABLED = PREFIX + "enabled";
-    private static final String KEY_INTERVAL = PREFIX + "intervalMinutes";
-    private static final String KEY_SAVE_PATH = PREFIX + "savePath";
-    private static final String KEY_PREFIX = PREFIX + "prefix";
-    private static final String KEY_ADD_TIMESTAMP = PREFIX + "addTimestamp";
-    private static final String KEY_SAVE_ON_DROP = PREFIX + "saveOnDrop";
+    private static final String KEY_ENABLED           = PREFIX + "enabled";
+    private static final String KEY_INTERVAL          = PREFIX + "intervalMinutes";
+    private static final String KEY_SAVE_PATH         = PREFIX + "savePath";
+    private static final String KEY_PREFIX            = PREFIX + "prefix";
+    private static final String KEY_ADD_TIMESTAMP     = PREFIX + "addTimestamp";
+    private static final String KEY_SAVE_ON_DROP      = PREFIX + "saveOnDrop";
+    private static final String KEY_SAVE_IMAGE        = PREFIX + "saveImage";
+    private static final String KEY_IMAGE_FORMAT      = PREFIX + "imageFormat";
+    private static final String KEY_ADD_TO_RECENT     = PREFIX + "addToRecentFiles";
+
+    /** Supported image export formats alongside .alog (parity with Python autoasaveimageformat_types). */
+    public static final String[] IMAGE_FORMATS = {"PNG", "JPG", "BMP", "PDF Report"};
 
     private static final int DEFAULT_INTERVAL = 5;
     private static final int MIN_INTERVAL = 1;
@@ -46,6 +52,9 @@ public final class AutoSave {
     private String prefix;
     private boolean addTimestamp;
     private boolean saveOnDrop;
+    private boolean saveImage;
+    private String imageFormat;
+    private boolean addToRecentFiles;
 
     private volatile ScheduledExecutorService scheduler;
     private volatile Supplier<ProfileData> profileDataSupplier;
@@ -64,6 +73,9 @@ public final class AutoSave {
         if (prefix == null) prefix = DEFAULT_PREFIX;
         addTimestamp = prefs.getBoolean(KEY_ADD_TIMESTAMP, true);
         saveOnDrop = prefs.getBoolean(KEY_SAVE_ON_DROP, true);
+        saveImage = prefs.getBoolean(KEY_SAVE_IMAGE, false);
+        imageFormat = prefs.get(KEY_IMAGE_FORMAT, IMAGE_FORMATS[0]);
+        addToRecentFiles = prefs.getBoolean(KEY_ADD_TO_RECENT, false);
     }
 
     public void save() {
@@ -74,6 +86,9 @@ public final class AutoSave {
         prefs.put(KEY_PREFIX, prefix != null ? prefix : DEFAULT_PREFIX);
         prefs.putBoolean(KEY_ADD_TIMESTAMP, addTimestamp);
         prefs.putBoolean(KEY_SAVE_ON_DROP, saveOnDrop);
+        prefs.putBoolean(KEY_SAVE_IMAGE, saveImage);
+        prefs.put(KEY_IMAGE_FORMAT, imageFormat != null ? imageFormat : IMAGE_FORMATS[0]);
+        prefs.putBoolean(KEY_ADD_TO_RECENT, addToRecentFiles);
     }
 
     private static int clampInterval(int v) {
@@ -221,5 +236,17 @@ public final class AutoSave {
         prefix = DEFAULT_PREFIX;
         addTimestamp = true;
         saveOnDrop = true;
+        saveImage = false;
+        imageFormat = IMAGE_FORMATS[0];
+        addToRecentFiles = false;
     }
+
+    public boolean isSaveImage() { return saveImage; }
+    public void setSaveImage(boolean v) { this.saveImage = v; }
+
+    public String getImageFormat() { return imageFormat != null ? imageFormat : IMAGE_FORMATS[0]; }
+    public void setImageFormat(String v) { this.imageFormat = v; }
+
+    public boolean isAddToRecentFiles() { return addToRecentFiles; }
+    public void setAddToRecentFiles(boolean v) { this.addToRecentFiles = v; }
 }

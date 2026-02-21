@@ -559,3 +559,74 @@
 .live-value-overlay {
     -fx-background-color: rgba(255, 255, 255, 0.85);
 }
+
+/* Settings overlay card */
+.settings-card {
+    -fx-background-color: -ri5-surface;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: -ri5-border;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 20, 0.3, 0, 6);
+    -fx-padding: 20 24 16 24;
+}
+
+.settings-header {
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ri5-text;
+    -fx-padding: 0 0 4 0;
+}
+
+.settings-tab {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -ri5-border transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-text-fill: -ri5-text-secondary;
+    -fx-font-size: 12px;
+    -fx-padding: 6 12 6 12;
+    -fx-cursor: hand;
+}
+
+.settings-tab:selected {
+    -fx-border-color: transparent transparent -ri5-primary transparent;
+    -fx-text-fill: -ri5-primary;
+    -fx-font-weight: 600;
+}
+
+.settings-tab:hover:!selected {
+    -fx-text-fill: -ri5-text;
+    -fx-background-color: -ri5-primary-soft;
+    -fx-background-radius: 4 4 0 0;
+}
+
+.settings-section-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ri5-text-secondary;
+    -fx-padding: 8 0 2 0;
+}
+
+.settings-color-btn {
+    -fx-min-width: 24;
+    -fx-min-height: 24;
+    -fx-max-width: 24;
+    -fx-max-height: 24;
+    -fx-border-color: -ri5-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-cursor: hand;
+}
+
+.settings-apply-btn {
+    -fx-background-color: -ri5-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-background-radius: 5;
+    -fx-padding: 6 20 6 20;
+}
+
+.settings-apply-btn:hover {
+    -fx-background-color: -ri5-primary-alt;
+}

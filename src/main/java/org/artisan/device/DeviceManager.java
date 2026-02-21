@@ -18,6 +18,11 @@ public final class DeviceManager {
   public static final String BESCA_RTU = "Besca (Modbus RTU/USB)";
   public static final String DIEDRICH_RTU = "Diedrich (Modbus RTU)";
 
+  public static final String MUGMA     = "Mugma";
+  public static final String LEBREW    = "LeBrew RoastSeeNEXT";
+  public static final String BLUEDOT   = "BlueDOT";
+  public static final String SANTOKER_R= "Santoker R";
+
   private static final List<String> DEVICE_TYPES = Collections.unmodifiableList(Arrays.asList(
       "Hottop",
       "Aillio R1 Bullet",
@@ -25,6 +30,11 @@ public final class DeviceManager {
       BESCA_TCP,
       BESCA_RTU,
       DIEDRICH_RTU,
+      "Santoker",
+      SANTOKER_R,
+      MUGMA,
+      LEBREW,
+      BLUEDOT,
       "Modbus TCP",
       "Modbus RTU",
       "Generic Serial (FUJI PXR)",
@@ -80,6 +90,19 @@ public final class DeviceManager {
         return new AillioR1Device();
       case "Kaleido":
         return new KaleidoDevice();
+      case "Santoker":
+        return port != null && !port.isEmpty() ? new SantokerDevice(port) : new StubDevice();
+      case SANTOKER_R:
+        return port != null && !port.isEmpty() ? new SantokerDevice(port) : new StubDevice();
+      case MUGMA: {
+        String h = (port != null && !port.isEmpty()) ? port : "192.168.10.10";
+        int p2 = baudRate > 0 ? baudRate : 8088;
+        return new MugmaDevice(h, p2);
+      }
+      case LEBREW:
+        return new LeBrewDevice();
+      case BLUEDOT:
+        return new BlueDotDevice();
       case BESCA_TCP: {
         BescaDevice d = BescaDevice.tcpMode(port != null && !port.isEmpty() ? port : "192.168.1.1");
         if (opts != null) {

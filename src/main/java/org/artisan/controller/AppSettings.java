@@ -10,6 +10,8 @@ import org.artisan.model.AxisConfig;
  */
 public final class AppSettings {
 
+  private static AppSettings instance;
+
   private static final String NODE = "org/artisan/artisan-java";
   private static final String KEY_LAST_DEVICE = "lastDevicePort";
   private static final String KEY_DEVICE_TYPE = "deviceType";
@@ -253,7 +255,16 @@ public final class AppSettings {
     s.autoChargeDrop = prefs.getDouble(KEY_ROAST_AUTO_CHARGE_DROP, 5.0);
     s.autoChargeSustain = prefs.getDouble(KEY_ROAST_AUTO_CHARGE_SUSTAIN, 20.0);
     s.preRoastTimeout = prefs.getDouble(KEY_ROAST_PRE_ROAST_TIMEOUT, 300.0);
+    instance = s;
     return s;
+  }
+
+  /** Shared instance (loaded lazily). */
+  public static synchronized AppSettings getInstance() {
+    if (instance == null) {
+      instance = load();
+    }
+    return instance;
   }
 
   /** Saves this instance to Preferences. */

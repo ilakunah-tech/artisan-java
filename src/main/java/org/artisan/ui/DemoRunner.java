@@ -68,6 +68,10 @@ public final class DemoRunner {
                 if (et > 250) et = 250;
                 if (appController != null)
                     appController.acceptSampleFromComm(t, bt, et);
+                if (viewModel != null) {
+                    double elapsedTimeSec = t;
+                    Platform.runLater(() -> viewModel.setElapsedSec(elapsedTimeSec));
+                }
                 pushModulation(viewModel, t);
             }
         };

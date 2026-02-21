@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -13,6 +14,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Generic async communication port (TCP or serial).
@@ -20,6 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Equivalent to Python artisanlib.async_comm.AsyncComm.
  */
 public abstract class AsyncCommPort {
+
+    private static final Logger LOG = Logger.getLogger(AsyncCommPort.class.getName());
 
     private final String host;
     private final int port;
@@ -144,7 +149,7 @@ public abstract class AsyncCommPort {
                 }
             } catch (IOException e) {
                 if (logging) {
-                    // log at debug level in real impl
+                    LOG.log(Level.FINE, "AsyncCommPort connection error", e);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -256,7 +261,7 @@ public abstract class AsyncCommPort {
             }
         } catch (IOException e) {
             if (logging && running.get()) {
-                // log
+                LOG.log(Level.FINE, "AsyncCommPort read error", e);
             }
         }
     }
@@ -270,7 +275,7 @@ public abstract class AsyncCommPort {
                     break;
                 }
                 if (logging) {
-                    // log write
+                    LOG.fine("AsyncCommPort write: " + Arrays.toString(message));
                 }
                 out.write(message);
                 out.flush();
@@ -279,7 +284,7 @@ public abstract class AsyncCommPort {
             Thread.currentThread().interrupt();
         } catch (IOException e) {
             if (logging) {
-                // log
+                LOG.log(Level.FINE, "AsyncCommPort write error", e);
             }
         }
     }

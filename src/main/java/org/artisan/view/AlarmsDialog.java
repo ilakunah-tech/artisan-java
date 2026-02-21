@@ -1,5 +1,6 @@
 package org.artisan.view;
 
+import java.io.File;
 import java.io.IOException;
 
 import javafx.collections.FXCollections;
@@ -16,8 +17,11 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
@@ -145,11 +149,18 @@ public final class AlarmsDialog extends ArtisanDialog {
 
         table.getColumns().addAll(colEnabled, colNum, colDesc, colCond, colThresh, colAction, colParam, colOnce, colGuard);
 
+        // ── Edit buttons ──────────────────────────────────────────────────────
         Button addBtn = new Button("Add");
         addBtn.setOnAction(e -> {
             items.add(new Alarm(true, "", AlarmCondition.BT_RISES_ABOVE, 200.0, AlarmAction.POPUP_MESSAGE, "", false, -1, false));
         });
-        Button removeBtn = new Button("Remove");
+        Button insertBtn = new Button("Insert");
+        insertBtn.setOnAction(e -> {
+            int idx = table.getSelectionModel().getSelectedIndex();
+            Alarm a = new Alarm(true, "", AlarmCondition.BT_RISES_ABOVE, 200.0, AlarmAction.POPUP_MESSAGE, "", false, -1, false);
+            if (idx >= 0) items.add(idx, a); else items.add(0, a);
+        });
+        Button removeBtn = new Button("Delete");
         removeBtn.setOnAction(e -> {
             int idx = table.getSelectionModel().getSelectedIndex();
             if (idx >= 0) items.remove(idx);
@@ -165,10 +176,30 @@ public final class AlarmsDialog extends ArtisanDialog {
             if (sel != null && alarmEngine != null) alarmEngine.testAlarm(sel);
         });
 
-        HBox buttons = new HBox(10, addBtn, removeBtn, duplicateBtn, testBtn);
-        buttons.setPadding(new Insets(8, 0, 0, 0));
+        // ── Enable all / disable all ──────────────────────────────────────────
+        Button allOnBtn = new Button("All On");
+        allOnBtn.setOnAction(e -> items.forEach(a -> a.setEnabled(true)));
+        Button allOffBtn = new Button("All Off");
+        allOffBtn.setOnAction(e -> items.forEach(a -> a.setEnabled(false)));
 
-        VBox root = new VBox(10, new Label("Alarms (IF condition THEN action). Guard: index of alarm that must fire first (-1 = none)."), table, buttons);
+        // ── Import / Export ───────────────────────────────────────────────────
+        Button loadBtn = new Button("Load...");
+        loadBtn.setOnAction(e -> importAlarms());
+        Button saveBtn = new Button("Save...");
+        saveBtn.setOnAction(e -> exportAlarms());
+
+        // ── Copy table to clipboard ───────────────────────────────────────────
+        Button copyBtn = new Button("Copy Table");
+        copyBtn.setOnAction(e -> copyTableToClipboard());
+
+        HBox editRow  = new HBox(8, addBtn, insertBtn, removeBtn, duplicateBtn, testBtn);
+        HBox extraRow = new HBox(8, allOnBtn, allOffBtn, loadBtn, saveBtn, copyBtn);
+        editRow.setPadding(new Insets(4, 0, 0, 0));
+        extraRow.setPadding(new Insets(0, 0, 0, 0));
+
+        VBox root = new VBox(8,
+                new Label("Alarms (IF condition THEN action). Guard: index of alarm that must fire first (-1 = none)."),
+                table, editRow, extraRow);
         root.setPadding(new Insets(10));
         return root;
     }
@@ -189,5 +220,62 @@ public final class AlarmsDialog extends ArtisanDialog {
         }
         onSaved.run();
         super.onOk(e);
+    }
+
+    private void importAlarms() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Load Alarms");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Alarm files (*.json)", "*.json"));
+        File f = chooser.showOpenDialog(getStage());
+        if (f == null) return;
+        AlarmList loaded = AlarmListPersistence.load(f.toPath());
+        if (loaded != null) {
+            items.clear();
+            for (int i = 0; i < loaded.size(); i++) items.add(copy(loaded.get(i)));
+        }
+    }
+
+    private void exportAlarms() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Alarms");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Alarm files (*.json)", "*.json"));
+        chooser.setInitialFileName("alarms.json");
+        File f = chooser.showSaveDialog(getStage());
+        if (f == null) return;
+        AlarmList toSave = new AlarmList();
+        for (Alarm a : items) toSave.add(a);
+        try {
+            AlarmListPersistence.save(toSave, f.toPath());
+        } catch (IOException ex) {
+            showError("Save failed", ex.getMessage());
+        }
+    }
+
+    private void copyTableToClipboard() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("#\tOn\tDescription\tCondition\tThreshold\tAction\tParam\tOnce\tGuard\n");
+        for (int i = 0; i < items.size(); i++) {
+            Alarm a = items.get(i);
+            sb.append(i + 1).append('\t')
+              .append(a.isEnabled() ? "ON" : "OFF").append('\t')
+              .append(a.getDescription()).append('\t')
+              .append(a.getCondition()).append('\t')
+              .append(a.getThreshold()).append('\t')
+              .append(a.getAction()).append('\t')
+              .append(a.getActionParam()).append('\t')
+              .append(a.isTriggerOnce() ? "Yes" : "No").append('\t')
+              .append(a.getGuardAlarmIndex()).append('\n');
+        }
+        ClipboardContent content = new ClipboardContent();
+        content.putString(sb.toString());
+        Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    private void showError(String header, String msg) {
+        Alert err = new Alert(Alert.AlertType.ERROR);
+        err.setTitle("Alarms");
+        err.setHeaderText(header);
+        err.setContentText(msg);
+        err.showAndWait();
     }
 }

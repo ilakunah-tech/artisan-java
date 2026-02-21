@@ -10,6 +10,7 @@ import java.util.prefs.Preferences;
 public final class DisplaySettings {
 
     private static final String NODE = "org/artisan/artisan-java";
+    private static DisplaySettings instance;
 
     // --- Curve colors (Curves tab) ---
     private static final String PREFIX_PALETTE = "palette.";
@@ -241,6 +242,10 @@ public final class DisplaySettings {
             case "bgeventtext": return "#000000";
             case "metbox": return "#cc0f50";
             case "mettext": return "#ffffff";
+            case "backgroundmetcolor": return DEFAULT_ET;
+            case "backgroundbtcolor": return DEFAULT_BT;
+            case "backgrounddeltaetcolor": return DEFAULT_DELTAET;
+            case "backgrounddeltabtcolor": return DEFAULT_DELTABT;
             case "analysismask": return "#bababa";
             case "statsanalysisbkgnd": return "#ffffff";
             default: return null;
@@ -287,7 +292,36 @@ public final class DisplaySettings {
 
     /** Load from preferences into this in-memory (DisplaySettings is stateless read-through). */
     public static DisplaySettings load() {
-        return new DisplaySettings();
+        DisplaySettings settings = new DisplaySettings();
+        instance = settings;
+        return settings;
+    }
+
+    /** Shared instance (loaded lazily). */
+    public static synchronized DisplaySettings getInstance() {
+        if (instance == null) {
+            instance = load();
+        }
+        return instance;
+    }
+
+    /** Palette keys used by the UI. */
+    public static String[] getPaletteKeys() {
+        return new String[] {
+            "background", "canvas", "grid", "title", "ylabel", "xlabel", "text", "markers", "watermarks",
+            "timeguide", "aucguide", "aucarea", "legendbg", "legendborder",
+            "rect1", "rect2", "rect3", "rect4", "rect5",
+            "specialeventbox", "specialeventtext", "bgeventmarker", "bgeventtext", "metbox", "mettext",
+            "analysismask", "statsanalysisbkgnd",
+            "backgroundmetcolor", "backgroundbtcolor", "backgrounddeltaetcolor", "backgrounddeltabtcolor"
+        };
+    }
+
+    /** Flush preferences to storage. */
+    public void save() {
+        try {
+            Preferences.userRoot().node(NODE).flush();
+        } catch (Exception ignored) {}
     }
 
     /** Restore all curve/graph/LCD and display defaults. Caller should persist (we write to prefs in setters when using load()). */
