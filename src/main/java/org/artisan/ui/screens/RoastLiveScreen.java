@@ -15,6 +15,7 @@ import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.artisan.controller.AppController;
+import org.artisan.controller.RoastStateMachine;
 import org.artisan.controller.DisplaySettings;
 import org.artisan.model.EventEntry;
 import org.artisan.model.EventType;
@@ -53,6 +54,7 @@ public final class RoastLiveScreen {
     private Popup popup;
     private ModulationTimeline modulationRef;
     private Runnable onStart;
+    private RoastStateMachine roastStateMachine;
 
     public RoastLiveScreen(Stage primaryStage, AppController appController,
                            RoastChartController chartController, DisplaySettings displaySettings,
@@ -122,7 +124,7 @@ public final class RoastLiveScreen {
                     viewModel.setEt(et);
                     viewModel.setRorBT(rorBT);
                     viewModel.setRorET(rorET);
-                    viewModel.setElapsedSec(timeSec);
+                    viewModel.setElapsedSec(computeElapsedSec(timeSec));
                     viewModel.setSamplingActive(true);
                 }));
 
@@ -350,6 +352,26 @@ public final class RoastLiveScreen {
 
     public void setModulationTimelineRef(ModulationTimeline ref) {
         this.modulationRef = ref;
+    }
+
+    public void setRoastStateMachine(RoastStateMachine machine) {
+        this.roastStateMachine = machine;
+    }
+
+    private double computeElapsedSec(double timeSec) {
+        if (roastStateMachine == null || appController == null) return timeSec;
+        var cd = appController.getSession().getCanvasData();
+        if (cd == null) return timeSec;
+        List<Double> timex = cd.getTimex();
+        if (timex == null || timex.isEmpty()) return timeSec;
+        int chargeIdx = cd.getChargeIndex();
+        if (roastStateMachine.getState() == RoastStateMachine.State.PRE_ROAST && chargeIdx < 0) {
+            return timex.get(timex.size() - 1) - timex.get(0);
+        }
+        if (chargeIdx >= 0 && chargeIdx < timex.size()) {
+            return timex.get(timex.size() - 1) - timex.get(chargeIdx);
+        }
+        return timeSec;
     }
 
     public void setPhaseStripProfile(ReferenceProfile rp) {

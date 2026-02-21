@@ -130,6 +130,11 @@ public final class RoastChartController {
         overlay.setOnCursorMoved(c);
     }
 
+    public void setOnChartRightClick(
+        java.util.function.Consumer<RoastOverlayCanvas.ChartRightClickInfo> cb) {
+        overlay.setOnChartRightClick(cb);
+    }
+
     public void setCurveSet(CurveSet curveSet) {
         this.curveSet = curveSet;
         applyColors();
@@ -333,13 +338,15 @@ public final class RoastChartController {
                 if (Double.isFinite(v)) { dataMin = Math.min(dataMin, v); dataMax = Math.max(dataMax, v); }
             }
         }
-        if (Double.isFinite(dataMin) && Double.isFinite(dataMax)) {
-            if (cfg.getUnit() == AxisConfig.TemperatureUnit.FAHRENHEIT) {
-                dataMin = AxisConfig.celsiusToFahrenheit(dataMin);
-                dataMax = AxisConfig.celsiusToFahrenheit(dataMax);
-            }
-            chartFactory.autoScaleTemp(dataMin, dataMax);
+        if (!Double.isFinite(dataMin) || !Double.isFinite(dataMax)) return;
+        dataMin -= 10;
+        dataMax += 10;
+        dataMin = Math.max(dataMin, cfg.getTempAutoScaleFloor());
+        if (cfg.getUnit() == AxisConfig.TemperatureUnit.FAHRENHEIT) {
+            dataMin = AxisConfig.celsiusToFahrenheit(dataMin);
+            dataMax = AxisConfig.celsiusToFahrenheit(dataMax);
         }
+        chartFactory.autoScaleTemp(dataMin, dataMax);
     }
 
     private void autoScaleRorAxis() {

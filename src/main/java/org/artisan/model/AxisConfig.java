@@ -28,7 +28,9 @@ public final class AxisConfig {
     /** Current temperature unit. */
     private TemperatureUnit unit;
     /** Auto-fit temperature axis from data. */
-    private boolean autoScaleY = false;
+    private boolean autoScaleY = true;
+    /** Auto-fit lower bound floor (°C) for temp axis. */
+    private double tempAutoScaleFloor = 50.0;
     /** Auto-fit RoR axis from data. */
     private boolean autoScaleY2 = false;
     /** RoR (right) axis min (degrees/min). */
@@ -117,6 +119,9 @@ public final class AxisConfig {
     public boolean isAutoScaleY() { return autoScaleY; }
     public void setAutoScaleY(boolean autoScaleY) { this.autoScaleY = autoScaleY; }
 
+    public double getTempAutoScaleFloor() { return tempAutoScaleFloor; }
+    public void setTempAutoScaleFloor(double v) { this.tempAutoScaleFloor = v; }
+
     public boolean isAutoScaleY2() { return autoScaleY2; }
     public void setAutoScaleY2(boolean autoScaleY2) { this.autoScaleY2 = autoScaleY2; }
 
@@ -182,8 +187,9 @@ public final class AxisConfig {
         target.setTempMin(p.getDouble(PREFIX + "tempMin", 0));
         target.setTempMax(p.getDouble(PREFIX + "tempMax", 300));
         target.setTempTickStep(p.getDouble(PREFIX + "tempTickStep", 25));
-        target.setAutoScaleY(p.getBoolean(PREFIX + "autoScaleY", false));
+        target.setAutoScaleY(p.getBoolean(PREFIX + "autoScaleY", true));
         target.setAutoScaleY2(p.getBoolean(PREFIX + "autoScaleY2", false));
+        target.setTempAutoScaleFloor(p.getDouble(PREFIX + "tempAutoScaleFloor", 50.0));
         target.setRorMin(p.getDouble(PREFIX + "rorMin", DEFAULT_MIN_ROR));
         target.setRorMax(p.getDouble(PREFIX + "rorMax", DEFAULT_MAX_ROR));
         target.setUnit(p.getBoolean(PREFIX + "unitFahrenheit", false) ? TemperatureUnit.FAHRENHEIT : TemperatureUnit.CELSIUS);
@@ -201,6 +207,7 @@ public final class AxisConfig {
         p.putDouble(PREFIX + "tempTickStep", config.getTempTickStep());
         p.putBoolean(PREFIX + "autoScaleY", config.isAutoScaleY());
         p.putBoolean(PREFIX + "autoScaleY2", config.isAutoScaleY2());
+        p.putDouble(PREFIX + "tempAutoScaleFloor", config.getTempAutoScaleFloor());
         p.putDouble(PREFIX + "rorMin", config.getRorMin());
         p.putDouble(PREFIX + "rorMax", config.getRorMax());
         p.putBoolean(PREFIX + "unitFahrenheit", config.getUnit() == TemperatureUnit.FAHRENHEIT);

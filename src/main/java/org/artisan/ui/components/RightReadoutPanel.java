@@ -24,6 +24,10 @@ public final class RightReadoutPanel extends VBox {
     private final ReferenceBox refBox;
     private final ModulationTimeline modulationTimeline;
     private AppController appController;
+    private final Label minutesLabel;
+    private final Label colonLabel;
+    private final Label secondsLabel;
+    private final Label preLabel;
 
     public RightReadoutPanel(RoastViewModel vm) {
         getStyleClass().add("right-readout-panel");
@@ -33,11 +37,15 @@ public final class RightReadoutPanel extends VBox {
         setSpacing(6);
 
         // 1. TIMER — split into three labels with blinking colon
-        Label minutesLabel = new Label("00");
+        preLabel = new Label("PRE");
+        preLabel.getStyleClass().add("timer-pre-label");
+        preLabel.setVisible(false);
+        preLabel.setManaged(false);
+        minutesLabel = new Label("00");
         minutesLabel.getStyleClass().add("timer-label");
-        Label colonLabel = new Label(":");
+        colonLabel = new Label(":");
         colonLabel.getStyleClass().add("timer-label");
-        Label secondsLabel = new Label("00.00");
+        secondsLabel = new Label("00.00");
         secondsLabel.getStyleClass().add("timer-label");
 
         minutesLabel.textProperty().bind(Bindings.createStringBinding(() -> {
@@ -68,7 +76,7 @@ public final class RightReadoutPanel extends VBox {
             }
         });
 
-        HBox timerBox = new HBox(0, minutesLabel, colonLabel, secondsLabel);
+        HBox timerBox = new HBox(6, preLabel, minutesLabel, colonLabel, secondsLabel);
         timerBox.setAlignment(Pos.CENTER);
 
         // 2. READOUT ROWS
@@ -176,6 +184,16 @@ public final class RightReadoutPanel extends VBox {
             controlsSection,
             spacer
         );
+    }
+
+    public void setPreRoastMode(boolean preRoast) {
+        preLabel.setVisible(preRoast);
+        preLabel.setManaged(preRoast);
+        Color c = preRoast ? Color.web("#FFA500") : null;
+        preLabel.setTextFill(preRoast ? Color.web("#FFA500") : null);
+        minutesLabel.setTextFill(c);
+        colonLabel.setTextFill(c);
+        secondsLabel.setTextFill(c);
     }
 
     public ReferenceBox getRefBox() {

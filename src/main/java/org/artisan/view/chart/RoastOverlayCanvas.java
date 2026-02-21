@@ -69,6 +69,9 @@ public final class RoastOverlayCanvas extends Canvas {
 
     private BiConsumer<Double, Double>                    onCursorMoved;
     private Consumer<RoastChartController.ChartClickInfo> onChartBodyClick;
+    public record ChartRightClickInfo(double timeSec, int timeIndex, double bt, double et,
+                                      double screenX, double screenY) {}
+    private Consumer<ChartRightClickInfo> onChartRightClick;
 
     public RoastOverlayCanvas() {
         // The canvas itself is transparent to mouse — handlers are added to the chart in setChart()
@@ -96,7 +99,8 @@ public final class RoastOverlayCanvas extends Canvas {
             redraw();
         });
         chart.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-            if (onChartBodyClick == null || lastTimex == null) return;
+            if (e.getButton() != javafx.scene.input.MouseButton.PRIMARY) return;
+            if (onChartBodyClick == null || lastTimex == null || lastTimex.isEmpty()) return;
             javafx.scene.canvas.Canvas ic = chart.getCanvas();
             javafx.geometry.Bounds cb;
             try {
@@ -109,6 +113,22 @@ public final class RoastOverlayCanvas extends Canvas {
             double bt = (lastBT != null && idx < lastBT.size()) ? lastBT.get(idx) : 0;
             double et = (lastET != null && idx < lastET.size()) ? lastET.get(idx) : 0;
             onChartBodyClick.accept(new RoastChartController.ChartClickInfo(timeSec, idx, bt, et));
+        });
+        chart.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() != javafx.scene.input.MouseButton.SECONDARY) return;
+            if (onChartRightClick == null || lastTimex == null || lastTimex.isEmpty()) return;
+            javafx.scene.canvas.Canvas ic = chart.getCanvas();
+            javafx.geometry.Bounds cb;
+            try { cb = chart.sceneToLocal(ic.localToScene(ic.getBoundsInLocal())); }
+            catch (Exception ex) { return; }
+            double plotX = cb.getMinX();
+            double timeSec = xAxis.getValueForDisplay(e.getX() - plotX);
+            int idx = nearestIndex(lastTimex, timeSec);
+            if (idx < 0) return;
+            double bt = (lastBT != null && idx < lastBT.size()) ? lastBT.get(idx) : Double.NaN;
+            double et = (lastET != null && idx < lastET.size()) ? lastET.get(idx) : Double.NaN;
+            onChartRightClick.accept(new ChartRightClickInfo(timeSec, idx, bt, et,
+                e.getScreenX(), e.getScreenY()));
         });
     }
 
@@ -124,6 +144,7 @@ public final class RoastOverlayCanvas extends Canvas {
     public void setOnChartBodyClick(Consumer<RoastChartController.ChartClickInfo> cb) {
         this.onChartBodyClick = cb;
     }
+    public void setOnChartRightClick(Consumer<ChartRightClickInfo> cb) { this.onChartRightClick = cb; }
 
     // ── Main entry ───────────────────────────────────────────────────
 
@@ -180,18 +201,30 @@ public final class RoastOverlayCanvas extends Canvas {
                                 double px, double py, double pw, double ph) {
         if (lastTimex == null || lastTimex.isEmpty() || canvasData == null) return;
 
-        double stripY = py + ph - STRIP_H;
+        double stripY    = py + ph - STRIP_H;
+        double lastDataPx = xAxis.getDisplayPosition(lastTimex.get(lastTimex.size() - 1)) + px;
 
         int chargeIdx = canvasData.getChargeIndex();
         int dryIdx    = canvasData.getDryEndIndex();
         int fcIdx     = canvasData.getFcStartIndex();
         int dropIdx   = canvasData.getDropIndex();
 
-        if (chargeIdx < 0 || chargeIdx >= lastTimex.size()) return;
+        if (chargeIdx < 0 || chargeIdx >= lastTimex.size()) {
+            double greyEnd = Math.min(lastDataPx, px + pw);
+            if (greyEnd > px) {
+                gc.setFill(COL_REMAINDER);
+                gc.fillRect(px, stripY, greyEnd - px, STRIP_H);
+            }
+            gc.setStroke(Color.web("#aaaaaa", 0.60));
+            gc.setLineWidth(1.0);
+            gc.strokeLine(px, stripY, px + pw, stripY);
+            return;
+        }
 
         double chargePx  = xAxis.getDisplayPosition(lastTimex.get(chargeIdx)) + px;
         double stripStart = Math.max(px, chargePx);
-        double stripEnd   = px + pw;
+        double stripEnd   = Math.min(px + pw, lastDataPx);
+        if (stripEnd <= stripStart) return;
 
         // Background: dark grey remainder bar
         gc.setFill(COL_REMAINDER);

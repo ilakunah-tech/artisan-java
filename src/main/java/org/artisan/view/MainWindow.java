@@ -38,6 +38,7 @@ import org.artisan.controller.DisplaySettings;
 import org.artisan.controller.FileSession;
 import org.artisan.controller.PhasesSettings;
 import org.artisan.controller.RoastSession;
+import org.artisan.controller.RoastStateMachine;
 import org.artisan.controller.Sample;
 import org.artisan.device.AillioR1Config;
 import org.artisan.device.BleDeviceChannel;
@@ -84,6 +85,7 @@ import org.artisan.view.S7Dialog;
 import org.artisan.view.SimulatorDialog;
 import org.artisan.view.StatusBar;
 import org.artisan.view.TransposerDialog;
+import org.artisan.view.chart.RoastOverlayCanvas;
 import org.artisan.ui.AppShell;
 import org.artisan.ui.DemoRunner;
 import org.artisan.ui.components.ShortcutHelpDialog;
@@ -124,6 +126,9 @@ public final class MainWindow extends Application {
   private boolean samplingOn;
   private HBox customEventButtonsBox;
   private AxisConfig axisConfig;
+  private RoastChartController chartController;
+  private CanvasData canvasData;
+  private final RoastStateMachine roastStateMachine = new RoastStateMachine();
   private SamplingConfig samplingConfig;
   private SerialPortConfig serialPortConfig;
   private ModbusPortConfig modbusPortConfig;
@@ -156,6 +161,7 @@ public final class MainWindow extends Application {
     autoSave.load();
 
     RoastSession session = new RoastSession();
+    canvasData = session.getCanvasData();
     ArtisanTime timeclock = new ArtisanTime();
     Sampling sampling = new Sampling(timeclock);
     DevicePort device = new StubDevice();
@@ -166,12 +172,14 @@ public final class MainWindow extends Application {
     AxisConfig.loadFromPreferences(axisConfig);
     samplingConfig = new SamplingConfig();
     SamplingConfig.loadFromPreferences(samplingConfig);
-    RoastChartController chartController = new RoastChartController(
+    chartController = new RoastChartController(
         session.getCanvasData(), colorConfig, axisConfig, displaySettings);
     chartController.setPhasesConfig(phasesSettings.toConfig());
     chartController.setBackgroundSettings(backgroundSettings);
     chartController.setEventList(session.getEvents());
     chartController.setOnEventMoved(() -> fileSession.markDirty());
+    chartController.setOnChartRightClick(info ->
+        Platform.runLater(() -> showPhaseContextMenu(info)));
     maybeLoadBackgroundProfile(chartController, backgroundSettings);
 
     appController = new AppController(
@@ -213,6 +221,7 @@ public final class MainWindow extends Application {
         update.getStats(), update.getPhase(), update.getDtr(), update.getAuc(), update.getAucBaseTempC()));
 
     appController.setOnSampleConsumer(s -> Platform.runLater(() -> {
+      roastStateMachine.onSample(s.timeSec(), s.bt());
       if (appController.getChartController() != null) {
         appController.getChartController().onSample(s.timeSec(), s.bt(), s.et());
       }
@@ -341,6 +350,16 @@ public final class MainWindow extends Application {
     phasesLCD = new PhasesLCD(phasesSettings);
 
     appShell = new AppShell(primaryStage, appController, chartController, displaySettings, uiPreferences, preferencesStore);
+    appShell.setOnStart(() -> {
+      roastStateMachine.onStartPressed();
+      RoastStateMachine.State st = roastStateMachine.getState();
+      if (st == RoastStateMachine.State.PRE_ROAST) {
+        startRecording();
+        setTimerPreRoastMode();
+      } else if (st == RoastStateMachine.State.ROASTING) {
+        setTimerRoastingMode();
+      }
+    });
     appShell.addLeadingToTopBar(menuOverflowBtn);
     appShell.setOnCurveVisibilitySync(() -> syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences));
     appShell.setOnSettings(() -> openDeviceSettings(root));
@@ -350,6 +369,12 @@ public final class MainWindow extends Application {
     appShell.setMachineName(deviceConfig.getActiveType() != null ? deviceConfig.getActiveType().getDisplayName() : "—");
     demoRunner = new DemoRunner(appController);
     appShell.setDemoRunner(demoRunner);
+    appShell.getRoastLiveScreen().setRoastStateMachine(roastStateMachine);
+
+    roastStateMachine.setOnAutoCharge(
+        () -> Platform.runLater(this::handleAutoCharge));
+    roastStateMachine.setOnPreRoastTimeout(
+        () -> Platform.runLater(this::handlePreRoastTimeout));
 
     StackPane centerWithOverlay = appShell.getRoot();
     centerWithOverlay.setMinSize(0, 0);
@@ -986,6 +1011,123 @@ public final class MainWindow extends Application {
     scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+P"), () -> openPidDialog(root));
     scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+D"), () -> openDevicesDialog(root));
     scene.getAccelerators().put(KeyCombination.keyCombination("Ctrl+Shift+R"), this::doResetLayout);
+  }
+
+  private void startRecording() {
+    if (appController != null) appController.startSampling();
+    samplingOn = true;
+  }
+
+  private void stopRecording() {
+    if (appController != null) appController.stopSampling();
+    samplingOn = false;
+  }
+
+  private void setTimerPreRoastMode() {
+    if (appShell != null) appShell.setTimerPreRoastMode();
+  }
+
+  private void setTimerRoastingMode() {
+    if (appShell != null) appShell.setTimerRoastingMode();
+  }
+
+  private void handleAutoCharge() {
+    if (canvasData == null) return;
+    java.util.List<Double> timex = canvasData.getTimex();
+    int chargeIdx = timex.size() - 1;
+    if (chargeIdx >= 0) {
+      canvasData.setChargeIndex(chargeIdx);
+      if (chartController != null) chartController.resetLiveRor();
+    }
+    setTimerRoastingMode();
+    if (appController != null) {
+      appController.notifyUser("CHARGE detected", NotificationLevel.INFO);
+    }
+    if (chartController != null) chartController.markDirty();
+  }
+
+  private void handlePreRoastTimeout() {
+    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+        javafx.scene.control.Alert.AlertType.CONFIRMATION);
+    alert.setTitle("Pre-start Timeout");
+    alert.setHeaderText("5 minutes elapsed without CHARGE");
+    alert.setContentText("Stop recording and reset timer?");
+    alert.showAndWait().ifPresent(btn -> {
+      if (btn == javafx.scene.control.ButtonType.OK) {
+        stopRecording();
+        roastStateMachine.reset();
+        if (canvasData != null) canvasData.clear();
+        if (chartController != null) chartController.updateChart();
+      }
+    });
+  }
+
+  private void showPhaseContextMenu(RoastOverlayCanvas.ChartRightClickInfo info) {
+    if (canvasData == null || chartController == null) return;
+    javafx.scene.control.ContextMenu menu = new javafx.scene.control.ContextMenu();
+    int idx = info.timeIndex();
+
+    addPhaseMenuItem(menu, "CHARGE",   canvasData.getChargeIndex(),  idx,
+        () -> { canvasData.setChargeIndex(idx);  chartController.markDirty(); });
+    addPhaseMenuItem(menu, "DRY END",  canvasData.getDryEndIndex(),  idx,
+        () -> { canvasData.setDryEndIndex(idx);  chartController.markDirty(); });
+    addPhaseMenuItem(menu, "FC START", canvasData.getFcStartIndex(), idx,
+        () -> { canvasData.setFcStartIndex(idx); chartController.markDirty(); });
+    addPhaseMenuItem(menu, "FC END",   canvasData.getFcEndIndex(),   idx,
+        () -> { canvasData.setFcEndIndex(idx);   chartController.markDirty(); });
+    addPhaseMenuItem(menu, "SC START", canvasData.getScStartIndex(), idx,
+        () -> { canvasData.setScStartIndex(idx); chartController.markDirty(); });
+    addPhaseMenuItem(menu, "SC END",   canvasData.getScEndIndex(),   idx,
+        () -> { canvasData.setScEndIndex(idx);   chartController.markDirty(); });
+    addPhaseMenuItem(menu, "DROP",     canvasData.getDropIndex(),    idx,
+        () -> { canvasData.setDropIndex(idx);    chartController.markDirty(); });
+
+    menu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+
+    javafx.scene.control.MenuItem removeItem =
+        new javafx.scene.control.MenuItem("Remove nearest event");
+    removeItem.setOnAction(e -> removeNearestEvent(idx));
+    menu.getItems().add(removeItem);
+
+    menu.show(chartController.getView().getScene().getWindow(),
+              info.screenX(), info.screenY());
+  }
+
+  private void addPhaseMenuItem(javafx.scene.control.ContextMenu menu,
+                                 String label, int currentIdx, int clickIdx,
+                                 Runnable action) {
+    String text = (currentIdx == clickIdx) ? "✓ " + label : label;
+    javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(text);
+    item.setOnAction(e -> action.run());
+    menu.getItems().add(item);
+  }
+
+  private void removeNearestEvent(int idx) {
+    if (canvasData == null) return;
+    int[] vals = {
+        canvasData.getChargeIndex(), canvasData.getDryEndIndex(),
+        canvasData.getFcStartIndex(), canvasData.getFcEndIndex(),
+        canvasData.getScStartIndex(), canvasData.getScEndIndex(),
+        canvasData.getDropIndex()
+    };
+    int bestSlot = -1, bestDist = Integer.MAX_VALUE;
+    for (int i = 0; i < vals.length; i++) {
+      if (vals[i] >= 0) {
+        int d = Math.abs(vals[i] - idx);
+        if (d < bestDist) { bestDist = d; bestSlot = i; }
+      }
+    }
+    switch (bestSlot) {
+      case 0 -> canvasData.setChargeIndex(-1);
+      case 1 -> canvasData.setDryEndIndex(-1);
+      case 2 -> canvasData.setFcStartIndex(-1);
+      case 3 -> canvasData.setFcEndIndex(-1);
+      case 4 -> canvasData.setScStartIndex(-1);
+      case 5 -> canvasData.setScEndIndex(-1);
+      case 6 -> canvasData.setDropIndex(-1);
+      default -> {}
+    }
+    if (bestSlot >= 0 && chartController != null) chartController.markDirty();
   }
 
   private void toggleSampling() {

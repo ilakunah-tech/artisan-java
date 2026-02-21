@@ -55,6 +55,7 @@ public final class AppShell {
     private Runnable onResetLayout;
     private Runnable onCurveVisibilitySync;
     private Runnable onOpenReplay;
+    private Runnable onStart;
     private Consumer<Path> onOpenRecent;
     private DemoRunner demoRunner;
 
@@ -68,6 +69,9 @@ public final class AppShell {
         this.appController = appController;
         this.uiPreferences = uiPreferences != null ? uiPreferences : new UIPreferences();
         this.preferencesStore = preferencesStore != null ? preferencesStore : new PreferencesStore();
+        this.onStart = () -> {
+            if (this.appController != null) this.appController.startSampling();
+        };
 
         // STEP 1 — RoastLiveScreen
         roastLiveScreen = new RoastLiveScreen(primaryStage, appController, chartController,
@@ -162,7 +166,7 @@ public final class AppShell {
 
         // STEP 10 — Start button wiring
         roastLiveScreen.setOnStart(() -> {
-            if (appController != null) appController.startSampling();
+            if (onStart != null) onStart.run();
             roastLiveScreen.onScreenShown();
             leftDrawer.close();
             leftIconRail.setFlameActive(false);
@@ -200,6 +204,14 @@ public final class AppShell {
 
     public RoastLiveScreen getRoastLiveScreen() { return roastLiveScreen; }
 
+    public void setTimerPreRoastMode() {
+        rightReadoutPanel.setPreRoastMode(true);
+    }
+
+    public void setTimerRoastingMode() {
+        rightReadoutPanel.setPreRoastMode(false);
+    }
+
     public DemoRunner getDemoRunner() { return demoRunner; }
 
     public void setDemoRunner(DemoRunner demoRunner) {
@@ -222,6 +234,10 @@ public final class AppShell {
     public void setOnOpenReplay(Runnable onOpenReplay) {
         this.onOpenReplay = onOpenReplay;
         if (preRoastScreen != null) preRoastScreen.setOnOpenReplay(onOpenReplay);
+    }
+
+    public void setOnStart(Runnable onStart) {
+        this.onStart = onStart;
     }
 
     public void setOnOpenRecent(Consumer<Path> onOpenRecent) {
