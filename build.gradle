@@ -19,7 +19,7 @@ repositories {
 
 javafx {
     version = '21'
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing', 'javafx.web']
 }
 
 dependencies {
@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.openjfx:javafx-fxml:21'
     implementation 'org.openjfx:javafx-swing:21'
     implementation 'org.openjfx:javafx-media:21'
+    implementation 'org.openjfx:javafx-web:21'
 
     // AtlantaFX theme
     implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
@@ -77,7 +78,8 @@ application {
         '--add-opens', 'javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED',
         '--add-opens', 'javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED',
         '--add-opens', 'javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED',
-        '--add-opens', 'javafx.base/com.sun.javafx.event=ALL-UNNAMED'
+        '--add-opens', 'javafx.base/com.sun.javafx.event=ALL-UNNAMED',
+        '-Dprism.allowhidpi=true'
     ]
 }
 
@@ -88,7 +90,8 @@ tasks.named('run') {
         '--add-opens', 'javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED',
         '--add-opens', 'javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED',
         '--add-opens', 'javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED',
-        '--add-opens', 'javafx.base/com.sun.javafx.event=ALL-UNNAMED'
+        '--add-opens', 'javafx.base/com.sun.javafx.event=ALL-UNNAMED',
+        '-Dprism.allowhidpi=true'
     ]
 }
 

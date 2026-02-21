@@ -106,11 +106,16 @@ public final class CanvasData {
         dropIndex = 0;
     }
 
-    public List<Double> getTimex() { return Collections.unmodifiableList(timex); }
-    public List<Double> getTemp1() { return Collections.unmodifiableList(temp1); }
-    public List<Double> getTemp2() { return Collections.unmodifiableList(temp2); }
+    public List<Double> getTimex()  { return Collections.unmodifiableList(timex); }
+    public List<Double> getTemp1()  { return Collections.unmodifiableList(temp1); }
+    public List<Double> getTemp2()  { return Collections.unmodifiableList(temp2); }
     public List<Double> getDelta1() { return Collections.unmodifiableList(delta1); }
     public List<Double> getDelta2() { return Collections.unmodifiableList(delta2); }
+
+    /** Appends one RoR(ET) sample without a full list copy. */
+    public void addDelta1(double ror) { delta1.add(ror); }
+    /** Appends one RoR(BT) sample without a full list copy. */
+    public void addDelta2(double ror) { delta2.add(ror); }
 
     public int getChargeIndex() { return chargeIndex; }
     public void setChargeIndex(int chargeIndex) { this.chargeIndex = chargeIndex; }

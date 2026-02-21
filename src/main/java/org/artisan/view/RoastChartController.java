@@ -21,14 +21,8 @@ import io.fair_acc.dataset.spi.DoubleDataSet;
  * JavaFX controller for the roast profile chart.
  * <p>
  * Architecture: dual Y-axes (temperature left, RoR right) via {@link ChartFactory},
- * with composable {@code ChartPlugin}s for overlays:
- * <ul>
- *   <li>{@link PhaseShadePlugin} — phase shading rectangles</li>
- *   <li>{@link EventMarkerPlugin} — event vertical lines, annotations, drag, legend</li>
- *   <li>{@link AUCPlugin} — area-under-curve with gradient fill</li>
- *   <li>{@link PrecisionCrosshairPlugin} — crosshair with value readout</li>
- *   <li>{@link StatisticsPlugin} — post-roast phase bars and DTR</li>
- * </ul>
+ * with a single {@link RoastOverlayCanvas} that renders all overlays via GraphicsContext
+ * (phase shading, event markers, crosshair, AUC gradient, PhaseStrip, etc.).
  * Background profiles managed by {@link BackgroundManager}.
  */
 public final class RoastChartController {
@@ -41,12 +35,8 @@ public final class RoastChartController {
     private final ColorConfig colorConfig;
     private final AxisConfig axisConfig;
 
-    private final PhaseShadePlugin phasePlugin;
-    private final EventMarkerPlugin eventPlugin;
-    private final AUCPlugin aucPlugin;
-    private final PrecisionCrosshairPlugin crosshairPlugin;
-    private final StatisticsPlugin statsPlugin;
     private final BackgroundManager bgManager;
+    private RoastOverlayCanvas overlay;
 
     private DisplaySettings displaySettings;
     private LiveRorCalculator liveRorET;
@@ -90,39 +80,15 @@ public final class RoastChartController {
 
         chartFactory = new ChartFactory(this.axisConfig);
 
-        phasePlugin = new PhaseShadePlugin();
-        phasePlugin.setCanvasData(canvasData);
-        phasePlugin.setColorConfig(this.colorConfig);
-
-        eventPlugin = new EventMarkerPlugin();
-        eventPlugin.setCanvasData(canvasData);
-        eventPlugin.setColorConfig(this.colorConfig);
-        eventPlugin.setDisplaySettings(displaySettings);
-        eventPlugin.setRequestUpdate(this::updateChart);
-        eventPlugin.setOnChartBodyClick(info -> {
+        overlay = chartFactory.getOverlayCanvas();
+        overlay.setCanvasData(canvasData);
+        overlay.setColorConfig(this.colorConfig);
+        overlay.setDisplaySettings(displaySettings);
+        overlay.setOnChartBodyClick(info -> {
             if (onChartBodyClick != null) {
                 onChartBodyClick.accept(new ChartClickInfo(info.timeSec, info.timeIndex, info.bt, info.et));
             }
         });
-
-        aucPlugin = new AUCPlugin();
-        aucPlugin.setCanvasData(canvasData);
-        aucPlugin.setColorConfig(this.colorConfig);
-        aucPlugin.setDisplaySettings(displaySettings);
-        aucPlugin.setAxisConfig(this.axisConfig);
-
-        crosshairPlugin = new PrecisionCrosshairPlugin();
-        crosshairPlugin.setCanvasData(canvasData);
-        crosshairPlugin.setColorConfig(this.colorConfig);
-        crosshairPlugin.setDisplaySettings(displaySettings);
-        crosshairPlugin.setAxisConfig(this.axisConfig);
-
-        statsPlugin = new StatisticsPlugin();
-        statsPlugin.setCanvasData(canvasData);
-        statsPlugin.setColorConfig(this.colorConfig);
-
-        XYChart chart = chartFactory.getChart();
-        chart.getPlugins().addAll(phasePlugin, aucPlugin, eventPlugin, statsPlugin, crosshairPlugin);
 
         bgManager = new BackgroundManager(chartFactory);
         bgManager.setColorConfig(this.colorConfig);
@@ -139,22 +105,29 @@ public final class RoastChartController {
     // ── Public API (backward-compatible) ──────────────────────────────
 
     public Node getView() {
-        return chartFactory.getChart();
+        return chartFactory.getChartContainer();
     }
 
     public XYChart getChart() {
         return chartFactory.getChart();
     }
 
+    public double getXAxisMin() {
+        return chartFactory.getXAxis().getMin();
+    }
+
+    public double getXAxisMax() {
+        return chartFactory.getXAxis().getMax();
+    }
+
     public void setPhasesConfig(PhasesConfig config) {
         this.phasesConfig = config;
-        phasePlugin.setPhasesConfig(config);
-        statsPlugin.setPhasesConfig(config);
+        overlay.setPhasesConfig(config);
     }
 
     /** Callback (timeSec, btCelsius) when mouse moves over chart. Used for CursorValueBar. */
     public void setOnCursorMoved(BiConsumer<Double, Double> c) {
-        crosshairPlugin.setOnCursorMoved(c);
+        overlay.setOnCursorMoved(c);
     }
 
     public void setCurveSet(CurveSet curveSet) {
@@ -166,11 +139,10 @@ public final class RoastChartController {
         this.displaySettings = ds;
         this.liveRorET = new LiveRorCalculator(getLiveRorWindow());
         this.liveRorBT = new LiveRorCalculator(getLiveRorWindow());
-        eventPlugin.setDisplaySettings(ds);
-        aucPlugin.setDisplaySettings(ds);
-        crosshairPlugin.setDisplaySettings(ds);
+        overlay.setDisplaySettings(ds);
         bgManager.setDisplaySettings(ds);
         applyColors();
+        applyAxisConfig(axisConfig);
     }
 
     public void setBackgroundSettings(BackgroundSettings bs) {
@@ -184,9 +156,9 @@ public final class RoastChartController {
     }
 
     public void setBackgroundProfile(BackgroundProfile bp) {
+        overlay.setBackgroundProfile(bp);
         bgManager.setBackgroundProfile(bp);
         bgManager.syncDatasetsInChart();
-        eventPlugin.setBackgroundProfile(bp);
         applyColors();
     }
 
@@ -195,12 +167,11 @@ public final class RoastChartController {
     }
 
     public void setEventList(EventList eventList) {
-        eventPlugin.setEventList(eventList);
+        overlay.setEventList(eventList);
     }
 
     public void setLiveRecording(boolean liveRecording) {
         this.liveRecording = liveRecording;
-        eventPlugin.setLiveRecording(liveRecording);
     }
 
     public void setZoomFollow(boolean zoomFollow) {
@@ -208,20 +179,20 @@ public final class RoastChartController {
     }
 
     public void setRoastTitle(String title) {
-        eventPlugin.setRoastTitle(title);
+        overlay.setRoastTitle(title);
     }
 
     public void setOnEventMoved(Runnable onEventMoved) {
-        eventPlugin.setOnEventMoved(onEventMoved);
+        // No-op: event dragging not yet reimplemented in canvas overlay
     }
 
     public void setOnChartBodyClick(java.util.function.Consumer<ChartClickInfo> onChartBodyClick) {
         this.onChartBodyClick = onChartBodyClick;
     }
 
-    /** Callback when user clicks an event marker in the events bar. Use to scroll EventLog + flash. */
+    /** Callback when user clicks an event marker in the events bar. */
     public void setOnEventBarClicked(java.util.function.Consumer<org.artisan.model.EventEntry> c) {
-        eventPlugin.setOnEventBarClicked(c);
+        // No-op: event bar click on canvas overlay not yet implemented
     }
 
     /** Resets chart X/Y axes to fixed defaults from axis config. */
@@ -293,8 +264,8 @@ public final class RoastChartController {
 
     /** Sets the highlighted time (vertical line when event selected from list). */
     public void setHighlightTimeSec(double timeSec) {
-        eventPlugin.setHighlightTimeSec(timeSec);
-        updateChart();
+        overlay.setHighlightTimeSec(timeSec);
+        overlay.redraw();
     }
 
     // ── Colors / Styling ──────────────────────────────────────────────
@@ -473,11 +444,7 @@ public final class RoastChartController {
             btDisplay.add(bt[i]);
         }
 
-        phasePlugin.refresh();
-        aucPlugin.refresh(timex, btDisplay);
-        eventPlugin.refresh(timex, etDisplay, btDisplay, d2List);
-        statsPlugin.setRorBT(d2List);
-        statsPlugin.refresh(timex);
+        overlay.redraw(timex, btDisplay, etDisplay, d2List);
         bgManager.updateData();
 
         if (liveRecording && zoomFollow && n > 0) {
@@ -530,14 +497,8 @@ public final class RoastChartController {
         canvasData.addDataPoint(timeSec, bt, et);
         double rorET = liveRorET.addSample(timeSec, et);
         double rorBT = liveRorBT.addSample(timeSec, bt);
-        double clampedET = clamp(rorET, RorCalculator.DEFAULT_MIN_ROR, RorCalculator.DEFAULT_MAX_ROR);
-        double clampedBT = clamp(rorBT, RorCalculator.DEFAULT_MIN_ROR, RorCalculator.DEFAULT_MAX_ROR);
-        List<Double> d1 = new ArrayList<>(canvasData.getDelta1());
-        d1.add(clampedET);
-        List<Double> d2 = new ArrayList<>(canvasData.getDelta2());
-        d2.add(clampedBT);
-        canvasData.setDelta1(d1);
-        canvasData.setDelta2(d2);
+        canvasData.addDelta1(clamp(rorET, RorCalculator.DEFAULT_MIN_ROR, RorCalculator.DEFAULT_MAX_ROR));
+        canvasData.addDelta2(clamp(rorBT, RorCalculator.DEFAULT_MIN_ROR, RorCalculator.DEFAULT_MAX_ROR));
         markDirty();
     }
 

@@ -1,49 +1,51 @@
-/* Cropster RI5–inspired design tokens — dark theme (RI5 style)
- * Background: #12121e, #1a1a2e | Chart: #0d0d0d | Card: #1e1e30
- * Curves: BT #FF6B35 | ET #00D4AA | RoR #FF4757 | Gas #F39C12 | Air #3498DB | Drum #9B59B6
- */
+/* Design tokens — Premium Glass + Material theme */
+:root {
+  /* ── Backgrounds ── */
+  --app-bg-top:    #F0F4F8;
+  --app-bg-bottom: #E4ECF4;
+  --glass-bg:      rgba(255, 255, 255, 0.55);
+  --glass-border:  rgba(255, 255, 255, 0.75);
+  --glass-shadow:  rgba(100, 130, 180, 0.18);
 
-.root, .ri5-root {
-    -ri5-bg-primary: #12121e;
-    -ri5-bg-secondary: #1a1a2e;
-    -ri5-bg-card: #1e1e30;
-    -ri5-border: #2a2a3e;
-    -ri5-text-primary: #e8e8f0;
-    -ri5-text-secondary: #8888a0;
-    -ri5-accent-green: #4CAF50;
-    -ri5-accent-red: #f44336;
-    -ri5-color-gas: #F39C12;
-    -ri5-color-air: #3498DB;
-    -ri5-color-drum: #9B59B6;
-    -ri5-spacing-xs: 4;
-    -ri5-spacing-s: 8;
-    -ri5-spacing-m: 12;
-    -ri5-spacing-l: 16;
-    -ri5-spacing-xl: 24;
-    -ri5-radius-sm: 6;
-    -ri5-radius-md: 8;
-    -ri5-radius-lg: 12;
-    -ri5-shadow-sm: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
-    -ri5-shadow-md: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 8, 0, 0, 2);
+  /* ── Chart ── */
+  --chart-bg:      rgba(245, 248, 252, 0.92);
 
-    /* Light chart tokens */
-    -ri5-bg-chart: #FFFFFF;
-    -ri5-chart-grid: #E0E0E0;
-    -ri5-chart-border: #CCCCCC;
-    -ri5-axis-text: #444444;
-    -ri5-axis-line: #BBBBBB;
-    -ri5-color-bt: #1565C0;
-    -ri5-color-et: #D84315;
-    -ri5-color-ror: #6A1B9A;
-    -ri5-color-reference: #9E9E9E;
-    -ri5-color-prediction: rgba(21, 101, 192, 0.35);
-}
+  /* ── Drawer ── */
+  --drawer-top:    #C8E6F5;
+  --drawer-mid:    #87CEEB;
+  --drawer-bottom: #4A9EC4;
 
-/* Density: compact uses smaller padding */
-.ri5-root.ri5-density-compact {
-    -ri5-panel-padding: 8;
-}
+  /* ── Text ── */
+  --text-primary:  #1A2B45;
+  --text-secondary:#4A6080;
+  --text-muted:    #8FA3BE;
 
-.ri5-root.ri5-density-comfortable {
-    -ri5-panel-padding: 12;
+  /* ── Accent ── */
+  --accent-green:  #2E7D32;
+  --accent-green-glow: rgba(46, 125, 50, 0.45);
+
+  /* ── Readout curve colors ── */
+  --color-bt:   #E53935;
+  --color-et:   #1565C0;
+  --color-dbt:  #F9A825;
+  --color-det:  #37474F;
+
+  /* ── Sliders ── */
+  --slider-burn: #E53935;
+  --slider-air:  #1565C0;
+
+  /* ── Phase strip ── */
+  --phase-dry:      #F5C518;
+  --phase-maillard: #4E260A;
+  --phase-dev:      #2E7D32;
+
+  /* ── Modulation slots ── */
+  --slot-past:  #BDBDBD;
+  --slot-next:  #2E7D32;
+  --slot-soon1: #F9A825;
+  --slot-soon2: #FFF176;
+
+  /* ── Reference box ── */
+  --ref-box-bg:     rgba(255, 255, 255, 0.70);
+  --ref-box-border: rgba(255, 255, 255, 0.90);
 }

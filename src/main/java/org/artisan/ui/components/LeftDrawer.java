@@ -2,188 +2,168 @@ package org.artisan.ui.components;
 
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
-/**
- * Slide-out left drawer overlay. Covers the full scene; contains nav links and
- * the Pre-Roast setup form. Toggle via {@link #toggle()}, open/close via
- * {@link #open()} and {@link #close()}.
- *
- * <p>Usage: add as layer [1] in a StackPane over RoastLiveScreen.
- */
-public final class LeftDrawer extends StackPane {
+import java.util.function.Consumer;
 
-    private static final double DRAWER_WIDTH = 380.0;
+/**
+ * Slide-out left drawer for roast properties (name, stock, blend, reference, comment, weights).
+ * Width 320px, slides from the left.
+ */
+public final class LeftDrawer extends VBox {
+
+    private static final double DRAWER_WIDTH  = 300.0;
+    private static final double LEFT_OFFSET = 30.0;
+    private static final double HIDE_PADDING = 10.0;
     private static final Duration SLIDE_DURATION = Duration.millis(250);
 
-    private final VBox drawer;
     private final TranslateTransition openAnim;
     private final TranslateTransition closeAnim;
     private boolean isOpen = false;
 
-    private Runnable onDemoMode;
-    private Runnable onStartRoast;
-    private Runnable onSimulator;
+    private Consumer<String> onReferenceSelected;
 
     public LeftDrawer() {
-        setPickOnBounds(false);
-        setMouseTransparent(true);
+        getStyleClass().add("left-drawer");
+        setPrefWidth(DRAWER_WIDTH);
+        setMaxWidth(DRAWER_WIDTH);
+        setPrefHeight(Region.USE_COMPUTED_SIZE);
+        setMaxHeight(560);
+        setTranslateX(-(DRAWER_WIDTH + LEFT_OFFSET + HIDE_PADDING));
 
-        Pane backdrop = new Pane();
-        backdrop.setStyle("-fx-background-color: rgba(0,0,0,0.45);");
-        backdrop.setVisible(false);
-        backdrop.setMouseTransparent(false);
-        backdrop.setOnMouseClicked(e -> close());
+        buildContent();
 
-        drawer = new VBox(0);
-        drawer.setPrefWidth(DRAWER_WIDTH);
-        drawer.setMaxWidth(DRAWER_WIDTH);
-        drawer.setMinWidth(DRAWER_WIDTH);
-        drawer.setStyle("-fx-background-color: #FFFFFF;");
-        drawer.setEffect(new DropShadow(20, 4, 0, Color.color(0, 0, 0, 0.4)));
-        drawer.setTranslateX(-DRAWER_WIDTH);
-        drawer.setMaxHeight(Double.MAX_VALUE);
-
-        StackPane.setAlignment(drawer, Pos.CENTER_LEFT);
-        StackPane.setAlignment(backdrop, Pos.CENTER);
-
-        getChildren().addAll(backdrop, drawer);
-
-        openAnim = new TranslateTransition(SLIDE_DURATION, drawer);
+        openAnim = new TranslateTransition(SLIDE_DURATION, this);
         openAnim.setToX(0);
         openAnim.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
 
-        closeAnim = new TranslateTransition(SLIDE_DURATION, drawer);
+        closeAnim = new TranslateTransition(SLIDE_DURATION, this);
         closeAnim.setToX(-DRAWER_WIDTH);
         closeAnim.setInterpolator(javafx.animation.Interpolator.EASE_IN);
-        closeAnim.setOnFinished(e -> {
-            setMouseTransparent(true);
-            backdrop.setVisible(false);
-        });
+    }
 
-        drawer.getChildren().addAll(
-            buildHeader(),
-            new Separator(),
-            buildNav(),
-            new Separator(),
-            buildPreRoastForm()
+    private void buildContent() {
+        Label drawerTitle = new Label("Roast Properties");
+        drawerTitle.setStyle(
+            "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-text-fill: #1A3A5C;" +
+                "-fx-padding: 0 0 6 0;"
         );
-    }
 
-    private HBox buildHeader() {
-        HBox header = new HBox(10);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(10, 12, 10, 12));
-        header.setStyle("-fx-background-color: #0e0e1a;");
-        header.setMinHeight(48);
-
-        Button closeBtn = new Button("\u2716");
-        closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #8888a0; -fx-font-size: 16px; -fx-padding: 0 8 0 0;");
-        closeBtn.setOnAction(e -> close());
-
-        Label logo = new Label("AJ");
-        logo.setStyle("-fx-font-weight: 700; -fx-font-size: 16px; -fx-text-fill: #e8e8f0; -fx-background-color: #5680E9; -fx-background-radius: 4; -fx-padding: 2 6 2 6;");
-
-        Label title = new Label("Artisan Java");
-        title.setStyle("-fx-font-size: 14px; -fx-font-weight: 700; -fx-text-fill: #e8e8f0;");
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        header.getChildren().addAll(closeBtn, logo, title, spacer);
-        return header;
-    }
-
-    private VBox buildNav() {
-        VBox nav = new VBox(2);
-        nav.setPadding(new Insets(8, 0, 8, 0));
-
-        nav.getChildren().addAll(
-            navItem("\uD83D\uDDA5 Simulator", () -> { if (onSimulator != null) onSimulator.run(); }),
-            navItem("\u2699 Pre-Roast Setup", null),
-            navItem("\uD83D\uDCC8 Roast (Live)", this::close)
+        // 1. Roast name
+        TextField roastNameField = new TextField();
+        roastNameField.setPromptText("#Name Roast");
+        roastNameField.setStyle(
+            "-fx-font-size: 15px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-color: rgba(255,255,255,0.85);" +
+                "-fx-border-color: rgba(255,255,255,0.9);" +
+                "-fx-border-radius: 8; -fx-background-radius: 8;" +
+                "-fx-padding: 10 12;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);"
         );
-        return nav;
-    }
+        roastNameField.setMaxWidth(Double.MAX_VALUE);
 
-    private Button navItem(String text, Runnable action) {
-        Button btn = new Button(text);
-        btn.setMaxWidth(Double.MAX_VALUE);
-        btn.setAlignment(Pos.CENTER_LEFT);
-        btn.setStyle("-fx-background-color: transparent; -fx-font-size: 13px; -fx-text-fill: #1F2937; -fx-padding: 10 16 10 16; -fx-background-radius: 0;");
-        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #F3F4F6; -fx-font-size: 13px; -fx-text-fill: #1F2937; -fx-padding: 10 16 10 16; -fx-background-radius: 0;"));
-        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: transparent; -fx-font-size: 13px; -fx-text-fill: #1F2937; -fx-padding: 10 16 10 16; -fx-background-radius: 0;"));
-        if (action != null) btn.setOnAction(e -> action.run());
-        return btn;
-    }
+        // 2. Stock combo
+        ComboBox<String> stockCombo = new ComboBox<>();
+        stockCombo.setPromptText("Stock");
+        stockCombo.setMaxWidth(Double.MAX_VALUE);
+        stockCombo.setStyle(
+            "-fx-background-color: rgba(255,255,255,0.75);" +
+                "-fx-border-color: rgba(255,255,255,0.8);" +
+                "-fx-border-radius: 8; -fx-background-radius: 8;" +
+                "-fx-font-size: 12px;" +
+                "-fx-padding: 6 12;" +
+                "-fx-pref-height: 36px;"
+        );
 
-    private VBox buildPreRoastForm() {
-        VBox form = new VBox(10);
-        form.setPadding(new Insets(16));
-        VBox.setVgrow(form, Priority.ALWAYS);
+        // 3. Blend combo
+        ComboBox<String> blendCombo = new ComboBox<>();
+        blendCombo.setPromptText("Blend");
+        blendCombo.setMaxWidth(Double.MAX_VALUE);
+        blendCombo.setStyle(
+            "-fx-background-color: rgba(255,255,255,0.75);" +
+                "-fx-border-color: rgba(255,255,255,0.8);" +
+                "-fx-border-radius: 8; -fx-background-radius: 8;" +
+                "-fx-font-size: 12px;" +
+                "-fx-padding: 6 12;" +
+                "-fx-pref-height: 36px;"
+        );
 
-        Label sectionTitle = new Label("Pre-Roast Setup");
-        sectionTitle.setStyle("-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #1F2937;");
-
-        Label profileLbl = new Label("Roast Profile");
-        profileLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7280;");
-        ComboBox<String> profileCombo = new ComboBox<>();
-        profileCombo.getItems().addAll("(Default)", "Light", "Medium", "Dark", "City", "Full City", "Vienna", "French");
-        profileCombo.getSelectionModel().select(0);
-        profileCombo.setMaxWidth(Double.MAX_VALUE);
-
-        Label batchLbl = new Label("Batch Size (g)");
-        batchLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7280;");
-        TextField batchField = new TextField();
-        batchField.setPromptText("e.g. 300");
-        batchField.setMaxWidth(Double.MAX_VALUE);
-
-        Label refLbl = new Label("Reference Curve");
-        refLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7280;");
-        ComboBox<String> refCombo = new ComboBox<>();
-        refCombo.getItems().addAll("(None)", "Last roast", "Reference 1", "Reference 2");
-        refCombo.getSelectionModel().select(0);
-        refCombo.setMaxWidth(Double.MAX_VALUE);
-
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-
-        Button demoBtn = new Button("Demo Mode");
-        demoBtn.setMaxWidth(Double.MAX_VALUE);
-        demoBtn.setStyle("-fx-background-color: #1e1e30; -fx-text-fill: #e8e8f0; -fx-border-color: #2a2a3e; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8 16 8 16; -fx-font-size: 13px;");
-        demoBtn.setOnAction(e -> {
-            close();
-            if (onDemoMode != null) onDemoMode.run();
+        // 4. Reference combo
+        ComboBox<String> referenceCombo = new ComboBox<>();
+        referenceCombo.setPromptText("Reference");
+        referenceCombo.setMaxWidth(Double.MAX_VALUE);
+        referenceCombo.setStyle(
+            "-fx-background-color: rgba(255,255,255,0.75);" +
+                "-fx-border-color: rgba(255,255,255,0.8);" +
+                "-fx-border-radius: 8; -fx-background-radius: 8;" +
+                "-fx-font-size: 12px;" +
+                "-fx-padding: 6 12;" +
+                "-fx-pref-height: 36px;"
+        );
+        referenceCombo.getItems().addAll(
+            "Ethiopia Natural 200g",
+            "Brazil Cerrado 250g"
+        );
+        referenceCombo.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && onReferenceSelected != null) {
+                onReferenceSelected.accept(newVal);
+            }
         });
 
-        Button startBtn = new Button("Start Roast");
-        startBtn.setMaxWidth(Double.MAX_VALUE);
-        startBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 10 16 10 16; -fx-font-size: 14px;");
-        startBtn.setOnAction(e -> {
-            close();
-            if (onStartRoast != null) onStartRoast.run();
-        });
+        Separator sectionDivider = new Separator();
+        sectionDivider.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
 
-        form.getChildren().addAll(sectionTitle,
-            profileLbl, profileCombo,
-            batchLbl, batchField,
-            refLbl, refCombo,
-            spacer, demoBtn, startBtn);
-        return form;
+        // 5. Comment area
+        TextArea commentArea = new TextArea();
+        commentArea.setPromptText("Comment batch");
+        commentArea.setMaxWidth(Double.MAX_VALUE);
+        commentArea.setPrefRowCount(4);
+        commentArea.setWrapText(true);
+        commentArea.setStyle(
+            "-fx-background-color: rgba(255,255,255,0.7);" +
+                "-fx-border-color: rgba(255,255,255,0.75);" +
+                "-fx-border-radius: 8; -fx-background-radius: 8;" +
+                "-fx-font-size: 11px;"
+        );
+
+        // 6. Weight row
+        TextField weightGreen = new TextField();
+        weightGreen.setPromptText("138");
+        weightGreen.getStyleClass().add("weight-field");
+
+        TextField weightRoasted = new TextField();
+        weightRoasted.setPromptText("138");
+        weightRoasted.getStyleClass().add("weight-field");
+
+        Label weightLabel = new Label("Weight:");
+        weightLabel.setStyle("-fx-text-fill: #1A3A5C; -fx-font-weight: bold;");
+        Label greenUnit = new Label("g");
+        Label roastedUnit = new Label("g");
+
+        HBox weightsRow = new HBox(6, weightLabel, weightGreen, greenUnit, weightRoasted, roastedUnit);
+        weightsRow.setMaxWidth(Double.MAX_VALUE);
+
+        getChildren().addAll(
+            drawerTitle,
+            roastNameField,
+            stockCombo,
+            blendCombo,
+            referenceCombo,
+            sectionDivider,
+            commentArea,
+            weightsRow
+        );
     }
 
     public void toggle() {
@@ -193,33 +173,28 @@ public final class LeftDrawer extends StackPane {
     public void open() {
         if (isOpen) return;
         isOpen = true;
-        setMouseTransparent(false);
-        Pane bd = (Pane) getChildren().get(0);
-        bd.setVisible(true);
+        setVisible(true);
+        setManaged(true);
         closeAnim.stop();
+        openAnim.setToX(0);
+        openAnim.setOnFinished(null);
         openAnim.playFromStart();
     }
 
     public void close() {
         if (!isOpen) return;
         isOpen = false;
-        closeAnim.stop();
+        openAnim.stop();
+        double hideX = -(getPrefWidth() + LEFT_OFFSET + HIDE_PADDING);
+        closeAnim.setToX(hideX);
+        closeAnim.setOnFinished(e -> {
+            setVisible(false);
+            setManaged(false);
+        });
         closeAnim.playFromStart();
     }
 
-    public boolean isOpen() {
-        return isOpen;
-    }
+    public boolean isOpen() { return isOpen; }
 
-    public void setOnDemoMode(Runnable onDemoMode) {
-        this.onDemoMode = onDemoMode;
-    }
-
-    public void setOnStartRoast(Runnable onStartRoast) {
-        this.onStartRoast = onStartRoast;
-    }
-
-    public void setOnSimulator(Runnable onSimulator) {
-        this.onSimulator = onSimulator;
-    }
+    public void setOnReferenceSelected(Consumer<String> handler) { this.onReferenceSelected = handler; }
 }

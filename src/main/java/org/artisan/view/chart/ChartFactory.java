@@ -4,11 +4,16 @@ import io.fair_acc.chartfx.XYChart;
 import io.fair_acc.chartfx.axes.spi.DefaultNumericAxis;
 import io.fair_acc.chartfx.plugins.EditAxis;
 import io.fair_acc.chartfx.plugins.Zoomer;
+import io.fair_acc.chartfx.renderer.LineStyle;
 import io.fair_acc.chartfx.renderer.spi.ErrorDataSetRenderer;
 import io.fair_acc.chartfx.ui.geometry.Side;
 import io.fair_acc.dataset.spi.DoubleDataSet;
+import javafx.geometry.Pos;
+import javafx.scene.layout.StackPane;
 import javafx.util.StringConverter;
 import org.artisan.model.AxisConfig;
+
+import java.util.List;
 
 /**
  * Factory that builds an {@link XYChart} with dual Y-axes (temperature left, RoR right)
@@ -18,6 +23,8 @@ import org.artisan.model.AxisConfig;
 public final class ChartFactory {
 
     private final XYChart chart;
+    private final StackPane chartContainer;
+    private RoastOverlayCanvas overlayCanvas;
     private final DefaultNumericAxis xAxis;
     private final DefaultNumericAxis tempAxis;
     private final DefaultNumericAxis rorAxis;
@@ -77,6 +84,11 @@ public final class ChartFactory {
         Zoomer zoomer = new Zoomer();
         chart.getPlugins().add(zoomer);
 
+        // Keep tick unit sensible when the Zoomer changes the axis range,
+        // so X-axis time labels stay visible at any zoom level.
+        xAxis.minProperty().addListener((obs, o, n) -> refreshXTickUnit());
+        xAxis.maxProperty().addListener((obs, o, n) -> refreshXTickUnit());
+
         dataET = new DoubleDataSet("ET");
         dataBT = new DoubleDataSet("BT");
         dataDeltaET = new DoubleDataSet("ΔET");
@@ -97,6 +109,38 @@ public final class ChartFactory {
 
         chart.getRenderers().clear();
         chart.getRenderers().addAll(tempRenderer, rorRenderer);
+
+        // Renderer style: smooth lines, no markers, no error bars
+        for (ErrorDataSetRenderer r : List.of(tempRenderer, rorRenderer)) {
+            r.setDrawMarker(false);
+            r.setPolyLineStyle(LineStyle.NORMAL);
+            r.setDrawBubbles(false);
+            r.setAssumeSortedData(true);
+            r.setPointReduction(true);
+        }
+
+        // Register the RoR axis with the chart so it renders on the right side
+        chart.getAxes().add(rorAxis);
+
+        // Canvas overlay: a StackPane wraps both chart and overlay canvas.
+        // The canvas is mouse-transparent; mouse handlers are attached directly to chart.
+        overlayCanvas = new RoastOverlayCanvas();
+        overlayCanvas.setChart(chart, xAxis, tempAxis);
+        chartContainer = new StackPane(chart, overlayCanvas);
+        StackPane.setAlignment(overlayCanvas, Pos.TOP_LEFT);
+    }
+
+    /**
+     * Recomputes the X-axis tick unit after a zoom so that labels remain visible.
+     * Targets ~8–10 ticks across the visible range, clamped to multiples of 30 seconds.
+     */
+    private void refreshXTickUnit() {
+        double range = xAxis.getMax() - xAxis.getMin();
+        if (range <= 0) return;
+        double rawUnit = range / 9.0;
+        // Round up to the nearest multiple of 30 seconds (minimum 30 sec)
+        double unit = Math.max(30, Math.ceil(rawUnit / 30.0) * 30.0);
+        xAxis.setTickUnit(unit);
     }
 
     public void setChargeTimeSec(int chargeTimeSec) {
@@ -107,7 +151,9 @@ public final class ChartFactory {
         return chargeTimeSec;
     }
 
-    public XYChart getChart()                   { return chart; }
+    public XYChart getChart()                       { return chart; }
+    public StackPane getChartContainer()            { return chartContainer; }
+    public RoastOverlayCanvas getOverlayCanvas()    { return overlayCanvas; }
     public DefaultNumericAxis getXAxis()         { return xAxis; }
     public DefaultNumericAxis getTempAxis()      { return tempAxis; }
     public DefaultNumericAxis getRorAxis()       { return rorAxis; }

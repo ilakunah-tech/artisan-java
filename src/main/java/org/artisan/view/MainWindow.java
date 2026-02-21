@@ -20,11 +20,13 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.scene.layout.HBox;
 import javafx.scene.control.TitledPane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import org.artisan.controller.AppController;
 import org.artisan.controller.AppSettings;
@@ -95,6 +97,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -356,19 +359,22 @@ public final class MainWindow extends Application {
     appController.refreshStatistics();
 
     Scene scene = new Scene(root, 1366, 820);
-    try {
-      scene.getStylesheets().add(getClass().getResource("/org/artisan/view/styles.css").toExternalForm());
-    } catch (Exception e) {
-      // styles.css optional
-    }
-    try {
-      scene.getStylesheets().add(getClass().getResource("/org/artisan/ui/theme/ri5.css").toExternalForm());
-    } catch (Exception e) {
-      // theme optional
-    }
+    scene.getStylesheets().clear();
+    scene.getStylesheets().add(
+        getClass().getResource("/org/artisan/ui/theme/tokens.css").toExternalForm());
+    scene.getStylesheets().add(
+        getClass().getResource("/org/artisan/ui/theme/app.css").toExternalForm());
+    scene.getStylesheets().add(
+        Objects.requireNonNull(
+            getClass().getResource("/org/artisan/roast-chart.css")
+        ).toExternalForm());
+    scene.getRoot().setStyle(null);
+    scene.setFill(Color.TRANSPARENT);
+    primaryStage.initStyle(StageStyle.UNDECORATED);
     primaryStage.setScene(scene);
     primaryStage.setMinWidth(1280);
     primaryStage.setMinHeight(720);
+    primaryStage.setMaximized(true);
     registerAccelerators(scene, root, chartController);
     updateWindowTitle();
     primaryStage.setOnCloseRequest(e -> {

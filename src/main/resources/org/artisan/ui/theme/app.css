@@ -1,0 +1,432 @@
+/* ═══ GLOBAL ═══ */
+.root {
+  -fx-background-color: linear-gradient(
+    to bottom, #F0F4F8 0%, #E4ECF4 100%
+  );
+  -fx-font-family: "Segoe UI", "Inter", "System", sans-serif;
+}
+
+/* ═══ CUSTOM TITLE BAR ═══ */
+.custom-title-bar {
+  -fx-background-color: rgba(240, 244, 248, 0.95);
+  -fx-border-color: rgba(180, 200, 220, 0.3);
+  -fx-border-width: 0 0 1 0;
+  -fx-padding: 0 12 0 12;
+  -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
+}
+.title-bar-connect-dot   { -fx-font-size: 11px; }
+.title-bar-connect-label {
+  -fx-font-size: 13px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #2A3F5F;
+}
+.title-bar-btn {
+  -fx-background-color: transparent;
+  -fx-font-size: 14px;
+  -fx-text-fill: #4A6080;
+  -fx-cursor: hand;
+  -fx-padding: 2 10 2 10;
+  -fx-background-radius: 6;
+  -fx-border-color: transparent;
+}
+.title-bar-btn:hover {
+  -fx-background-color: rgba(100,130,180,0.12);
+  -fx-text-fill: #1A2B45;
+}
+.title-bar-btn-close:hover {
+  -fx-background-color: #E53935;
+  -fx-text-fill: white;
+}
+
+/* ═══ LEFT ICON RAIL ═══ */
+.left-icon-rail {
+  -fx-background-color: transparent;
+  -fx-padding: 12 4 0 4;
+  -fx-spacing: 6;
+  -fx-min-width: 38; -fx-pref-width: 38; -fx-max-width: 38;
+}
+.icon-rail-btn {
+  -fx-background-color: transparent;
+  -fx-cursor: hand;
+  -fx-font-size: 18px;
+  -fx-padding: 7 5 7 5;
+  -fx-background-radius: 10;
+  -fx-min-width: 32; -fx-min-height: 32;
+}
+.icon-rail-btn:hover {
+  -fx-background-color: rgba(100,140,200,0.14);
+  -fx-effect: dropshadow(gaussian, rgba(80,120,180,0.2), 6, 0, 0, 0);
+}
+.icon-rail-btn.active {
+  -fx-background-color: rgba(80,120,200,0.2);
+  -fx-effect: dropshadow(gaussian, rgba(80,120,200,0.3), 8, 0, 0, 0);
+}
+
+/* ═══ CHART AREA ═══ */
+.chart-area {
+  -fx-background-color: rgba(245, 248, 252, 0.92);
+}
+.chart-plot-background  { -fx-background-color: rgba(245, 248, 252, 0.92); }
+.chart-horizontal-grid-lines {
+  -fx-stroke: rgba(180,200,220,0.5); -fx-stroke-dash-array: 3 3;
+}
+.chart-vertical-grid-lines {
+  -fx-stroke: rgba(180,200,220,0.5); -fx-stroke-dash-array: 3 3;
+}
+.axis { -fx-tick-label-fill: #4A6080; -fx-font-size: 10px; }
+.axis-line { -fx-stroke: rgba(180,200,220,0.6); }
+
+/* Roast name label */
+.roast-name-label {
+  -fx-font-size: 12px;
+  -fx-text-fill: #8FA3BE;
+  -fx-background-color: transparent;
+}
+
+/* ═══ START BUTTON ═══ */
+.btn-start {
+  -fx-background-color: linear-gradient(to bottom, #43A047, #2E7D32);
+  -fx-text-fill: white;
+  -fx-font-weight: bold;
+  -fx-font-size: 16px;
+  -fx-background-radius: 28;
+  -fx-padding: 12 40 12 40;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.55), 18, 0, 0, 4);
+}
+.btn-start:hover {
+  -fx-background-color: linear-gradient(to bottom, #66BB6A, #388E3C);
+  -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.8), 28, 0, 0, 6);
+}
+.btn-start:pressed {
+  -fx-scale-x: 0.96; -fx-scale-y: 0.96;
+  -fx-effect: dropshadow(gaussian, rgba(46,125,50,0.4), 10, 0, 0, 2);
+}
+
+/* ═══ PHASE STRIP (inside chart) ═══ */
+.phase-strip {
+  -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
+}
+.phase-dry      { -fx-background-color: rgba(249, 168, 37, 0.88); }
+.phase-maillard { -fx-background-color: rgba(78, 38, 10, 0.88); }
+.phase-dev      { -fx-background-color: rgba(46, 125, 50, 0.88); }
+.phase-label {
+  -fx-font-weight: bold;
+  -fx-font-size: 12px;
+  -fx-alignment: CENTER;
+}
+.phase-dry .phase-label      { -fx-text-fill: #1A1A1A; }
+.phase-maillard .phase-label { -fx-text-fill: #FFFFFF; }
+.phase-dev .phase-label      { -fx-text-fill: #FFFFFF; }
+
+/* ═══ RIGHT READOUT PANEL (Glassmorphism) ═══ */
+.right-readout-panel {
+  -fx-background-color: rgba(255, 255, 255, 0.55);
+  -fx-border-color: rgba(255, 255, 255, 0.75);
+  -fx-border-width: 0 0 0 1;
+  -fx-effect: dropshadow(gaussian, rgba(100,130,180,0.15), 12, 0, -2, 0);
+  -fx-padding: 14 12 14 12;
+  -fx-spacing: 10;
+  -fx-min-width: 220; -fx-pref-width: 220;
+}
+
+/* ═══ TIMER ═══ */
+.timer-label {
+  -fx-font-family: "Courier New", monospace;
+  -fx-font-size: 34px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1A2B45;
+  -fx-effect: dropshadow(gaussian, rgba(26,43,69,0.12), 4, 0, 0, 1);
+}
+
+/* ═══ READOUTS ═══ */
+.readout-row { -fx-spacing: 6; -fx-alignment: CENTER_LEFT; }
+
+.readout-label-bt, .readout-value-bt {
+  -fx-text-fill: #E53935;
+  -fx-font-weight: bold;
+  -fx-font-size: 19px;
+}
+.readout-label-et, .readout-value-et {
+  -fx-text-fill: #1565C0;
+  -fx-font-weight: bold;
+  -fx-font-size: 19px;
+}
+.readout-label-dbt, .readout-value-dbt {
+  -fx-text-fill: #F9A825;
+  -fx-font-weight: bold;
+  -fx-font-size: 19px;
+}
+.readout-label-det, .readout-value-det {
+  -fx-text-fill: #37474F;
+  -fx-font-weight: bold;
+  -fx-font-size: 19px;
+}
+
+/* ═══ REFERENCE BOX (Glass card) ═══ */
+.reference-box {
+  -fx-background-color: rgba(255, 255, 255, 0.7);
+  -fx-border-color: rgba(255, 255, 255, 0.9);
+  -fx-border-width: 1.5;
+  -fx-border-radius: 10;
+  -fx-background-radius: 10;
+  -fx-padding: 8 10;
+  -fx-effect: dropshadow(gaussian, rgba(100,130,180,0.18), 8, 0, 0, 2);
+}
+.reference-box-title {
+  -fx-font-size: 12px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1A2B45;
+}
+.reference-box-label {
+  -fx-font-size: 11px;
+  -fx-text-fill: #4A6080;
+}
+.reference-box-empty {
+  -fx-font-size: 11px;
+  -fx-font-style: italic;
+  -fx-text-fill: #8FA3BE;
+}
+
+/* ═══ MODULATION SLOTS (Material cards) ═══ */
+.modulation-slot {
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+  -fx-padding: 6 12;
+  -fx-spacing: 8;
+  -fx-min-height: 30; -fx-pref-height: 30;
+  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 5, 0, 0, 2);
+}
+.modulation-slot-past {
+  -fx-background-color: linear-gradient(to right, #BDBDBD, #CFD8DC);
+}
+.modulation-slot-next {
+  -fx-background-color: linear-gradient(to right, #2E7D32, #43A047);
+}
+.modulation-slot-soon1 {
+  -fx-background-color: linear-gradient(to right, #F9A825, #FFD54F);
+}
+.modulation-slot-soon2 {
+  -fx-background-color: linear-gradient(to right, #FFF176, #FFFDE7);
+}
+.slot-label {
+  -fx-font-weight: bold;
+  -fx-font-size: 12px;
+}
+.modulation-slot-past .slot-label,
+.modulation-slot-next .slot-label  { -fx-text-fill: #FFFFFF; }
+.modulation-slot-soon1 .slot-label { -fx-text-fill: #1A2B45; }
+.modulation-slot-soon2 .slot-label { -fx-text-fill: #3A4A60; }
+.slot-time { -fx-font-size: 10px; -fx-opacity: 0.75; }
+
+/* ═══ SLIDERS (Burn & Air) ═══ */
+.burn-slider .track {
+  -fx-background-color: linear-gradient(to top, #FFCDD2, #E53935);
+  -fx-background-radius: 6;
+  -fx-pref-width: 12px;
+  -fx-effect: dropshadow(gaussian, rgba(229,57,53,0.2), 4, 0, 0, 0);
+}
+.burn-slider .thumb {
+  -fx-background-color: #E53935;
+  -fx-background-radius: 6;
+  -fx-pref-width: 22px; -fx-pref-height: 22px;
+  -fx-effect: dropshadow(gaussian, rgba(229,57,53,0.5), 8, 0, 0, 2);
+}
+.burn-slider .thumb:hover {
+  -fx-effect: dropshadow(gaussian, rgba(229,57,53,0.75), 14, 0, 0, 2);
+  -fx-scale-x: 1.15; -fx-scale-y: 1.15;
+}
+.air-slider .track {
+  -fx-background-color: linear-gradient(to top, #BBDEFB, #1565C0);
+  -fx-background-radius: 6;
+  -fx-pref-width: 12px;
+  -fx-effect: dropshadow(gaussian, rgba(21,101,192,0.2), 4, 0, 0, 0);
+}
+.air-slider .thumb {
+  -fx-background-color: #1E88E5;
+  -fx-background-radius: 6;
+  -fx-pref-width: 22px; -fx-pref-height: 22px;
+  -fx-effect: dropshadow(gaussian, rgba(30,136,229,0.5), 8, 0, 0, 2);
+}
+.air-slider .thumb:hover {
+  -fx-effect: dropshadow(gaussian, rgba(30,136,229,0.75), 14, 0, 0, 2);
+  -fx-scale-x: 1.15; -fx-scale-y: 1.15;
+}
+
+/* ═══ TICK BUTTONS ═══ */
+.tick-btn {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-font-size: 10px;
+  -fx-text-fill: #8FA3BE;
+  -fx-cursor: hand;
+  -fx-padding: 1 4;
+  -fx-background-radius: 4;
+}
+.tick-btn:hover {
+  -fx-background-color: rgba(80,120,200,0.12);
+  -fx-text-fill: #1A2B45;
+  -fx-font-weight: bold;
+}
+.tick-btn:pressed {
+  -fx-background-color: rgba(80,120,200,0.25);
+  -fx-scale-x: 0.95; -fx-scale-y: 0.95;
+}
+
+/* ═══ LEFT DRAWER (Glass + gradient) ═══ */
+.left-drawer {
+  -fx-background-color: linear-gradient(
+    to bottom,
+    rgba(200, 230, 245, 0.92) 0%,
+    rgba(135, 206, 235, 0.88) 50%,
+    rgba(74, 158, 196, 0.90) 100%
+  );
+  -fx-background-radius: 14;
+  -fx-border-color: rgba(255,255,255,0.6);
+  -fx-border-width: 1;
+  -fx-border-radius: 14;
+  -fx-effect: dropshadow(gaussian, rgba(40,80,140,0.28), 20, 0, 4, 4);
+  -fx-padding: 18 16 18 16;
+  -fx-spacing: 11;
+}
+.drawer-title {
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #0D2B4A;
+}
+.drawer-field {
+  -fx-background-color: rgba(255,255,255,0.80);
+  -fx-border-color: rgba(255,255,255,0.95);
+  -fx-border-width: 1.5;
+  -fx-border-radius: 9;
+  -fx-background-radius: 9;
+  -fx-padding: 9 12;
+  -fx-font-size: 13px;
+  -fx-text-fill: #1A2B45;
+  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 5, 0, 0, 2);
+}
+.drawer-field:focused {
+  -fx-border-color: rgba(255,255,255,1.0);
+  -fx-effect: dropshadow(gaussian, rgba(80,160,220,0.35), 8, 0, 0, 0);
+}
+.drawer-combo {
+  -fx-background-color: rgba(255,255,255,0.80);
+  -fx-border-color: rgba(255,255,255,0.95);
+  -fx-border-radius: 9;
+  -fx-background-radius: 9;
+  -fx-font-size: 13px;
+  -fx-pref-height: 38px;
+}
+.drawer-separator {
+  -fx-background-color: rgba(255,255,255,0.35);
+}
+.weight-label {
+  -fx-font-size: 13px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #0D2B4A;
+}
+.weight-field {
+  -fx-background-color: rgba(255,255,255,0.80);
+  -fx-border-color: rgba(255,255,255,0.9);
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+  -fx-font-size: 13px;
+  -fx-pref-width: 80px;
+  -fx-padding: 7 10;
+}
+
+/* ═══ LOGIN CARD (Glassmorphism) ═══ */
+.login-card {
+  -fx-background-color: rgba(255, 255, 255, 0.80);
+  -fx-border-color: rgba(255, 255, 255, 0.90);
+  -fx-border-width: 1.5;
+  -fx-border-radius: 16;
+  -fx-background-radius: 16;
+  -fx-padding: 28 24 24 24;
+  -fx-spacing: 12;
+  -fx-effect: dropshadow(gaussian, rgba(40,80,140,0.22), 24, 0, 0, 6);
+  -fx-pref-width: 340;
+}
+.login-title {
+  -fx-font-size: 22px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1A2B45;
+}
+.login-field-label {
+  -fx-font-size: 13px;
+  -fx-text-fill: #4A6080;
+}
+.login-text-field {
+  -fx-background-color: rgba(240,244,248,0.9);
+  -fx-border-color: rgba(180,200,220,0.6);
+  -fx-border-radius: 9;
+  -fx-background-radius: 9;
+  -fx-padding: 10 14;
+  -fx-font-size: 13px;
+}
+.login-text-field:focused {
+  -fx-border-color: #1E88E5;
+  -fx-effect: dropshadow(gaussian, rgba(30,136,229,0.25), 8, 0, 0, 0);
+}
+.btn-login {
+  -fx-background-color: linear-gradient(to bottom, #5C6BC0, #3949AB);
+  -fx-text-fill: white;
+  -fx-font-weight: bold;
+  -fx-background-radius: 10;
+  -fx-padding: 12 0;
+  -fx-font-size: 14px;
+  -fx-max-width: infinity;
+  -fx-cursor: hand;
+  -fx-effect: dropshadow(gaussian, rgba(57,73,171,0.40), 10, 0, 0, 3);
+}
+.btn-login:hover {
+  -fx-background-color: linear-gradient(to bottom, #7986CB, #5C6BC0);
+  -fx-effect: dropshadow(gaussian, rgba(57,73,171,0.60), 16, 0, 0, 4);
+}
+
+/* ═══ SETTINGS CARD (Glass) ═══ */
+.settings-card {
+  -fx-background-color: rgba(248, 250, 255, 0.88);
+  -fx-border-color: rgba(255,255,255,0.85);
+  -fx-border-width: 1.5;
+  -fx-border-radius: 16;
+  -fx-background-radius: 16;
+  -fx-padding: 22 20;
+  -fx-spacing: 14;
+  -fx-effect: dropshadow(gaussian, rgba(40,80,140,0.22), 28, 0, 0, 8);
+}
+.settings-header {
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #1A2B45;
+}
+.settings-tab {
+  -fx-background-color: rgba(240,244,248,0.8);
+  -fx-text-fill: #4A6080;
+  -fx-background-radius: 22;
+  -fx-border-color: rgba(180,200,220,0.5);
+  -fx-border-width: 1;
+  -fx-border-radius: 22;
+  -fx-padding: 6 18;
+  -fx-font-size: 13px;
+  -fx-cursor: hand;
+}
+.settings-tab:hover {
+  -fx-background-color: rgba(200,215,235,0.9);
+}
+.settings-tab:selected {
+  -fx-background-color: linear-gradient(to bottom, #5C6BC0, #3949AB);
+  -fx-text-fill: white;
+  -fx-border-color: transparent;
+  -fx-effect: dropshadow(gaussian, rgba(57,73,171,0.35), 8, 0, 0, 2);
+}
+
+/* Comment area */
+.comment-area {
+  -fx-background-color: rgba(255,255,255,0.80);
+  -fx-border-color: rgba(255,255,255,0.90);
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+  -fx-font-size: 11px;
+  -fx-pref-height: 60; -fx-max-height: 60;
+}
