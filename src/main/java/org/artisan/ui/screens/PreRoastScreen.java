@@ -4,8 +4,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.application.Platform;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 import org.artisan.controller.AppController;
 import org.artisan.controller.CommController;
 import org.artisan.ui.state.PreferencesStore;
@@ -24,6 +26,7 @@ import java.util.function.Consumer;
 public final class PreRoastScreen {
 
     private static final String[] PROFILE_OPTIONS = { "(Default)", "Light", "Medium", "Dark", "City", "Full City", "Vienna", "French" };
+    private static final String[] LOT_OPTIONS = { "(None)", "Ethiopian Yirgacheffe", "Colombian Supremo", "Kenya AA", "Brazil Santos", "Guatemala Antigua", "Costa Rica Tarrazu" };
     private static final String[] REF_OPTIONS = { "(None)", "Last roast", "Reference 1", "Reference 2" };
 
     private final GridPane root;
@@ -84,16 +87,24 @@ public final class PreRoastScreen {
         root.add(profileCombo, 0, row++);
 
         root.add(new Label("Green coffee / lot:"), 0, row);
-        TextField lotField = new TextField();
-        lotField.setPromptText("Optional");
-        lotField.setMaxWidth(Double.MAX_VALUE);
-        root.add(lotField, 0, row++);
+        ComboBox<String> lotCombo = new ComboBox<>();
+        lotCombo.setEditable(true);
+        lotCombo.getItems().setAll(LOT_OPTIONS);
+        lotCombo.getSelectionModel().select(0);
+        lotCombo.setMaxWidth(Double.MAX_VALUE);
+        makeSearchable(lotCombo, LOT_OPTIONS);
+        root.add(lotCombo, 0, row++);
 
-        root.add(new Label("Batch size (g):"), 0, row);
+        root.add(new Label("Batch size:"), 0, row);
+        HBox batchRow = new HBox(8);
         batchField = new TextField();
-        batchField.setPromptText("e.g. 500");
-        batchField.setMaxWidth(Double.MAX_VALUE);
-        root.add(batchField, 0, row++);
+        batchField.setPromptText("e.g. 0.5");
+        batchField.setPrefColumnCount(8);
+        Label batchUnit = new Label("kg");
+        batchRow.getChildren().addAll(batchField, batchUnit);
+        batchRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        HBox.setHgrow(batchField, Priority.ALWAYS);
+        root.add(batchRow, 0, row++);
 
         root.add(new Label("Target roast level:"), 0, row);
         ComboBox<String> levelCombo = new ComboBox<>();
@@ -103,11 +114,37 @@ public final class PreRoastScreen {
         root.add(levelCombo, 0, row++);
 
         root.add(new Label("Reference curve:"), 0, row);
+        VBox refCard = new VBox(8);
+        refCard.getStyleClass().add("ri5-card");
+        refCard.setPadding(new Insets(12));
         refCombo = new ComboBox<>();
         refCombo.getItems().addAll(REF_OPTIONS);
         refCombo.getSelectionModel().select(0);
         refCombo.setMaxWidth(Double.MAX_VALUE);
-        root.add(refCombo, 0, row++);
+        HBox refButtons = new HBox(8);
+        Button refChartBtn = new Button("Chart");
+        refChartBtn.setTooltip(new Tooltip("Open reference curve in chart window"));
+        refChartBtn.setOnAction(e -> openReferenceChart());
+        Button refBrowserBtn = new Button("Open in browser");
+        refBrowserBtn.setTooltip(new Tooltip("Open reference URL in browser"));
+        refBrowserBtn.setOnAction(e -> {
+            try {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI("https://artisan-scope.org"));
+            } catch (Exception ignored) {}
+        });
+        refButtons.getChildren().addAll(refChartBtn, refBrowserBtn);
+        refCard.getChildren().addAll(refCombo, refButtons);
+        root.add(refCard, 0, row++);
+
+        root.add(new Label("Production plan:"), 0, row);
+        ListView<String> prodList = new ListView<>(FXCollections.observableArrayList("— No plan loaded —"));
+        prodList.setPrefHeight(80);
+        HBox prodButtons = new HBox(8);
+        Button syncProdBtn = new Button("Synchronize");
+        syncProdBtn.setTooltip(new Tooltip("Sync with production plan"));
+        prodButtons.getChildren().add(syncProdBtn);
+        VBox prodBox = new VBox(4, prodList, prodButtons);
+        root.add(prodBox, 0, row++);
 
         HBox leftButtons = new HBox(12);
         startRoastBtn = new Button("Start Roast");
@@ -233,6 +270,18 @@ public final class PreRoastScreen {
         });
     }
 
+    private void openReferenceChart() {
+        Stage stage = new Stage();
+        stage.setTitle("Reference Curve");
+        stage.setWidth(700);
+        stage.setHeight(450);
+        VBox content = new VBox(8, new Label("Reference curve preview"));
+        content.setPadding(new Insets(16));
+        content.setAlignment(javafx.geometry.Pos.CENTER);
+        stage.setScene(new Scene(content));
+        stage.show();
+    }
+
     private void makeSearchable(ComboBox<String> combo, String[] allItems) {
         combo.setEditable(true);
         final boolean[] updating = { false };
@@ -255,7 +304,7 @@ public final class PreRoastScreen {
         String profile = profileCombo.getSelectionModel().getSelectedItem();
         summaryProfile.setText("Profile: " + (profile != null && !profile.isEmpty() ? profile : "(Default)"));
         String batch = batchField.getText();
-        summaryBatch.setText("Batch: " + (batch != null && !batch.trim().isEmpty() ? batch.trim() + " g" : "—"));
+        summaryBatch.setText("Batch: " + (batch != null && !batch.trim().isEmpty() ? batch.trim() + " kg" : "—"));
         summaryMachine.setText("Machine: " + (machineName != null && !machineName.isBlank() ? machineName : "—"));
         String ref = refCombo.getSelectionModel().getSelectedItem();
         summaryReference.setText("Reference: " + (ref != null && !ref.isEmpty() ? ref : "(None)"));
@@ -264,13 +313,13 @@ public final class PreRoastScreen {
     private void validate() {
         String t = batchField.getText();
         if (t == null || t.trim().isEmpty()) {
-            validationLabel.setText("Batch size required for Start Roast.");
+            validationLabel.setText("Batch size (kg) required for Start Roast.");
             startRoastBtn.setDisable(true);
         } else {
             try {
                 double v = Double.parseDouble(t.trim());
-                if (v <= 0 || v > 10000) {
-                    validationLabel.setText("Batch size should be between 1 and 10000 g.");
+                if (v <= 0 || v > 1000) {
+                    validationLabel.setText("Batch size should be between 0.001 and 1000 kg.");
                     startRoastBtn.setDisable(true);
                 } else {
                     validationLabel.setText("");

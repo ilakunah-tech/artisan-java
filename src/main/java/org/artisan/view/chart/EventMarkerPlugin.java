@@ -10,6 +10,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
+import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import org.artisan.controller.DisplaySettings;
@@ -40,7 +41,9 @@ public final class EventMarkerPlugin extends ChartPlugin {
     private int draggedEventIndex = -1;
     private Runnable onEventMoved;
     private Consumer<ChartClickInfo> onChartBodyClick;
+    private Consumer<EventEntry> onEventBarClicked;
     private Runnable requestUpdate;
+    private double highlightTimeSec = Double.NaN;
 
     private final List<Node> dynamicNodes = new ArrayList<>();
 
@@ -58,8 +61,10 @@ public final class EventMarkerPlugin extends ChartPlugin {
     public void setLiveRecording(boolean live)            { this.liveRecording = live; }
     public void setOnEventMoved(Runnable r)               { this.onEventMoved = r; }
     public void setOnChartBodyClick(Consumer<ChartClickInfo> c) { this.onChartBodyClick = c; }
+    public void setOnEventBarClicked(Consumer<EventEntry> c) { this.onEventBarClicked = c; }
     public void setBackgroundProfile(BackgroundProfile bp) { this.backgroundProfile = bp; }
     public void setRequestUpdate(Runnable r)              { this.requestUpdate = r; }
+    public void setHighlightTimeSec(double sec)           { this.highlightTimeSec = sec; }
 
     /** Data passed when user clicks chart body. */
     public static final class ChartClickInfo {
@@ -105,7 +110,7 @@ public final class EventMarkerPlugin extends ChartPlugin {
         if (specialBoxColor == null) specialBoxColor = Color.web("#ff5871");
         if (specialTextColor == null) specialTextColor = Color.WHITE;
 
-        // (A) Special events bar at bottom
+        // (A) Special events bar at bottom (clickable: scroll EventLog + flash marker)
         double barY = plotY + canvasH - SPECIAL_EVENT_BAR_HEIGHT;
         if (eventList != null) {
             for (int i = 0; i < eventList.size(); i++) {
@@ -115,42 +120,58 @@ public final class EventMarkerPlugin extends ChartPlugin {
                 double xSec = timex.get(idx);
                 double xPx = xAxis.getDisplayPosition(xSec) + plotX;
                 if (xPx < plotX - 2 || xPx > plotX + canvasW + 2) continue;
+                Pane hitPane = new Pane();
+                hitPane.setLayoutX(xPx - 8);
+                hitPane.setLayoutY(barY);
+                hitPane.setPrefSize(16, SPECIAL_EVENT_BAR_HEIGHT);
+                hitPane.setPickOnBounds(true);
+                if (onEventBarClicked != null) {
+                    EventEntry ev = e;
+                    hitPane.setOnMouseClicked(me -> onEventBarClicked.accept(ev));
+                }
                 Rectangle rect = new Rectangle(4, SPECIAL_EVENT_BAR_HEIGHT - 2);
-                rect.setX(xPx - 2);
-                rect.setY(barY + 1);
+                rect.setLayoutX(6);
+                rect.setLayoutY(1);
                 rect.setFill(specialBoxColor);
                 rect.setStroke(specialTextColor);
                 rect.setMouseTransparent(true);
-                Tooltip.install(rect, new Tooltip(
-                    String.format("%s  value=%.1f  %s  t=%.0fs", e.getType(), e.getValue(), e.getLabel(), xSec)));
-                addNode(rect);
-
-                Text label = new Text(e.getLabel() != null && !e.getLabel().isEmpty() ? e.getLabel() : e.getType().name());
+                Text label = new Text(abbrevFor(e.getType(), e.getLabel()));
                 label.setFill(specialTextColor);
                 label.setStyle("-fx-font-size: 10px;");
-                label.setX(xPx);
-                label.setY(barY - 2);
+                label.setLayoutX(8);
+                label.setLayoutY(-2);
                 label.setMouseTransparent(true);
-                addNode(label);
+                hitPane.getChildren().addAll(rect, label);
+                Tooltip.install(hitPane, new Tooltip(
+                    String.format("%s  value=%.1f  %s  t=%.0fs", e.getType(), e.getValue(), e.getLabel(), xSec)));
+                addNode(hitPane);
             }
         }
 
-        // (B) Main event markers: vertical dashed lines
-        Color rect1 = colorConfig.getPaletteColor("rect1");
-        Color rect2 = colorConfig.getPaletteColor("rect2");
-        Color rect3 = colorConfig.getPaletteColor("rect3");
-        Color rect4 = colorConfig.getPaletteColor("rect4");
-        addVerticalMarker(xAxis, timex, canvasData.getChargeIndex(), plotX, plotY, canvasH, canvasW, Color.WHITE, "CHARGE");
-        addVerticalMarker(xAxis, timex, canvasData.getDryEndIndex(), plotX, plotY, canvasH, canvasW, rect1 != null ? rect1 : Color.GRAY, "DRY END");
-        addVerticalMarker(xAxis, timex, canvasData.getFcStartIndex(), plotX, plotY, canvasH, canvasW, rect2 != null ? rect2 : Color.GRAY, "FC START");
-        addVerticalMarker(xAxis, timex, canvasData.getFcEndIndex(), plotX, plotY, canvasH, canvasW, rect3 != null ? rect3 : Color.GRAY, "FC END");
-        addVerticalMarker(xAxis, timex, canvasData.getScStartIndex(), plotX, plotY, canvasH, canvasW, rect3 != null ? rect3 : Color.GRAY, "SC START");
-        addVerticalMarker(xAxis, timex, canvasData.getScEndIndex(), plotX, plotY, canvasH, canvasW, rect3 != null ? rect3 : Color.GRAY, "SC END");
-        addVerticalMarker(xAxis, timex, canvasData.getDropIndex(), plotX, plotY, canvasH, canvasW, Color.WHITE, "DROP");
+        // (B) Main event markers: vertical dashed lines (RI5 spec: #FFFFFF opacity 0.6, abbreviations)
+        addVerticalMarker(xAxis, timex, canvasData.getChargeIndex(), plotX, plotY, canvasH, canvasW, "CH");
+        addVerticalMarker(xAxis, timex, canvasData.getDryEndIndex(), plotX, plotY, canvasH, canvasW, "DE");
+        addVerticalMarker(xAxis, timex, canvasData.getFcStartIndex(), plotX, plotY, canvasH, canvasW, "FC\u2191");
+        addVerticalMarker(xAxis, timex, canvasData.getFcEndIndex(), plotX, plotY, canvasH, canvasW, "FC\u2193");
+        addVerticalMarker(xAxis, timex, canvasData.getScStartIndex(), plotX, plotY, canvasH, canvasW, "SC\u2191");
+        addVerticalMarker(xAxis, timex, canvasData.getScEndIndex(), plotX, plotY, canvasH, canvasW, "SC\u2193");
+        addVerticalMarker(xAxis, timex, canvasData.getDropIndex(), plotX, plotY, canvasH, canvasW, "DR");
 
         int coolIdx = findCoolEndIndex();
         if (coolIdx >= 0 && coolIdx < timex.size()) {
-            addVerticalMarker(xAxis, timex, coolIdx, plotX, plotY, canvasH, canvasW, rect4 != null ? rect4 : Color.GRAY, "COOL END");
+            addVerticalMarker(xAxis, timex, coolIdx, plotX, plotY, canvasH, canvasW, "CMT");
+        }
+
+        // (B2) Highlight line when event is selected from list (centers chart on that time)
+        if (Double.isFinite(highlightTimeSec)) {
+            double xPx = xAxis.getDisplayPosition(highlightTimeSec) + plotX;
+            if (xPx >= plotX - 2 && xPx <= plotX + canvasW + 2) {
+                Line hlLine = new Line(xPx, plotY, xPx, plotY + canvasH);
+                hlLine.setStroke(Color.web("#5680E9", 0.9));
+                hlLine.setStrokeWidth(2.5);
+                hlLine.setMouseTransparent(true);
+                addNode(hlLine);
+            }
         }
 
         // (C) Callout annotations for custom events
@@ -303,23 +324,40 @@ public final class EventMarkerPlugin extends ChartPlugin {
 
     private void addVerticalMarker(Axis xAxis, List<Double> timex, int idx,
                                    double plotX, double plotY, double canvasH, double canvasW,
-                                   Color color, String labelText) {
+                                   String labelText) {
         if (idx < 0 || idx >= timex.size()) return;
         double t = timex.get(idx);
         double xPx = xAxis.getDisplayPosition(t) + plotX;
         if (xPx < plotX || xPx > plotX + canvasW) return;
         Line line = new Line(xPx, plotY, xPx, plotY + canvasH);
-        line.setStroke(color);
-        line.getStrokeDashArray().addAll(8.0, 6.0);
+        line.setStroke(Color.web("#333333", 0.5));
+        line.getStrokeDashArray().addAll(6.0, 4.0);
         line.setMouseTransparent(true);
         addNode(line);
         Text lab = new Text(labelText);
-        lab.setFill(color);
+        lab.setFill(Color.web("#333333", 0.9));
         lab.setStyle("-fx-font-size: 10px;");
         lab.setX(xPx + 2);
         lab.setY(plotY + 12);
         lab.setMouseTransparent(true);
         addNode(lab);
+    }
+
+    private static String abbrevFor(EventType type, String customLabel) {
+        if (type == EventType.CUSTOM && customLabel != null && !customLabel.isEmpty()) {
+            return customLabel.length() > 4 ? customLabel.substring(0, 4) : customLabel;
+        }
+        return switch (type) {
+            case CHARGE -> "CH";
+            case DRY_END -> "DE";
+            case FC_START -> "FC\u2191";
+            case FC_END -> "FC\u2193";
+            case SC_START -> "SC\u2191";
+            case SC_END -> "SC\u2193";
+            case DROP -> "DR";
+            case COOL_END -> "CMT";
+            default -> type.name().length() > 3 ? type.name().substring(0, 3) : type.name();
+        };
     }
 
     private void addNode(javafx.scene.Node node) {

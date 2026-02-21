@@ -39,14 +39,14 @@ class PreferencesStoreTest {
             prefs.setTheme("light");
             prefs.setDensity(UIPreferences.Density.COMPACT);
             prefs.setVisibleBT(false);
-            prefs.getLayoutState().setDockWidth(300);
+            prefs.getLayoutState().setDockWidth(250);
             store.save(prefs);
             assertTrue(Files.isRegularFile(store.getPath()));
             UIPreferences loaded = store.load();
             assertEquals("light", loaded.getTheme());
             assertEquals(UIPreferences.Density.COMPACT, loaded.getDensity());
             assertFalse(loaded.isVisibleBT());
-            assertEquals(300.0, loaded.getLayoutState().getDockWidth());
+            assertEquals(250.0, loaded.getLayoutState().getDockWidth());
         } finally {
             if (prev != null) System.setProperty("user.home", prev);
         }
@@ -55,7 +55,7 @@ class PreferencesStoreTest {
     @Test
     void resetLayout_clearsLayoutState() {
         UIPreferences prefs = new UIPreferences();
-        prefs.getLayoutState().setDockWidth(400);
+        prefs.getLayoutState().setDockWidth(999);
         prefs.getLayoutState().setPanelCollapsed(LayoutState.PANEL_LEGEND, true);
         PreferencesStore store = new PreferencesStore();
         store.resetLayout(prefs);

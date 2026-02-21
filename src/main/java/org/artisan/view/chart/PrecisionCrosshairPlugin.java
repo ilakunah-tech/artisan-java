@@ -15,6 +15,7 @@ import org.artisan.model.CanvasData;
 import org.artisan.model.ColorConfig;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Chart-FX plugin providing a precision crosshair with snap-to-curve functionality
@@ -33,6 +34,7 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
     private ColorConfig colorConfig;
     private DisplaySettings displaySettings;
     private AxisConfig axisConfig;
+    private BiConsumer<Double, Double> onCursorMoved;
 
     public PrecisionCrosshairPlugin() {
         crosshairV.getStrokeDashArray().addAll(4.0, 4.0);
@@ -51,13 +53,18 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
         hideAll();
 
         registerInputEventHandler(MouseEvent.MOUSE_MOVED, this::onMouseMoved);
-        registerInputEventHandler(MouseEvent.MOUSE_EXITED, e -> hideAll());
+        registerInputEventHandler(MouseEvent.MOUSE_EXITED, e -> {
+            if (onCursorMoved != null) onCursorMoved.accept(Double.NaN, Double.NaN);
+            hideAll();
+        });
     }
 
     public void setCanvasData(CanvasData data)         { this.canvasData = data; }
     public void setColorConfig(ColorConfig cfg)        { this.colorConfig = cfg; }
     public void setDisplaySettings(DisplaySettings ds) { this.displaySettings = ds; }
     public void setAxisConfig(AxisConfig cfg)          { this.axisConfig = cfg; }
+    /** Callback (timeSec, bt) when mouse moves over chart. */
+    public void setOnCursorMoved(BiConsumer<Double, Double> c) { this.onCursorMoved = c; }
 
     private void onMouseMoved(MouseEvent e) {
         if (displaySettings != null && !displaySettings.isShowCrosshair()) {
@@ -82,6 +89,7 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
         double my = e.getY();
 
         if (mx < plotX || mx > plotX + canvasW || my < plotY || my > plotY + canvasH) {
+            if (onCursorMoved != null) onCursorMoved.accept(Double.NaN, Double.NaN);
             hideAll();
             return;
         }
@@ -144,6 +152,10 @@ public final class PrecisionCrosshairPlugin extends ChartPlugin {
         if (useF) {
             if (Double.isFinite(bt)) bt = AxisConfig.celsiusToFahrenheit(bt);
             if (Double.isFinite(et)) et = AxisConfig.celsiusToFahrenheit(et);
+        }
+        if (onCursorMoved != null) {
+            double btCelsius = Double.isFinite(bt) && useF ? AxisConfig.fahrenheitToCelsius(bt) : bt;
+            onCursorMoved.accept(timeSec, btCelsius);
         }
         String unitStr = useF ? "°F" : "°C";
         int totalSec = (int) Math.round(timeSec);

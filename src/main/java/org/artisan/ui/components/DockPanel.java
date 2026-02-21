@@ -25,7 +25,7 @@ public final class DockPanel extends VBox {
 
     private static final String STYLE_DOCK = "ri5-dock-panel";
     private static final String STYLE_TITLE_BAR = "title-bar";
-    private static final double TITLE_HEIGHT = 42;
+    private static final double TITLE_HEIGHT = 24;
     private static final double DEFAULT_EXPANDED_BODY_HEIGHT = 260;
     private static final Duration COLLAPSE_ANIMATION = Duration.millis(180);
 

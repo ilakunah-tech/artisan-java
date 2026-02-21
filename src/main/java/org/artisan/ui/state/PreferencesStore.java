@@ -143,6 +143,9 @@ public final class PreferencesStore {
                 });
                 prefs.setShortcuts(shortcuts);
             }
+            if (obj.has("drawerLastOpenedSection") && obj.get("drawerLastOpenedSection").isTextual()) {
+                prefs.setDrawerLastOpenedSection(obj.get("drawerLastOpenedSection").asText(null));
+            }
         } catch (IOException e) {
             // return defaults
         }
@@ -197,6 +200,10 @@ public final class PreferencesStore {
             ObjectNode shortcutsObj = root.putObject("shortcuts");
             for (Map.Entry<String, String> e : prefs.getShortcuts().entrySet()) {
                 shortcutsObj.put(e.getKey(), e.getValue());
+            }
+
+            if (prefs.getDrawerLastOpenedSection() != null) {
+                root.put("drawerLastOpenedSection", prefs.getDrawerLastOpenedSection());
             }
 
             mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), root);

@@ -1,22 +1,26 @@
 package org.artisan.view;
 
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-
 import org.artisan.controller.AppController;
 import org.artisan.model.EventType;
+import org.artisan.ui.vm.RoastViewModel;
 
 /**
  * Event chips (pill buttons) and sliders (Gas, Air, Drum).
  * "Show controls" toggle lives in card header; this panel exposes it.
+ * When RoastViewModel provided, sliders bind bidirectionally.
  */
 public final class ControlsPanel extends VBox {
 
@@ -28,6 +32,10 @@ public final class ControlsPanel extends VBox {
     private final ToggleButton showControlsToggle;
 
     public ControlsPanel(AppController appController) {
+        this(appController, null);
+    }
+
+    public ControlsPanel(AppController appController, RoastViewModel vm) {
         this.appController = appController;
         setSpacing(12);
         setPadding(new Insets(0));
@@ -36,14 +44,14 @@ public final class ControlsPanel extends VBox {
         eventChips.getStyleClass().add("ri5-event-chips");
         eventChips.setPrefWrapLength(260);
         eventChips.getChildren().addAll(
-            eventChip("Charge", EventType.CHARGE),
-            eventChip("TP", EventType.TP),
-            eventChip("Dry End", EventType.DRY_END),
-            eventChip("FC Start", EventType.FC_START),
-            eventChip("FC End", EventType.FC_END),
-            eventChip("SC Start", EventType.SC_START),
-            eventChip("SC End", EventType.SC_END),
-            eventChip("Drop", EventType.DROP)
+            eventChip("Charge", EventType.CHARGE, "CHARGE (1)"),
+            eventChip("TP", EventType.TP, "Turning Point"),
+            eventChip("Dry End", EventType.DRY_END, "Dry End (2)"),
+            eventChip("FC Start", EventType.FC_START, "FC Start (3)"),
+            eventChip("FC End", EventType.FC_END, "FC End (4)"),
+            eventChip("SC Start", EventType.SC_START, "SC Start"),
+            eventChip("SC End", EventType.SC_END, "SC End"),
+            eventChip("Drop", EventType.DROP, "DROP (5)")
         );
 
         showControlsToggle = new ToggleButton("Controls");
@@ -54,12 +62,17 @@ public final class ControlsPanel extends VBox {
         gasSlider = slider("Gas", "Gas");
         airSlider = slider("Air", "Air");
         drumSlider = slider("Drum", "Drum");
+        if (vm != null) {
+            Bindings.bindBidirectional(gasSlider.valueProperty(), vm.gasValueProperty());
+            Bindings.bindBidirectional(airSlider.valueProperty(), vm.airValueProperty());
+            Bindings.bindBidirectional(drumSlider.valueProperty(), vm.drumValueProperty());
+        }
         GridPane sliderGrid = new GridPane();
         sliderGrid.setHgap(12);
         sliderGrid.setVgap(10);
-        sliderGrid.add(sliderGroup("Gas", gasSlider), 0, 0);
-        sliderGrid.add(sliderGroup("Air", airSlider), 1, 0);
-        sliderGrid.add(sliderGroup("Drum", drumSlider), 0, 1);
+        sliderGrid.add(sliderGroupWithButtons("Gas", gasSlider, "Gas"), 0, 0);
+        sliderGrid.add(sliderGroupWithButtons("Air", airSlider, "Air"), 1, 0);
+        sliderGrid.add(sliderGroupWithButtons("Drum", drumSlider, "Drum"), 0, 1);
         GridPane.setHgrow(sliderGrid.getChildren().get(0), Priority.ALWAYS);
         GridPane.setHgrow(sliderGrid.getChildren().get(1), Priority.ALWAYS);
         GridPane.setHgrow(sliderGrid.getChildren().get(2), Priority.ALWAYS);
@@ -85,9 +98,10 @@ public final class ControlsPanel extends VBox {
         sliderContent.setVisible(visible);
     }
 
-    private Button eventChip(String label, EventType type) {
+    private Button eventChip(String label, EventType type, String tooltipText) {
         Button b = new Button(label);
         b.getStyleClass().add("ri5-event-chip");
+        b.setTooltip(new Tooltip(tooltipText));
         b.setOnAction(e -> {
             if (appController != null) appController.markEvent(type);
         });
@@ -111,11 +125,43 @@ public final class ControlsPanel extends VBox {
         return s;
     }
 
-    private VBox sliderGroup(String labelText, Slider slider) {
+    private VBox sliderGroupWithButtons(String labelText, Slider slider, String key) {
         Label label = new Label(labelText);
-        VBox box = new VBox(4, label, slider);
+        TextField tf = new TextField();
+        tf.setPrefColumnCount(4);
+        tf.setTextFormatter(new javafx.scene.control.TextFormatter<>(c -> {
+            if (c.getControlNewText().isEmpty()) return c;
+            try {
+                double v = Double.parseDouble(c.getControlNewText());
+                if (v >= 0 && v <= 100) return c;
+            } catch (NumberFormatException ignored) {}
+            return null;
+        }));
+        slider.valueProperty().addListener((a, ov, nv) -> {
+            if (!tf.isFocused()) tf.setText(String.format("%.0f", nv.doubleValue()));
+        });
+        Runnable commitTf = () -> {
+            try {
+                double v = Double.parseDouble(tf.getText());
+                slider.setValue(Math.max(0, Math.min(100, v)));
+            } catch (NumberFormatException ignored) {}
+        };
+        tf.setOnAction(e -> commitTf.run());
+        tf.focusedProperty().addListener((a, wasFocused, nowFocused) -> {
+            if (wasFocused && !nowFocused) commitTf.run();
+        });
+        Button minusBtn = new Button("−");
+        minusBtn.getStyleClass().add("ri5-slider-step-btn");
+        minusBtn.setOnAction(e -> slider.setValue(Math.max(0, slider.getValue() - 1)));
+        Button plusBtn = new Button("+");
+        plusBtn.getStyleClass().add("ri5-slider-step-btn");
+        plusBtn.setOnAction(e -> slider.setValue(Math.min(100, slider.getValue() + 1)));
+        HBox row = new HBox(4, label, tf, minusBtn, slider, plusBtn);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        HBox.setHgrow(slider, Priority.ALWAYS);
+        tf.setText(String.format("%.0f", slider.getValue()));
+        VBox box = new VBox(4, row);
         box.getStyleClass().add("ri5-slider-group");
-        VBox.setVgrow(slider, Priority.NEVER);
         return box;
     }
 }

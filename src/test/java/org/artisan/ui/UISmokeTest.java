@@ -63,14 +63,14 @@ class UISmokeTest extends ApplicationTest {
             System.setProperty("user.home", fakeHome.toString());
             PreferencesStore store = new PreferencesStore();
             UIPreferences prefs = new UIPreferences();
-            prefs.getLayoutState().setDockWidth(320);
+            prefs.getLayoutState().setDockWidth(240);
             prefs.getLayoutState().setPanelCollapsed(LayoutState.PANEL_LEGEND, true);
             prefs.getLayoutState().setControlsVisible(false);
             prefs.setMainDividerPosition(0.7);
             store.save(prefs);
 
             UIPreferences loaded = store.load();
-            assertEquals(320.0, loaded.getLayoutState().getDockWidth());
+            assertEquals(240.0, loaded.getLayoutState().getDockWidth());
             assertTrue(loaded.getLayoutState().isPanelCollapsed(LayoutState.PANEL_LEGEND));
             assertFalse(loaded.getLayoutState().isControlsVisible());
             assertEquals(0.7, loaded.getMainDividerPosition());
@@ -88,7 +88,7 @@ class UISmokeTest extends ApplicationTest {
             System.setProperty("user.home", fakeHome.toString());
             PreferencesStore store = new PreferencesStore();
             UIPreferences prefs = new UIPreferences();
-            prefs.getLayoutState().setDockWidth(400);
+            prefs.getLayoutState().setDockWidth(999);
             prefs.getLayoutState().setPanelDetached(LayoutState.PANEL_READOUTS, true);
             store.resetLayout(prefs);
             store.save(prefs);

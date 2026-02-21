@@ -3,14 +3,17 @@ package org.artisan.ui.components;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.artisan.model.EventEntry;
+import org.artisan.model.EventType;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -26,6 +29,7 @@ public final class EventLogPanel extends VBox {
     private final ObservableList<EventEntry> items = FXCollections.observableArrayList();
     private List<Double> timex;
     private Consumer<String> onQuickAdd;
+    private Consumer<EventEntry> onEventSelected;
 
     public EventLogPanel() {
         setSpacing(6);
@@ -54,12 +58,30 @@ public final class EventLogPanel extends VBox {
                 super.updateItem(e, empty);
                 if (empty || e == null) {
                     setText(null);
+                    setGraphic(null);
                 } else {
                     double timeSec = timeAt(e.getTimeIndex());
                     int m = (int) (timeSec / 60);
                     int s = (int) (timeSec % 60);
-                    setText(String.format("%d:%02d  %s", m, s, e.getLabel()));
+                    String timeStr = String.format("%d:%02d", m, s);
+                    double temp = e.getValue();
+                    String label = e.getLabel() != null ? e.getLabel() : e.getType().name();
+                    String text = String.format("%s  %.1f°C  %s", timeStr, temp, label);
+                    setText(text);
+                    if (isFixedEvent(e.getType())) {
+                        Label check = new Label("\u2713");
+                        check.getStyleClass().add("ri5-event-status-icon");
+                        setGraphic(check);
+                    } else {
+                        setGraphic(null);
+                    }
                 }
+            }
+        });
+        listView.setOnMouseClicked(ev -> {
+            EventEntry sel = listView.getSelectionModel().getSelectedItem();
+            if (sel != null && onEventSelected != null) {
+                onEventSelected.accept(sel);
             }
         });
         VBox.setVgrow(listView, Priority.ALWAYS);
@@ -73,6 +95,23 @@ public final class EventLogPanel extends VBox {
 
     public void setOnQuickAdd(Consumer<String> callback) {
         this.onQuickAdd = callback;
+    }
+
+    /** Called when user selects an event in the list; use to center chart and highlight. */
+    public void setOnEventSelected(Consumer<EventEntry> callback) {
+        this.onEventSelected = callback;
+    }
+
+    /** Scroll list to the given event and select it. */
+    public void scrollToEvent(EventEntry entry) {
+        if (entry == null || !items.contains(entry)) return;
+        listView.getSelectionModel().select(entry);
+        listView.scrollTo(entry);
+    }
+
+    private static boolean isFixedEvent(EventType type) {
+        return type == EventType.CHARGE || type == EventType.DRY_END || type == EventType.FC_START
+            || type == EventType.FC_END || type == EventType.DROP;
     }
 
     private double timeAt(int index) {

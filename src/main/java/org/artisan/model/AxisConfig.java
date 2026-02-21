@@ -28,21 +28,21 @@ public final class AxisConfig {
     /** Current temperature unit. */
     private TemperatureUnit unit;
     /** Auto-fit temperature axis from data. */
-    private boolean autoScaleY = true;
+    private boolean autoScaleY = false;
     /** Auto-fit RoR axis from data. */
-    private boolean autoScaleY2 = true;
+    private boolean autoScaleY2 = false;
     /** RoR (right) axis min (degrees/min). */
     private double rorMin = DEFAULT_MIN_ROR;
     /** RoR (right) axis max (degrees/min). */
     private double rorMax = DEFAULT_MAX_ROR;
 
     /** Default min RoR for axis (degrees/min). */
-    public static final double DEFAULT_MIN_ROR = -20.0;
+    public static final double DEFAULT_MIN_ROR = -5.0;
     /** Default max RoR for axis (degrees/min). */
-    public static final double DEFAULT_MAX_ROR = 50.0;
+    public static final double DEFAULT_MAX_ROR = 30.0;
 
     public AxisConfig() {
-        this(-30, 600, 120, 0, 275, 50, TemperatureUnit.CELSIUS);
+        this(0, 900, 60, 0, 300, 25, TemperatureUnit.CELSIUS);
     }
 
     /**
@@ -176,14 +176,14 @@ public final class AxisConfig {
     public static void loadFromPreferences(AxisConfig target) {
         if (target == null) return;
         Preferences p = Preferences.userRoot().node(PREFS_NODE);
-        target.setTimeMinSec(p.getDouble(PREFIX + "timeMinSec", -30));
-        target.setTimeMaxSec(p.getDouble(PREFIX + "timeMaxSec", 600));
-        target.setTimeTickStepSec(p.getDouble(PREFIX + "timeTickStepSec", 120));
+        target.setTimeMinSec(p.getDouble(PREFIX + "timeMinSec", 0));
+        target.setTimeMaxSec(p.getDouble(PREFIX + "timeMaxSec", 900));
+        target.setTimeTickStepSec(p.getDouble(PREFIX + "timeTickStepSec", 60));
         target.setTempMin(p.getDouble(PREFIX + "tempMin", 0));
-        target.setTempMax(p.getDouble(PREFIX + "tempMax", 275));
-        target.setTempTickStep(p.getDouble(PREFIX + "tempTickStep", 50));
-        target.setAutoScaleY(p.getBoolean(PREFIX + "autoScaleY", true));
-        target.setAutoScaleY2(p.getBoolean(PREFIX + "autoScaleY2", true));
+        target.setTempMax(p.getDouble(PREFIX + "tempMax", 300));
+        target.setTempTickStep(p.getDouble(PREFIX + "tempTickStep", 25));
+        target.setAutoScaleY(p.getBoolean(PREFIX + "autoScaleY", false));
+        target.setAutoScaleY2(p.getBoolean(PREFIX + "autoScaleY2", false));
         target.setRorMin(p.getDouble(PREFIX + "rorMin", DEFAULT_MIN_ROR));
         target.setRorMax(p.getDouble(PREFIX + "rorMax", DEFAULT_MAX_ROR));
         target.setUnit(p.getBoolean(PREFIX + "unitFahrenheit", false) ? TemperatureUnit.FAHRENHEIT : TemperatureUnit.CELSIUS);

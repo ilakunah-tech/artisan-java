@@ -9,19 +9,27 @@ import java.util.List;
  */
 public final class LayoutState {
 
-    public static final double DEFAULT_DOCK_WIDTH = 340.0;
-    public static final double MIN_DOCK_WIDTH = 280.0;
-    public static final double MAX_DOCK_WIDTH = 640.0;
+    public static final double DEFAULT_DOCK_WIDTH = 220.0;
+    public static final double MIN_DOCK_WIDTH = 200.0;
+    public static final double MAX_DOCK_WIDTH = 280.0;
 
-    /** Panel IDs for right dock (order preserved). */
-    public static final String PANEL_LEGEND = "legend";
-    public static final String PANEL_READOUTS = "readouts";
-    public static final String PANEL_CONTROLS = "controls";
+    /** Panel IDs for right dock (order preserved). RI5-like: readouts, curves, controls, machine_readouts, reference_info, event_log. */
+    public static final String PANEL_MODE_STRIP = "modeStrip";
+    public static final String PANEL_ROAST_SUMMARY = "roastSummary";
     public static final String PANEL_EVENT_LOG = "eventLog";
+    public static final String PANEL_READOUTS = "readouts";
+    public static final String PANEL_LEGEND = "legend";
+    public static final String PANEL_CURVES = "curves";
+    public static final String PANEL_CONTROLS = "controls";
+    public static final String PANEL_DETAILS = "details";
+    public static final String PANEL_MACHINE_READOUTS = "machine_readouts";
+    public static final String PANEL_REFERENCE_INFO = "reference_info";
 
     private List<String> panelOrder;
     private double dockWidth;
     private boolean controlsVisible;
+    private boolean referenceInfoExpanded = true;
+    private List<String> machineReadoutsOrder;
 
     /** For each panel ID: is it collapsed (accordion-style)? */
     private java.util.Map<String, Boolean> collapsed;
@@ -31,16 +39,13 @@ public final class LayoutState {
     private java.util.Map<String, WindowBounds> detachedBounds;
 
     public LayoutState() {
-        panelOrder = new ArrayList<>();
-        panelOrder.add(PANEL_LEGEND);
-        panelOrder.add(PANEL_READOUTS);
-        panelOrder.add(PANEL_CONTROLS);
-        panelOrder.add(PANEL_EVENT_LOG);
+        panelOrder = defaultPanelOrder();
         dockWidth = DEFAULT_DOCK_WIDTH;
         controlsVisible = true;
         collapsed = new java.util.HashMap<>();
         detached = new java.util.HashMap<>();
         detachedBounds = new java.util.HashMap<>();
+        machineReadoutsOrder = new ArrayList<>();
     }
 
     public List<String> getPanelOrder() {
@@ -53,11 +58,32 @@ public final class LayoutState {
 
     private static List<String> defaultPanelOrder() {
         List<String> d = new ArrayList<>();
-        d.add(PANEL_LEGEND);
+        d.add(PANEL_MODE_STRIP);
+        d.add(PANEL_ROAST_SUMMARY);
         d.add(PANEL_READOUTS);
+        d.add(PANEL_LEGEND);
         d.add(PANEL_CONTROLS);
+        d.add(PANEL_MACHINE_READOUTS);
+        d.add(PANEL_REFERENCE_INFO);
         d.add(PANEL_EVENT_LOG);
+        d.add(PANEL_DETAILS);
         return d;
+    }
+
+    public boolean isReferenceInfoExpanded() {
+        return referenceInfoExpanded;
+    }
+
+    public void setReferenceInfoExpanded(boolean referenceInfoExpanded) {
+        this.referenceInfoExpanded = referenceInfoExpanded;
+    }
+
+    public List<String> getMachineReadoutsOrder() {
+        return machineReadoutsOrder != null ? new ArrayList<>(machineReadoutsOrder) : new ArrayList<>();
+    }
+
+    public void setMachineReadoutsOrder(List<String> machineReadoutsOrder) {
+        this.machineReadoutsOrder = machineReadoutsOrder != null ? new ArrayList<>(machineReadoutsOrder) : new ArrayList<>();
     }
 
     public double getDockWidth() {

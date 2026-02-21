@@ -16,15 +16,18 @@ public final class ShortcutHelpDialog {
     private static final String[][] SHORTCUTS = {
         { "Ctrl+Shift+R", "Reset layout to defaults" },
         { "Space", "Add event marker at current time (quick note)" },
-        { "1", "Charge" },
-        { "2", "Yellow / Dry end" },
-        { "3", "First crack start" },
-        { "4", "First crack end" },
-        { "5", "Drop" },
+        { "1–5", "Charge, Dry end, FC start, FC end, Drop" },
         { "C", "Toggle Controls panel visibility" },
         { "L", "Toggle Curve Legend panel" },
         { "E", "Focus Event Log" },
         { "?", "Show this help" },
+        { "Ctrl+G / Ctrl+Shift+G", "Gas ±1" },
+        { "Ctrl+A / Ctrl+Shift+A", "Air ±1" },
+        { "Ctrl+D / Ctrl+Shift+D", "Drum ±1" },
+        { "H", "Reset chart zoom" },
+        { "+ / −", "Zoom in / out" },
+        { "Left / Right", "Pan chart 10s" },
+        { "B", "BBP pause/resume (when active)" },
     };
 
     public static void show(Window owner) {

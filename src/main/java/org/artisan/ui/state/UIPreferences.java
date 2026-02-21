@@ -1,7 +1,12 @@
 package org.artisan.ui.state;
 
+import org.artisan.ui.model.AlertRule;
+import org.artisan.ui.model.MeasurementConfig;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,6 +37,8 @@ public final class UIPreferences {
 
     public enum Density { COMPACT, COMFORTABLE }
     public enum ReadoutSize { S, M, L }
+    public enum SliderButtonPosition { TOP, BOTTOM }
+    public enum MachineReadoutSize { SMALL, LARGE }
 
     private int schemaVersion = SCHEMA_VERSION;
     private String theme = "light"; // "light" | "dark"
@@ -46,6 +53,16 @@ public final class UIPreferences {
     private double mainDividerPosition = 0.75;
     /** Keyboard shortcuts: action id -> key name. Null means use DEFAULT_SHORTCUTS. */
     private Map<String, String> shortcuts;
+    private List<AlertRule> alertRules = new ArrayList<>();
+    private Map<String, Boolean> curveVisibility = new LinkedHashMap<>();
+    private SliderButtonPosition sliderButtonPosition = SliderButtonPosition.TOP;
+    private MachineReadoutSize machineReadoutSize = MachineReadoutSize.SMALL;
+    private boolean tourCompleted = false;
+    private String lastSeenVersion = "";
+    private Map<String, Boolean> referenceInfoSections = new LinkedHashMap<>();
+    private String replayFilePath = null;
+    private List<MeasurementConfig> measurementConfigs = new ArrayList<>();
+    private String drawerLastOpenedSection = null;
 
     public int getSchemaVersion() {
         return schemaVersion;
@@ -140,5 +157,85 @@ public final class UIPreferences {
 
     public void setShortcuts(Map<String, String> shortcuts) {
         this.shortcuts = shortcuts == null ? null : new LinkedHashMap<>(shortcuts);
+    }
+
+    public List<AlertRule> getAlertRules() {
+        return alertRules != null ? alertRules : new ArrayList<>();
+    }
+
+    public void setAlertRules(List<AlertRule> alertRules) {
+        this.alertRules = alertRules != null ? new ArrayList<>(alertRules) : new ArrayList<>();
+    }
+
+    public Map<String, Boolean> getCurveVisibility() {
+        return curveVisibility != null ? curveVisibility : new LinkedHashMap<>();
+    }
+
+    public void setCurveVisibility(Map<String, Boolean> curveVisibility) {
+        this.curveVisibility = curveVisibility != null ? new LinkedHashMap<>(curveVisibility) : new LinkedHashMap<>();
+    }
+
+    public SliderButtonPosition getSliderButtonPosition() {
+        return sliderButtonPosition != null ? sliderButtonPosition : SliderButtonPosition.TOP;
+    }
+
+    public void setSliderButtonPosition(SliderButtonPosition sliderButtonPosition) {
+        this.sliderButtonPosition = sliderButtonPosition != null ? sliderButtonPosition : SliderButtonPosition.TOP;
+    }
+
+    public MachineReadoutSize getMachineReadoutSize() {
+        return machineReadoutSize != null ? machineReadoutSize : MachineReadoutSize.SMALL;
+    }
+
+    public void setMachineReadoutSize(MachineReadoutSize machineReadoutSize) {
+        this.machineReadoutSize = machineReadoutSize != null ? machineReadoutSize : MachineReadoutSize.SMALL;
+    }
+
+    public boolean isTourCompleted() {
+        return tourCompleted;
+    }
+
+    public void setTourCompleted(boolean tourCompleted) {
+        this.tourCompleted = tourCompleted;
+    }
+
+    public String getLastSeenVersion() {
+        return lastSeenVersion != null ? lastSeenVersion : "";
+    }
+
+    public void setLastSeenVersion(String lastSeenVersion) {
+        this.lastSeenVersion = lastSeenVersion != null ? lastSeenVersion : "";
+    }
+
+    public Map<String, Boolean> getReferenceInfoSections() {
+        return referenceInfoSections != null ? referenceInfoSections : new LinkedHashMap<>();
+    }
+
+    public void setReferenceInfoSections(Map<String, Boolean> referenceInfoSections) {
+        this.referenceInfoSections = referenceInfoSections != null ? new LinkedHashMap<>(referenceInfoSections) : new LinkedHashMap<>();
+    }
+
+    public String getReplayFilePath() {
+        return replayFilePath;
+    }
+
+    public void setReplayFilePath(String replayFilePath) {
+        this.replayFilePath = replayFilePath;
+    }
+
+    public List<MeasurementConfig> getMeasurementConfigs() {
+        return measurementConfigs != null ? measurementConfigs : new ArrayList<>();
+    }
+
+    public void setMeasurementConfigs(List<MeasurementConfig> measurementConfigs) {
+        this.measurementConfigs = measurementConfigs != null ? new ArrayList<>(measurementConfigs) : new ArrayList<>();
+    }
+
+    public String getDrawerLastOpenedSection() {
+        return drawerLastOpenedSection;
+    }
+
+    public void setDrawerLastOpenedSection(String drawerLastOpenedSection) {
+        this.drawerLastOpenedSection = drawerLastOpenedSection;
     }
 }

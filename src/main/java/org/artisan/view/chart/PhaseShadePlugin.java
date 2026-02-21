@@ -22,7 +22,10 @@ import java.util.List;
  */
 public final class PhaseShadePlugin extends ChartPlugin {
 
-    private static final double PHASE_ALPHA = 0.25;
+    private static final double PHASE_ALPHA_DRYING = 0.12;
+    private static final double PHASE_ALPHA_MAILLARD = 0.10;
+    private static final double PHASE_ALPHA_FINISHING = 0.12;
+    private static final double PHASE_ALPHA_COOLING = 0.08;
     private static final int IDX_CHARGE = 0;
     private static final int IDX_DRY_END = 1;
     private static final int IDX_FC_START = 2;
@@ -100,13 +103,21 @@ public final class PhaseShadePlugin extends ChartPlugin {
         double x4 = xAxis.getDisplayPosition(tDrop) + plotX;
         double x5 = xAxis.getDisplayPosition(tEnd) + plotX;
 
-        placeRect(rectDrying, x1, plotY, x2 - x1, canvasH, colorConfig.getPaletteColor("rect1"));
-        placeRect(rectMaillard, x2, plotY, x3 - x2, canvasH, colorConfig.getPaletteColor("rect2"));
-        placeRect(rectFinishing, x3, plotY, x4 - x3, canvasH, colorConfig.getPaletteColor("rect3"));
-        placeRect(rectCooling, x4, plotY, x5 - x4, canvasH, colorConfig.getPaletteColor("rect4"));
+        Color c1 = colorConfig.getPaletteColor("rect1");
+        Color c2 = colorConfig.getPaletteColor("rect2");
+        Color c3 = colorConfig.getPaletteColor("rect3");
+        Color c4 = colorConfig.getPaletteColor("rect4");
+        if (c1 == null) c1 = Color.web("#F1C40F");
+        if (c2 == null) c2 = Color.web("#E67E22");
+        if (c3 == null) c3 = Color.web("#E74C3C");
+        if (c4 == null) c4 = Color.web("#95A5A6");
+        placeRect(rectDrying, x1, plotY, x2 - x1, canvasH, c1, PHASE_ALPHA_DRYING);
+        placeRect(rectMaillard, x2, plotY, x3 - x2, canvasH, c2, PHASE_ALPHA_MAILLARD);
+        placeRect(rectFinishing, x3, plotY, x4 - x3, canvasH, c3, PHASE_ALPHA_FINISHING);
+        placeRect(rectCooling, x4, plotY, x5 - x4, canvasH, c4, PHASE_ALPHA_COOLING);
     }
 
-    private void placeRect(Rectangle rect, double x, double y, double w, double h, Color color) {
+    private void placeRect(Rectangle rect, double x, double y, double w, double h, Color color, double alpha) {
         if (w <= 0 || color == null) {
             rect.setVisible(false);
             return;
@@ -115,7 +126,7 @@ public final class PhaseShadePlugin extends ChartPlugin {
         rect.setY(y);
         rect.setWidth(w);
         rect.setHeight(h);
-        rect.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), PHASE_ALPHA));
+        rect.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
         rect.setVisible(true);
     }
 

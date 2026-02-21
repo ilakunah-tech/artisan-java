@@ -44,6 +44,7 @@ public final class ChartFactory {
         xAxis.setMin(cfg.getTimeMinSec());
         xAxis.setMax(cfg.getTimeMaxSec());
         xAxis.setTickUnit(cfg.getTimeTickStepSec());
+        xAxis.setAutoRanging(false);
         xAxis.setAutoRangeRounding(false);
         xAxis.setAnimated(false);
         xAxis.setTickLabelFormatter(new TimeAxisFormatter());
@@ -53,6 +54,7 @@ public final class ChartFactory {
         tempAxis.setMin(cfg.getTempMin());
         tempAxis.setMax(cfg.getTempMax());
         tempAxis.setTickUnit(cfg.getTempTickStep());
+        tempAxis.setAutoRanging(false);
         tempAxis.setAutoRangeRounding(false);
         tempAxis.setAnimated(false);
 
@@ -60,6 +62,7 @@ public final class ChartFactory {
         rorAxis.setSide(Side.RIGHT);
         rorAxis.setMin(cfg.getRorMin());
         rorAxis.setMax(cfg.getRorMax());
+        rorAxis.setAutoRanging(false);
         rorAxis.setAutoRangeRounding(false);
         rorAxis.setAnimated(false);
 

@@ -255,7 +255,7 @@ public final class MainWindow extends Application {
     Menu viewMenu = buildViewMenu(root, chartController);
     Menu roastMenu = new Menu("Roast");
     MenuItem propertiesItem = new MenuItem("Properties...");
-    propertiesItem.setOnAction(e -> openRoastPropertiesDialog(root));
+    propertiesItem.setOnAction(e -> openRoastPropertiesInPanel());
     MenuItem cupProfileItem = new MenuItem("Cup Profile...");
     cupProfileItem.setOnAction(e -> openCupProfileDialog(root));
     MenuItem batchesItem = new MenuItem("Batches...");
@@ -348,10 +348,8 @@ public final class MainWindow extends Application {
     demoRunner = new DemoRunner(appController);
     appShell.setDemoRunner(demoRunner);
 
-    root.setTop(appShell.getRoot().getTop());
-    StackPane centerWithOverlay = new StackPane(appShell.getRoot().getCenter());
+    StackPane centerWithOverlay = appShell.getRoot();
     centerWithOverlay.setMinSize(0, 0);
-    BorderPane.setAlignment(centerWithOverlay, javafx.geometry.Pos.CENTER);
     root.setCenter(centerWithOverlay);
     appController.setMainRoot(centerWithOverlay);
 
@@ -915,11 +913,11 @@ public final class MainWindow extends Application {
     dialog.showAndWait();
   }
 
-  private void openRoastPropertiesDialog(BorderPane root) {
-    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
-    if (owner == null) return;
-    RoastPropertiesDialog dialog = new RoastPropertiesDialog(owner, appController, this::updateWindowTitle);
-    dialog.showAndWait();
+  private void openRoastPropertiesInPanel() {
+    if (appShell != null) {
+      appShell.switchToRoastLive();
+      appShell.getRoastLiveScreen().expandDetailsPanel();
+    }
   }
 
   private void openCupProfileDialog(BorderPane root) {

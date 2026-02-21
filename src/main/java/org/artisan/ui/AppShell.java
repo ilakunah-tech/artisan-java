@@ -1,46 +1,30 @@
 package org.artisan.ui;
 
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.Tooltip;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.artisan.controller.AppController;
 import org.artisan.controller.CommController;
+import org.artisan.ui.components.LeftDrawer;
+import org.artisan.ui.components.ShortcutHelpDialog;
 import org.artisan.ui.screens.PreRoastScreen;
 import org.artisan.ui.screens.RoastLiveScreen;
 import org.artisan.ui.state.PreferencesStore;
 import org.artisan.ui.state.UIPreferences;
 
 /**
- * Main window layout: top bar (app name, nav Pre-Roast | Roast Live, connection, settings),
- * center = current screen content.
+ * Main window layout: StackPane with RoastLiveScreen always visible and LeftDrawer overlay.
+ * Pre-Roast setup lives inside LeftDrawer; there is no top-level nav bar.
  */
 public final class AppShell {
-    private static final double APP_BAR_HEIGHT = 56.0;
 
-    private final BorderPane root;
-    private final HBox topBar;
-    private final StackPane contentArea;
-    private final ToggleButton preRoastNav;
-    private final ToggleButton roastLiveNav;
-    private final Label machineLabel;
-    private final Label connectionLabel;
-    private final PreRoastScreen preRoastScreen;
+    private final StackPane root;
     private final RoastLiveScreen roastLiveScreen;
+    private final LeftDrawer leftDrawer;
+    private final PreRoastScreen preRoastScreen;
     private final AppController appController;
     private final UIPreferences uiPreferences;
     private final PreferencesStore preferencesStore;
@@ -59,145 +43,93 @@ public final class AppShell {
         this.uiPreferences = uiPreferences != null ? uiPreferences : new UIPreferences();
         this.preferencesStore = preferencesStore != null ? preferencesStore : new PreferencesStore();
 
-        root = new BorderPane();
-        root.getStyleClass().add("ri5-root");
-
-        topBar = new HBox(12);
-        topBar.getStyleClass().add("ri5-topbar");
-        topBar.setAlignment(Pos.CENTER_LEFT);
-        topBar.setPadding(new Insets(8, 12, 8, 12));
-        topBar.setMinHeight(APP_BAR_HEIGHT);
-        topBar.setPrefHeight(APP_BAR_HEIGHT);
-        topBar.setMaxHeight(APP_BAR_HEIGHT);
-
-        Label appName = new Label("AJ  Artisan Java");
-        appName.getStyleClass().add("app-name");
-
-        machineLabel = new Label("—");
-        machineLabel.getStyleClass().add("machine-indicator");
-        machineLabel.setTooltip(new Tooltip("Configured device (Settings → Device)"));
-
-        preRoastNav = new ToggleButton("Pre-Roast");
-        preRoastNav.setSelected(true);
-        preRoastNav.setTooltip(new Tooltip("Setup profile and batch"));
-        roastLiveNav = new ToggleButton("Roast (Live)");
-        roastLiveNav.setSelected(false);
-        roastLiveNav.setTooltip(new Tooltip("Live roast chart and controls"));
-        javafx.scene.control.ToggleGroup navGroup = new javafx.scene.control.ToggleGroup();
-        preRoastNav.setToggleGroup(navGroup);
-        roastLiveNav.setToggleGroup(navGroup);
-
-        connectionLabel = new Label("Disconnected");
-        connectionLabel.getStyleClass().add("connection-status");
-
-        MenuButton settingsBtn = new MenuButton("Settings");
-        MenuItem devicesItem = new MenuItem("Devices...");
-        devicesItem.setOnAction(e -> {
-            if (onSettings != null) onSettings.run();
-        });
-        MenuItem resetLayoutItem = new MenuItem("Reset Layout...");
-        resetLayoutItem.setOnAction(e -> {
-            if (onResetLayout != null) onResetLayout.run();
-        });
-        settingsBtn.getItems().addAll(devicesItem, resetLayoutItem);
-
-        Region topSpacer = new Region();
-        HBox.setHgrow(topSpacer, Priority.ALWAYS);
-        topBar.getChildren().addAll(appName, machineLabel, preRoastNav, roastLiveNav, topSpacer, connectionLabel, settingsBtn);
-        HBox.setMargin(machineLabel, new Insets(0, 0, 0, 16));
-        HBox.setMargin(connectionLabel, new Insets(0, 0, 0, 8));
-
-        root.setTop(topBar);
-        contentArea = new StackPane();
-        contentArea.setMinSize(0, 0);
-        preRoastScreen = new PreRoastScreen(appController, this.uiPreferences, this.preferencesStore);
         roastLiveScreen = new RoastLiveScreen(primaryStage, appController, chartController,
             displaySettings, this.uiPreferences, this.preferencesStore);
 
-        contentArea.getChildren().add(preRoastScreen.getRoot());
-        contentArea.getChildren().add(roastLiveScreen.getRoot());
-        javafx.scene.layout.StackPane.setAlignment(preRoastScreen.getRoot(), javafx.geometry.Pos.TOP_LEFT);
-        javafx.scene.layout.StackPane.setAlignment(roastLiveScreen.getRoot(), javafx.geometry.Pos.TOP_LEFT);
-        roastLiveScreen.getRoot().setVisible(false);
-
-        preRoastNav.setOnAction(e -> {
-            if (preRoastNav.isSelected()) switchToPreRoast();
-        });
-        roastLiveNav.setOnAction(e -> {
-            if (roastLiveNav.isSelected()) switchToRoastLive();
-        });
-
-        preRoastScreen.setOnStartRoast(() -> {
-            appController.startSampling();
-            updateRoastLiveEnabled();
-            switchToRoastLive();
-        });
-        preRoastScreen.setOnDemoMode(() -> {
+        leftDrawer = new LeftDrawer();
+        leftDrawer.setOnDemoMode(() -> {
             if (demoRunner == null) demoRunner = new DemoRunner(appController);
+            if (roastLiveScreen != null) demoRunner.setViewModel(roastLiveScreen.getViewModel());
             demoRunner.start();
-            updateRoastLiveEnabled();
-            switchToRoastLive();
+            roastLiveScreen.onScreenShown();
         });
-        root.setCenter(contentArea);
+        leftDrawer.setOnStartRoast(() -> {
+            if (appController != null) appController.startSampling();
+            roastLiveScreen.onScreenShown();
+        });
 
-        updateConnectionStatus();
-        updateRoastLiveEnabled();
+        roastLiveScreen.setOnHamburger(leftDrawer::toggle);
+        roastLiveScreen.setOnTopBarSettings(() -> { if (onSettings != null) onSettings.run(); });
+        roastLiveScreen.setOnTopBarResetLayout(() -> { if (onResetLayout != null) onResetLayout.run(); });
+        roastLiveScreen.setOnTopBarKeyboardShortcuts(() -> {
+            org.artisan.ui.components.ShortcutHelpDialog.show(primaryStage);
+        });
+
+        root = new StackPane();
+        root.getStyleClass().add("ri5-root");
+        root.setAlignment(Pos.TOP_LEFT);
+
+        StackPane.setAlignment(roastLiveScreen.getRoot(), Pos.TOP_LEFT);
+        StackPane.setAlignment(leftDrawer, Pos.TOP_LEFT);
+
+        root.getChildren().addAll(roastLiveScreen.getRoot(), leftDrawer);
+
+        // PreRoastScreen kept alive for tests; not shown in layout
+        preRoastScreen = new PreRoastScreen(appController, this.uiPreferences, this.preferencesStore);
+
+        // Open drawer on first launch
+        if (!this.uiPreferences.isTourCompleted()) {
+            javafx.application.Platform.runLater(() -> {
+                javafx.animation.PauseTransition delay =
+                    new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
+                delay.setOnFinished(e -> leftDrawer.open());
+                delay.play();
+            });
+        }
     }
 
-    public BorderPane getRoot() {
+    public StackPane getRoot() {
         return root;
-    }
-
-    /** Prepends a node to the top bar (e.g. menu overflow button). */
-    public void addLeadingToTopBar(javafx.scene.Node node) {
-        if (topBar != null) topBar.getChildren().add(0, node);
     }
 
     public void setOnSettings(Runnable onSettings) {
         this.onSettings = onSettings;
+        roastLiveScreen.setOnTopBarSettings(() -> { if (onSettings != null) onSettings.run(); });
     }
 
     public void setOnResetLayout(Runnable onResetLayout) {
         this.onResetLayout = onResetLayout;
+        roastLiveScreen.setOnTopBarResetLayout(() -> { if (onResetLayout != null) onResetLayout.run(); });
     }
 
-    /** Syncs curve visibility from UI prefs to DisplaySettings when Pre-Roast quick settings change. */
     public void setOnCurveVisibilitySync(Runnable onCurveVisibilitySync) {
         this.onCurveVisibilitySync = onCurveVisibilitySync;
         if (preRoastScreen != null) preRoastScreen.setOnCurveVisibilitySync(onCurveVisibilitySync);
     }
 
+    /** No longer used (no nav bar), kept for API compatibility. */
     public void switchToPreRoast() {
-        preRoastScreen.getRoot().setVisible(true);
-        roastLiveScreen.getRoot().setVisible(false);
-        preRoastNav.setSelected(true);
-        roastLiveNav.setSelected(false);
-        preRoastScreen.refresh();
+        leftDrawer.open();
     }
 
+    /** No longer needed; RoastLiveScreen is always visible. */
     public void switchToRoastLive() {
-        preRoastScreen.getRoot().setVisible(false);
-        roastLiveScreen.getRoot().setVisible(true);
-        preRoastNav.setSelected(false);
-        roastLiveNav.setSelected(true);
+        leftDrawer.close();
         roastLiveScreen.onScreenShown();
     }
 
     public void updateConnectionStatus() {
         CommController comm = appController != null ? appController.getCommController() : null;
-        boolean running = comm != null && comm.isRunning();
         String desc = (comm != null && comm.getActiveChannel() != null)
             ? comm.getActiveChannel().getDescription() : "Disconnected";
-        connectionLabel.setText(running ? desc : "Disconnected");
+        if (roastLiveScreen != null) {
+            roastLiveScreen.getViewModel().setConnectionStatus(
+                (comm != null && comm.isRunning()) ? desc : "Disconnected");
+        }
     }
 
     public void updateRoastLiveEnabled() {
-        boolean active = appController != null && (appController.getSession().isActive()
-            || (demoRunner != null && demoRunner.isRunning()));
-        roastLiveNav.setDisable(!active);
-        if (active && !roastLiveNav.isSelected()) {
-            roastLiveNav.setTooltip(new Tooltip("Switch to live roast view"));
-        }
+        // No nav button to enable/disable; no-op.
     }
 
     public RoastLiveScreen getRoastLiveScreen() {
@@ -212,11 +144,10 @@ public final class AppShell {
         this.demoRunner = demoRunner;
     }
 
-    /** Updates the machine indicator (e.g. device type name). Call after device config changes. */
+    /** Updates the machine indicator. */
     public void setMachineName(String name) {
-        String value = name != null && !name.isBlank() ? name : "—";
-        if (machineLabel != null) machineLabel.setText(value);
-        preRoastScreen.setMachineName(value);
+        // Machine name shown inside LeftDrawer or status bar; no top-bar label needed.
+        if (preRoastScreen != null) preRoastScreen.setMachineName(name != null && !name.isBlank() ? name : "—");
     }
 
     public void setOnOpenReplay(Runnable onOpenReplay) {
@@ -233,10 +164,14 @@ public final class AppShell {
         return preRoastScreen;
     }
 
-    /** Refreshes connection status and Roast Live button. Call after Ports/Devices dialogs close. */
+    /** Refreshes connection status. Call after Ports/Devices dialogs close. */
     public void refreshTopBar() {
         updateConnectionStatus();
-        updateRoastLiveEnabled();
-        preRoastScreen.refresh();
+        if (preRoastScreen != null) preRoastScreen.refresh();
+    }
+
+    /** Kept for API compatibility (was addLeadingToTopBar). No-op since top bar removed. */
+    public void addLeadingToTopBar(javafx.scene.Node node) {
+        // no-op: top nav bar removed in P6
     }
 }

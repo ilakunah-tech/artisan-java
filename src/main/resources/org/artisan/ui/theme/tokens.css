@@ -1,10 +1,20 @@
-/* Cropster RI5–inspired design tokens — light theme brand palette
- * Primary: #5680E9 | Primary alt: #5AB9EA | Soft accent: #84CEEB
- * Lavender neutral: #C1C8E4 | Secondary violet: #8860D0
- * Neutrals: #FFFFFF, #F6F8FC, #EEF2FA | Text: #1F2937 | Secondary text: #6B7280
+/* Cropster RI5–inspired design tokens — dark theme (RI5 style)
+ * Background: #12121e, #1a1a2e | Chart: #0d0d0d | Card: #1e1e30
+ * Curves: BT #FF6B35 | ET #00D4AA | RoR #FF4757 | Gas #F39C12 | Air #3498DB | Drum #9B59B6
  */
 
-.ri5-root {
+.root, .ri5-root {
+    -ri5-bg-primary: #12121e;
+    -ri5-bg-secondary: #1a1a2e;
+    -ri5-bg-card: #1e1e30;
+    -ri5-border: #2a2a3e;
+    -ri5-text-primary: #e8e8f0;
+    -ri5-text-secondary: #8888a0;
+    -ri5-accent-green: #4CAF50;
+    -ri5-accent-red: #f44336;
+    -ri5-color-gas: #F39C12;
+    -ri5-color-air: #3498DB;
+    -ri5-color-drum: #9B59B6;
     -ri5-spacing-xs: 4;
     -ri5-spacing-s: 8;
     -ri5-spacing-m: 12;
@@ -13,8 +23,20 @@
     -ri5-radius-sm: 6;
     -ri5-radius-md: 8;
     -ri5-radius-lg: 12;
-    -ri5-shadow-sm: dropshadow(gaussian, rgba(31, 41, 55, 0.06), 4, 0, 0, 2);
-    -ri5-shadow-md: dropshadow(gaussian, rgba(31, 41, 55, 0.08), 8, 0, 0, 2);
+    -ri5-shadow-sm: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -ri5-shadow-md: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 8, 0, 0, 2);
+
+    /* Light chart tokens */
+    -ri5-bg-chart: #FFFFFF;
+    -ri5-chart-grid: #E0E0E0;
+    -ri5-chart-border: #CCCCCC;
+    -ri5-axis-text: #444444;
+    -ri5-axis-line: #BBBBBB;
+    -ri5-color-bt: #1565C0;
+    -ri5-color-et: #D84315;
+    -ri5-color-ror: #6A1B9A;
+    -ri5-color-reference: #9E9E9E;
+    -ri5-color-prediction: rgba(21, 101, 192, 0.35);
 }
 
 /* Density: compact uses smaller padding */

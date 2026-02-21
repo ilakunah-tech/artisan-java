@@ -1,7 +1,9 @@
 package org.artisan.ui;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import org.artisan.controller.AppController;
+import org.artisan.ui.vm.RoastViewModel;
 
 /**
  * Simple demo data generator: feeds synthetic BT/ET samples to simulate a roast.
@@ -10,12 +12,35 @@ import org.artisan.controller.AppController;
 public final class DemoRunner {
 
     private final AppController appController;
+    private RoastViewModel viewModel;
     private AnimationTimer timer;
     private double startTimeSec;
     private boolean running;
 
     public DemoRunner(AppController appController) {
         this.appController = appController;
+    }
+
+    public void setViewModel(RoastViewModel vm) {
+        this.viewModel = vm;
+    }
+
+    /** Synthetic gas/air/drum for modulation chart. Gas: 70->40 at 5min, 60 at 8min. */
+    private static void pushModulation(RoastViewModel vm, double t) {
+        if (vm == null) return;
+        Platform.runLater(() -> {
+            double gas = 70;
+            if (t > 300) gas = 40 + (t - 300) * 0.1;
+            if (t > 480) gas = 60;
+            gas = Math.max(0, Math.min(100, gas));
+            double air = 30 + Math.min(t * 0.05, 40);
+            air = Math.max(0, Math.min(100, air));
+            double drum = 50 + Math.sin(t * 0.02) * 10;
+            drum = Math.max(0, Math.min(100, drum));
+            vm.setGasValue(gas);
+            vm.setAirValue(air);
+            vm.setDrumValue(drum);
+        });
     }
 
     /** Starts demo: session.start() and synthetic samples (ramp up BT/ET). */
@@ -43,6 +68,7 @@ public final class DemoRunner {
                 if (et > 250) et = 250;
                 if (appController != null)
                     appController.acceptSampleFromComm(t, bt, et);
+                pushModulation(viewModel, t);
             }
         };
         timer.start();

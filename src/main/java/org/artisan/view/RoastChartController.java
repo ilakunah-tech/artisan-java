@@ -2,6 +2,7 @@ package org.artisan.view;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import javafx.application.Platform;
 import javafx.scene.Node;
@@ -151,6 +152,11 @@ public final class RoastChartController {
         statsPlugin.setPhasesConfig(config);
     }
 
+    /** Callback (timeSec, btCelsius) when mouse moves over chart. Used for CursorValueBar. */
+    public void setOnCursorMoved(BiConsumer<Double, Double> c) {
+        crosshairPlugin.setOnCursorMoved(c);
+    }
+
     public void setCurveSet(CurveSet curveSet) {
         this.curveSet = curveSet;
         applyColors();
@@ -211,6 +217,84 @@ public final class RoastChartController {
 
     public void setOnChartBodyClick(java.util.function.Consumer<ChartClickInfo> onChartBodyClick) {
         this.onChartBodyClick = onChartBodyClick;
+    }
+
+    /** Callback when user clicks an event marker in the events bar. Use to scroll EventLog + flash. */
+    public void setOnEventBarClicked(java.util.function.Consumer<org.artisan.model.EventEntry> c) {
+        eventPlugin.setOnEventBarClicked(c);
+    }
+
+    /** Resets chart X/Y axes to fixed defaults from axis config. */
+    public void resetZoom() {
+        if (axisConfig != null) {
+            var xAxis = chartFactory.getXAxis();
+            xAxis.setMin(axisConfig.getTimeMinSec());
+            xAxis.setMax(axisConfig.getTimeMaxSec());
+            var tempAxis = chartFactory.getTempAxis();
+            tempAxis.setMin(axisConfig.getTempMin());
+            tempAxis.setMax(axisConfig.getTempMax());
+            var rorAxis = chartFactory.getRorAxis();
+            rorAxis.setMin(axisConfig.getRorMin());
+            rorAxis.setMax(axisConfig.getRorMax());
+        }
+    }
+
+    /** Zooms X-axis in (narrows range by ~20%). */
+    public void zoomIn() {
+        var xAxis = chartFactory.getXAxis();
+        double w = xAxis.getMax() - xAxis.getMin();
+        if (w <= 20) return;
+        double c = (xAxis.getMin() + xAxis.getMax()) / 2;
+        double nw = w * 0.8;
+        xAxis.setMin(Math.max(0, c - nw / 2));
+        xAxis.setMax(c + nw / 2);
+    }
+
+    /** Zooms X-axis out (widens range by ~25%). */
+    public void zoomOut() {
+        var xAxis = chartFactory.getXAxis();
+        double w = xAxis.getMax() - xAxis.getMin();
+        double c = (xAxis.getMin() + xAxis.getMax()) / 2;
+        double nw = Math.min(w * 1.25, axisConfig != null ? axisConfig.getTimeMaxSec() - axisConfig.getTimeMinSec() : 3600);
+        xAxis.setMin(Math.max(0, c - nw / 2));
+        xAxis.setMax(c + nw / 2);
+    }
+
+    /** Pans X-axis left by 10 seconds. */
+    public void panLeft() {
+        var xAxis = chartFactory.getXAxis();
+        double w = xAxis.getMax() - xAxis.getMin();
+        double shift = Math.min(10, xAxis.getMin());
+        xAxis.setMin(xAxis.getMin() - shift);
+        xAxis.setMax(xAxis.getMax() - shift);
+    }
+
+    /** Pans X-axis right by 10 seconds. */
+    public void panRight() {
+        var xAxis = chartFactory.getXAxis();
+        double maxTime = axisConfig != null ? axisConfig.getTimeMaxSec() : 3600;
+        double shift = Math.min(10, maxTime - xAxis.getMax());
+        xAxis.setMin(xAxis.getMin() + shift);
+        xAxis.setMax(xAxis.getMax() + shift);
+    }
+
+    /** Centers the X axis view on the given time (e.g. when user selects an event). */
+    public void centerChartOnTime(double timeSec) {
+        if (!Double.isFinite(timeSec)) return;
+        var xAxis = chartFactory.getXAxis();
+        double currentWidth = xAxis.getMax() - xAxis.getMin();
+        if (currentWidth <= 0) currentWidth = 120.0;
+        double half = currentWidth / 2.0;
+        double xMin = Math.max(0, timeSec - half);
+        double xMax = timeSec + half;
+        xAxis.setMin(xMin);
+        xAxis.setMax(xMax);
+    }
+
+    /** Sets the highlighted time (vertical line when event selected from list). */
+    public void setHighlightTimeSec(double timeSec) {
+        eventPlugin.setHighlightTimeSec(timeSec);
+        updateChart();
     }
 
     // ── Colors / Styling ──────────────────────────────────────────────
