@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.artisan.controller.AppController;
+import org.artisan.ui.state.ChartAppearance;
 import org.artisan.ui.vm.RoastViewModel;
 
 /**
@@ -28,6 +29,10 @@ public final class RightReadoutPanel extends VBox {
     private final Label colonLabel;
     private final Label secondsLabel;
     private final Label preLabel;
+    private final Label btValue;
+    private final Label etValue;
+    private final Label dbtValue;
+    private final Label detValue;
     private static final Color TIMER_DEFAULT_COLOR = Color.web("#1A2B45");
     private static final Color TIMER_PRE_COLOR = Color.web("#FFA500");
 
@@ -89,7 +94,7 @@ public final class RightReadoutPanel extends VBox {
 
         Label btLabel = new Label("BT:");
         btLabel.getStyleClass().add("readout-label-bt");
-        Label btValue = new Label("000.0 \u00b0C");
+        btValue = new Label("000.0 \u00b0C");
         btValue.getStyleClass().add("readout-value-bt");
         btValue.textProperty().bind(Bindings.createStringBinding(() -> {
             double v = vm.getBt();
@@ -101,7 +106,7 @@ public final class RightReadoutPanel extends VBox {
 
         Label etLabel = new Label("ET:");
         etLabel.getStyleClass().add("readout-label-et");
-        Label etValue = new Label("000.0 \u00b0C");
+        etValue = new Label("000.0 \u00b0C");
         etValue.getStyleClass().add("readout-value-et");
         etValue.textProperty().bind(Bindings.createStringBinding(() -> {
             double v = vm.getEt();
@@ -113,7 +118,7 @@ public final class RightReadoutPanel extends VBox {
 
         Label dbtLabel = new Label("\u0394BT:");
         dbtLabel.getStyleClass().add("readout-label-dbt");
-        Label dbtValue = new Label("0.0 \u00b0C/MIN");
+        dbtValue = new Label("0.0 \u00b0C/MIN");
         dbtValue.getStyleClass().add("readout-value-dbt");
         dbtValue.textProperty().bind(Bindings.createStringBinding(() -> {
             double v = vm.getRorBT();
@@ -125,7 +130,7 @@ public final class RightReadoutPanel extends VBox {
 
         Label detLabel = new Label("\u0394ET:");
         detLabel.getStyleClass().add("readout-label-det");
-        Label detValue = new Label("0.0 \u00b0C/MIN");
+        detValue = new Label("0.0 \u00b0C/MIN");
         detValue.getStyleClass().add("readout-value-det");
         detValue.textProperty().bind(Bindings.createStringBinding(() -> {
             double v = vm.getRorET();
@@ -211,5 +216,15 @@ public final class RightReadoutPanel extends VBox {
 
     public void setAppController(AppController ac) {
         this.appController = ac;
+    }
+
+    public void applyChartAppearance(ChartAppearance appearance) {
+        if (appearance == null) return;
+        String mainSize = "-fx-font-size: " + appearance.getReadoutMainFontSize() + "px;";
+        String secSize = "-fx-font-size: " + appearance.getReadoutSecondaryFontSize() + "px;";
+        btValue.setStyle(mainSize + " -fx-text-fill: " + appearance.getReadoutBtColor() + "; -fx-font-weight: 700;");
+        etValue.setStyle(mainSize + " -fx-text-fill: " + appearance.getReadoutEtColor() + "; -fx-font-weight: 700;");
+        dbtValue.setStyle(secSize + " -fx-text-fill: " + appearance.getReadoutRorBtColor() + ";");
+        detValue.setStyle(secSize + " -fx-text-fill: " + appearance.getReadoutRorEtColor() + ";");
     }
 }

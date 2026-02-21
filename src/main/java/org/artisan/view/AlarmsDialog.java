@@ -222,6 +222,24 @@ public final class AlarmsDialog extends ArtisanDialog {
         super.onOk(e);
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public boolean applyFromUI() {
+        AlarmList toSave = new AlarmList();
+        for (Alarm a : items) toSave.add(a);
+        try {
+            AlarmListPersistence.save(toSave);
+        } catch (IOException ex) {
+            Alert err = new Alert(Alert.AlertType.ERROR);
+            err.setTitle("Alarms");
+            err.setHeaderText("Save failed");
+            err.setContentText(ex.getMessage());
+            err.showAndWait();
+            return false;
+        }
+        onSaved.run();
+        return true;
+    }
+
     private void importAlarms() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Load Alarms");

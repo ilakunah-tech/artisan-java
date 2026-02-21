@@ -163,12 +163,17 @@ public final class BatchesDialog extends ArtisanDialog {
 
     @Override
     protected void onOk(javafx.event.ActionEvent e) {
+        if (applyFromUI()) super.onOk(e);
+    }
+
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public boolean applyFromUI() {
         try {
             batchManager.save();
+            return true;
         } catch (IOException ex) {
             new Alert(Alert.AlertType.ERROR, "Save failed: " + ex.getMessage()).showAndWait();
-            return;
+            return false;
         }
-        super.onOk(e);
     }
 }

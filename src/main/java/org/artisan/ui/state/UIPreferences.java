@@ -16,6 +16,7 @@ import java.util.Map;
 public final class UIPreferences {
 
     public static final int SCHEMA_VERSION = 1;
+    public static final String DEFAULT_CHART_APPEARANCE_PRESET = "RI5 Default";
 
     /** Default keyboard shortcut action -> key name (e.g. "addEvent" -> "SPACE"). */
     public static final Map<String, String> DEFAULT_SHORTCUTS = defaultShortcuts();
@@ -63,6 +64,9 @@ public final class UIPreferences {
     private String replayFilePath = null;
     private List<MeasurementConfig> measurementConfigs = new ArrayList<>();
     private String drawerLastOpenedSection = null;
+    private ChartAppearance chartAppearance = ChartAppearance.ri5Default();
+    private Map<String, ChartAppearance> chartAppearancePresets;
+    private String chartAppearanceActivePreset = DEFAULT_CHART_APPEARANCE_PRESET;
 
     public int getSchemaVersion() {
         return schemaVersion;
@@ -237,5 +241,43 @@ public final class UIPreferences {
 
     public void setDrawerLastOpenedSection(String drawerLastOpenedSection) {
         this.drawerLastOpenedSection = drawerLastOpenedSection;
+    }
+
+    public ChartAppearance getChartAppearance() {
+        return chartAppearance != null ? chartAppearance : ChartAppearance.ri5Default();
+    }
+
+    public void setChartAppearance(ChartAppearance chartAppearance) {
+        this.chartAppearance = chartAppearance != null ? chartAppearance : ChartAppearance.ri5Default();
+    }
+
+    public Map<String, ChartAppearance> getChartAppearancePresets() {
+        if (chartAppearancePresets == null) {
+            chartAppearancePresets = new LinkedHashMap<>();
+        }
+        if (!chartAppearancePresets.containsKey(DEFAULT_CHART_APPEARANCE_PRESET)) {
+            chartAppearancePresets.put(DEFAULT_CHART_APPEARANCE_PRESET, ChartAppearance.ri5Default());
+        }
+        return chartAppearancePresets;
+    }
+
+    public void setChartAppearancePresets(Map<String, ChartAppearance> presets) {
+        chartAppearancePresets = presets != null ? new LinkedHashMap<>(presets) : new LinkedHashMap<>();
+        if (!chartAppearancePresets.containsKey(DEFAULT_CHART_APPEARANCE_PRESET)) {
+            chartAppearancePresets.put(DEFAULT_CHART_APPEARANCE_PRESET, ChartAppearance.ri5Default());
+        }
+    }
+
+    public String getChartAppearanceActivePreset() {
+        if (chartAppearanceActivePreset == null || chartAppearanceActivePreset.isBlank()) {
+            return DEFAULT_CHART_APPEARANCE_PRESET;
+        }
+        return chartAppearanceActivePreset;
+    }
+
+    public void setChartAppearanceActivePreset(String chartAppearanceActivePreset) {
+        this.chartAppearanceActivePreset = chartAppearanceActivePreset != null && !chartAppearanceActivePreset.isBlank()
+            ? chartAppearanceActivePreset
+            : DEFAULT_CHART_APPEARANCE_PRESET;
     }
 }

@@ -45,6 +45,11 @@ import org.artisan.model.importer.PetronciniImporter;
 import org.artisan.model.importer.RoestImporter;
 import org.artisan.model.importer.RubasseImporter;
 import org.artisan.model.importer.StrongholdImporter;
+import org.artisan.ui.screens.RoastLiveScreen;
+import org.artisan.ui.state.ChartAppearance;
+import org.artisan.ui.state.PreferencesStore;
+import org.artisan.ui.state.UIPreferences;
+import org.artisan.view.RoastChartController;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -67,6 +72,11 @@ public final class SettingsOverlay extends StackPane {
 
     private final AppSettings appSettings;
     private final DisplaySettings displaySettings;
+    private UIPreferences uiPreferences;
+    private PreferencesStore preferencesStore;
+    private RoastChartController chartController;
+    private RightReadoutPanel rightReadoutPanel;
+    private RoastLiveScreen roastLiveScreen;
 
     /** Called when the user imports a profile file — receives the loaded ProfileData. */
     private Consumer<ProfileData> onImport;
@@ -121,6 +131,46 @@ public final class SettingsOverlay extends StackPane {
     private Spinner<Integer> smoothingBtSpinner;
     private Spinner<Integer> smoothingEtSpinner;
     private Spinner<Integer> smoothingRorSpinner;
+    // Chart Appearance tab
+    private Button apBtColorBtn;
+    private Button apEtColorBtn;
+    private Button apRorBtColorBtn;
+    private Button apRorEtColorBtn;
+    private Button apGasColorBtn;
+    private Button apDrumColorBtn;
+    private Button apEventLineColorBtn;
+    private Button apEventDotColorBtn;
+    private Button apGridColorBtn;
+    private Button apBgMainColorBtn;
+    private Button apBgBottomColorBtn;
+    private Button apAxisFontColorBtn;
+    private Button apAnnotationBgBtn;
+    private Button apAnnotationTextBtn;
+    private Button apReadoutBtBtn;
+    private Button apReadoutEtBtn;
+    private Button apReadoutRorBtBtn;
+    private Button apReadoutRorEtBtn;
+    private Spinner<Double> apBtWidthSpinner;
+    private Spinner<Double> apEtWidthSpinner;
+    private Spinner<Double> apRorBtWidthSpinner;
+    private Spinner<Double> apRorEtWidthSpinner;
+    private Spinner<Double> apGasWidthSpinner;
+    private Spinner<Double> apDrumWidthSpinner;
+    private ComboBox<ChartAppearance.LineStyle> apBtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apEtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apRorBtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apRorEtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apGasStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apDrumStyleCombo;
+    private Spinner<Double> apGasFillOpacitySpinner;
+    private Spinner<Double> apGridOpacitySpinner;
+    private TextField apAxisFontField;
+    private Spinner<Double> apAxisFontSizeSpinner;
+    private Spinner<Double> apAnnotationFontSizeSpinner;
+    private ComboBox<ChartAppearance.LegendPosition> apLegendPositionCombo;
+    private Spinner<Double> apReadoutMainSizeSpinner;
+    private Spinner<Double> apReadoutSecondarySizeSpinner;
+    private ComboBox<String> apPresetCombo;
     private Spinner<Double> backgroundAlphaSpinner;
     private CheckBox visibleEtCheck;
     private CheckBox visibleBtCheck;
@@ -134,6 +184,7 @@ public final class SettingsOverlay extends StackPane {
 
     // Colors tab
     private final Map<String, Button> paletteButtons = new LinkedHashMap<>();
+
 
     public SettingsOverlay() {
         setVisible(false);
@@ -281,6 +332,18 @@ public final class SettingsOverlay extends StackPane {
     /** Set the callback invoked when a profile is successfully imported. */
     public void setOnImport(Consumer<ProfileData> onImport) {
         this.onImport = onImport;
+    }
+
+    public void setChartAppearanceContext(UIPreferences uiPreferences, PreferencesStore preferencesStore,
+                                          RoastChartController chartController,
+                                          RightReadoutPanel rightReadoutPanel,
+                                          RoastLiveScreen roastLiveScreen) {
+        this.uiPreferences = uiPreferences;
+        this.preferencesStore = preferencesStore;
+        this.chartController = chartController;
+        this.rightReadoutPanel = rightReadoutPanel;
+        this.roastLiveScreen = roastLiveScreen;
+        reloadChartAppearanceTab();
     }
 
     private VBox buildDeviceTab() {
@@ -910,6 +973,151 @@ public final class SettingsOverlay extends StackPane {
         label.getStyleClass().add("settings-section-label");
         return label;
     }
+    private void addRow(GridPane grid, int row, String label, Node control) {
+        grid.add(new Label(label), 0, row);
+        grid.add(control, 1, row);
+        forceGrow(control);
+    }
+    private void addColorRow(GridPane grid, int row, String label, Button btn) {
+        grid.add(new Label(label), 0, row);
+        grid.add(btn, 1, row);
+    }
+
+    private void reloadChartAppearanceTab() {
+        if (uiPreferences == null) return;
+        ChartAppearance ap = uiPreferences.getChartAppearance();
+        if (apBtColorBtn == null) return;
+        setButtonColor(apBtColorBtn, ap.getBtColor());
+        setButtonColor(apEtColorBtn, ap.getEtColor());
+        setButtonColor(apRorBtColorBtn, ap.getRorBtColor());
+        setButtonColor(apRorEtColorBtn, ap.getRorEtColor());
+        setButtonColor(apGasColorBtn, ap.getGasColor());
+        setButtonColor(apDrumColorBtn, ap.getDrumColor());
+        setButtonColor(apEventLineColorBtn, ap.getEventLineColor());
+        setButtonColor(apEventDotColorBtn, ap.getEventDotColor());
+        setButtonColor(apGridColorBtn, ap.getGridColor());
+        setButtonColor(apBgMainColorBtn, ap.getBackgroundMain());
+        setButtonColor(apBgBottomColorBtn, ap.getBackgroundBottom());
+        setButtonColor(apAxisFontColorBtn, ap.getAxisFontColor());
+        setButtonColor(apAnnotationBgBtn, ap.getAnnotationBoxBg());
+        setButtonColor(apAnnotationTextBtn, ap.getAnnotationTextColor());
+        setButtonColor(apReadoutBtBtn, ap.getReadoutBtColor());
+        setButtonColor(apReadoutEtBtn, ap.getReadoutEtColor());
+        setButtonColor(apReadoutRorBtBtn, ap.getReadoutRorBtColor());
+        setButtonColor(apReadoutRorEtBtn, ap.getReadoutRorEtColor());
+        apBtWidthSpinner.getValueFactory().setValue(ap.getBtWidth());
+        apEtWidthSpinner.getValueFactory().setValue(ap.getEtWidth());
+        apRorBtWidthSpinner.getValueFactory().setValue(ap.getRorBtWidth());
+        apRorEtWidthSpinner.getValueFactory().setValue(ap.getRorEtWidth());
+        apGasWidthSpinner.getValueFactory().setValue(ap.getGasWidth());
+        apDrumWidthSpinner.getValueFactory().setValue(ap.getDrumWidth());
+        apGasFillOpacitySpinner.getValueFactory().setValue(ap.getGasFillOpacity());
+        apGridOpacitySpinner.getValueFactory().setValue(ap.getGridOpacity());
+        apAxisFontField.setText(ap.getAxisFontFamily());
+        apAxisFontSizeSpinner.getValueFactory().setValue(ap.getAxisFontSize());
+        apAnnotationFontSizeSpinner.getValueFactory().setValue(ap.getAnnotationFontSize());
+        apLegendPositionCombo.setValue(ap.getLegendPosition());
+        apReadoutMainSizeSpinner.getValueFactory().setValue(ap.getReadoutMainFontSize());
+        apReadoutSecondarySizeSpinner.getValueFactory().setValue(ap.getReadoutSecondaryFontSize());
+        apBtStyleCombo.setValue(ap.getBtLineStyle());
+        apEtStyleCombo.setValue(ap.getEtLineStyle());
+        apRorBtStyleCombo.setValue(ap.getRorBtLineStyle());
+        apRorEtStyleCombo.setValue(ap.getRorEtLineStyle());
+        apGasStyleCombo.setValue(ap.getGasLineStyle());
+        apDrumStyleCombo.setValue(ap.getDrumLineStyle());
+        refreshPresetList(uiPreferences.getChartAppearanceActivePreset());
+    }
+
+    private void refreshPresetList(String selected) {
+        if (apPresetCombo == null || uiPreferences == null) return;
+        apPresetCombo.setEditable(true);
+        apPresetCombo.getItems().setAll(uiPreferences.getChartAppearancePresets().keySet());
+        if (selected != null) apPresetCombo.setValue(selected);
+    }
+
+    private void applyChartAppearanceTab() {
+        if (uiPreferences == null) return;
+        ChartAppearance ap = buildChartAppearanceFromUI();
+        uiPreferences.setChartAppearance(ap);
+        if (apPresetCombo != null && apPresetCombo.getValue() != null) {
+            uiPreferences.setChartAppearanceActivePreset(apPresetCombo.getValue());
+        }
+        applyChartAppearancePreview();
+        saveChartAppearancePrefs();
+    }
+
+    private ChartAppearance buildChartAppearanceFromUI() {
+        ChartAppearance ap = ChartAppearance.ri5Default();
+        ap.setBtColor(getButtonColor(apBtColorBtn));
+        ap.setEtColor(getButtonColor(apEtColorBtn));
+        ap.setRorBtColor(getButtonColor(apRorBtColorBtn));
+        ap.setRorEtColor(getButtonColor(apRorEtColorBtn));
+        ap.setGasColor(getButtonColor(apGasColorBtn));
+        ap.setDrumColor(getButtonColor(apDrumColorBtn));
+        ap.setEventLineColor(getButtonColor(apEventLineColorBtn));
+        ap.setEventDotColor(getButtonColor(apEventDotColorBtn));
+        ap.setGridColor(getButtonColor(apGridColorBtn));
+        ap.setBackgroundMain(getButtonColor(apBgMainColorBtn));
+        ap.setBackgroundBottom(getButtonColor(apBgBottomColorBtn));
+        ap.setAxisFontColor(getButtonColor(apAxisFontColorBtn));
+        ap.setAnnotationBoxBg(getButtonColor(apAnnotationBgBtn));
+        ap.setAnnotationTextColor(getButtonColor(apAnnotationTextBtn));
+        ap.setReadoutBtColor(getButtonColor(apReadoutBtBtn));
+        ap.setReadoutEtColor(getButtonColor(apReadoutEtBtn));
+        ap.setReadoutRorBtColor(getButtonColor(apReadoutRorBtBtn));
+        ap.setReadoutRorEtColor(getButtonColor(apReadoutRorEtBtn));
+        ap.setBtWidth(apBtWidthSpinner.getValue());
+        ap.setEtWidth(apEtWidthSpinner.getValue());
+        ap.setRorBtWidth(apRorBtWidthSpinner.getValue());
+        ap.setRorEtWidth(apRorEtWidthSpinner.getValue());
+        ap.setGasWidth(apGasWidthSpinner.getValue());
+        ap.setDrumWidth(apDrumWidthSpinner.getValue());
+        ap.setGasFillOpacity(apGasFillOpacitySpinner.getValue());
+        ap.setGridOpacity(apGridOpacitySpinner.getValue());
+        ap.setAxisFontFamily(apAxisFontField.getText());
+        ap.setAxisFontSize(apAxisFontSizeSpinner.getValue());
+        ap.setAnnotationFontSize(apAnnotationFontSizeSpinner.getValue());
+        ap.setLegendPosition(apLegendPositionCombo.getValue());
+        ap.setReadoutMainFontSize(apReadoutMainSizeSpinner.getValue());
+        ap.setReadoutSecondaryFontSize(apReadoutSecondarySizeSpinner.getValue());
+        ap.setBtLineStyle(apBtStyleCombo.getValue());
+        ap.setEtLineStyle(apEtStyleCombo.getValue());
+        ap.setRorBtLineStyle(apRorBtStyleCombo.getValue());
+        ap.setRorEtLineStyle(apRorEtStyleCombo.getValue());
+        ap.setGasLineStyle(apGasStyleCombo.getValue());
+        ap.setDrumLineStyle(apDrumStyleCombo.getValue());
+        return ap;
+    }
+
+    private void applyChartAppearancePreview() {
+        if (uiPreferences == null) return;
+        ChartAppearance ap = buildChartAppearanceFromUI();
+        uiPreferences.setChartAppearance(ap);
+        if (chartController != null) chartController.setChartAppearance(ap);
+        if (rightReadoutPanel != null) rightReadoutPanel.applyChartAppearance(ap);
+        if (roastLiveScreen != null) roastLiveScreen.applyChartAppearance(ap);
+    }
+
+    private void saveChartAppearancePrefs() {
+        if (preferencesStore != null && uiPreferences != null) {
+            preferencesStore.save(uiPreferences);
+        }
+    }
+
+    private void wireChartAppearanceLiveUpdate(Node... nodes) {
+        if (nodes == null) return;
+        for (Node node : nodes) {
+            if (node instanceof Spinner<?> spinner) {
+                spinner.valueProperty().addListener((o, ov, nv) -> applyChartAppearancePreview());
+            } else if (node instanceof ComboBox<?> combo) {
+                combo.valueProperty().addListener((o, ov, nv) -> applyChartAppearancePreview());
+            } else if (node instanceof TextField tf) {
+                tf.textProperty().addListener((o, ov, nv) -> applyChartAppearancePreview());
+            } else if (node instanceof Button btn) {
+                btn.addEventHandler(javafx.event.ActionEvent.ACTION, e -> applyChartAppearancePreview());
+            }
+        }
+    }
 
     private static void setRowVisible(Node label, Node control, boolean visible) {
         if (label != null) {
@@ -921,6 +1129,7 @@ public final class SettingsOverlay extends StackPane {
             control.setManaged(visible);
         }
     }
+
 
     private static int toOdd(int v) {
         if (v < 1) return 1;

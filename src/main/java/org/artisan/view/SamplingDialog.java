@@ -102,6 +102,13 @@ public final class SamplingDialog extends ArtisanDialog {
         if (close) getStage().close();
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public void applyFromUI() {
+        syncToConfig();
+        SamplingConfig.saveToPreferences(config);
+        onApply.run();
+    }
+
     @Override
     protected void onOk(javafx.event.ActionEvent e) {
         applyAndRedraw(false);

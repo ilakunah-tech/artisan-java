@@ -146,6 +146,37 @@ public final class PreferencesStore {
             if (obj.has("drawerLastOpenedSection") && obj.get("drawerLastOpenedSection").isTextual()) {
                 prefs.setDrawerLastOpenedSection(obj.get("drawerLastOpenedSection").asText(null));
             }
+
+            JsonNode apNode = obj.get("chartAppearance");
+            if (apNode != null && apNode.isObject()) {
+                try {
+                    ChartAppearance ap = mapper.treeToValue(apNode, ChartAppearance.class);
+                    if (ap != null) prefs.setChartAppearance(ap);
+                } catch (Exception e) {
+                    // ignore and keep defaults
+                }
+            }
+
+            JsonNode presetsNode = obj.get("chartAppearancePresets");
+            if (presetsNode != null && presetsNode.isObject()) {
+                Map<String, ChartAppearance> presets = new LinkedHashMap<>();
+                presetsNode.fields().forEachRemaining(e -> {
+                    JsonNode v = e.getValue();
+                    if (v != null && v.isObject()) {
+                        try {
+                            ChartAppearance ap = mapper.treeToValue(v, ChartAppearance.class);
+                            if (ap != null) presets.put(e.getKey(), ap);
+                        } catch (Exception ex) {
+                            // ignore invalid entries
+                        }
+                    }
+                });
+                prefs.setChartAppearancePresets(presets);
+            }
+
+            if (obj.has("chartAppearanceActivePreset") && obj.get("chartAppearanceActivePreset").isTextual()) {
+                prefs.setChartAppearanceActivePreset(obj.get("chartAppearanceActivePreset").asText(null));
+            }
         } catch (IOException e) {
             // return defaults
         }
@@ -205,6 +236,13 @@ public final class PreferencesStore {
             if (prefs.getDrawerLastOpenedSection() != null) {
                 root.put("drawerLastOpenedSection", prefs.getDrawerLastOpenedSection());
             }
+
+            root.set("chartAppearance", mapper.valueToTree(prefs.getChartAppearance()));
+            ObjectNode presetsObj = root.putObject("chartAppearancePresets");
+            for (Map.Entry<String, ChartAppearance> e : prefs.getChartAppearancePresets().entrySet()) {
+                presetsObj.set(e.getKey(), mapper.valueToTree(e.getValue()));
+            }
+            root.put("chartAppearanceActivePreset", prefs.getChartAppearanceActivePreset());
 
             mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), root);
         } catch (IOException e) {

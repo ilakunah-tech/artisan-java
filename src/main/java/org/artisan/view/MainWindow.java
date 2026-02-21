@@ -918,26 +918,57 @@ public final class MainWindow extends Application {
   private void openSettingsDialog(BorderPane root) {
     Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
     if (owner == null) return;
-    SettingsDialog dialog = new SettingsDialog(
-        appSettings, displaySettings, axisConfig, roastStateMachine, owner);
-    dialog.showAndWait().ifPresent(btn -> {
-      if (btn == ButtonType.OK || btn == ButtonType.APPLY) {
-        if (appController != null) appController.setDisplaySettings(displaySettings);
-        if (chartController != null && appController != null) {
-          syncColorConfigFromDisplaySettings(appController.getColorConfig(), displaySettings);
-          chartController.setDisplaySettings(displaySettings);
-          chartController.applyAxisConfig(axisConfig);
-          chartController.applyColors();
-          chartController.updateChart();
-        }
-        applyThemeFromSettings(root);
-        applyRoastStateMachineFromAppSettings();
-        if (appShell != null && appShell.getRoastLiveScreen() != null) {
-          appShell.getRoastLiveScreen().refreshCurveLegendColors(displaySettings);
-        }
-        if (appController != null) appController.refreshStatistics();
-      }
-    });
+    SettingsContext ctx = SettingsContext.builder()
+        .owner(owner)
+        .appController(appController)
+        .appSettings(appSettings)
+        .displaySettings(displaySettings)
+        .axisConfig(axisConfig)
+        .roastStateMachine(roastStateMachine)
+        .phasesSettings(phasesSettings)
+        .backgroundSettings(backgroundSettings)
+        .autoSave(autoSave)
+        .samplingConfig(samplingConfig)
+        .serialPortConfig(serialPortConfig)
+        .modbusPortConfig(modbusPortConfig)
+        .blePortConfig(blePortConfig)
+        .deviceConfig(deviceConfig)
+        .simulatorConfig(simulatorConfig)
+        .aillioR1Config(aillioR1Config)
+        .commController(commController)
+        .colorConfig(appController != null ? appController.getColorConfig() : null)
+        .chartController(chartController)
+        .onSettingsApplied(() -> applyAfterSettingsClosed(root))
+        .build();
+    UnifiedSettingsDialog dialog = new UnifiedSettingsDialog(ctx);
+    dialog.showAndWait();
+    // applyChanges() in the dialog already ran embedded applyFromUI() and onSettingsApplied (applyAfterSettingsClosed)
+  }
+
+  private void applyAfterSettingsClosed(BorderPane root) {
+    if (appController != null) appController.setDisplaySettings(displaySettings);
+    if (chartController != null && appController != null) {
+      syncColorConfigFromDisplaySettings(appController.getColorConfig(), displaySettings);
+      chartController.setDisplaySettings(displaySettings);
+      chartController.applyAxisConfig(axisConfig);
+      chartController.applyColors();
+      chartController.updateChart();
+    }
+    applyThemeFromSettings(root);
+    applyRoastStateMachineFromAppSettings();
+    if (appShell != null && appShell.getRoastLiveScreen() != null) {
+      appShell.getRoastLiveScreen().refreshCurveLegendColors(displaySettings);
+    }
+    if (appController != null) {
+      appController.refreshStatistics();
+      rebuildCustomEventButtons();
+      appController.reloadAlarmsFromFile();
+      if (appController.getChartController() != null) appController.getChartController().updateChart();
+    }
+    if (appShell != null) {
+      appShell.setMachineName(deviceConfig.getActiveType() != null ? deviceConfig.getActiveType().getDisplayName() : "—");
+      appShell.refreshTopBar();
+    }
   }
 
   private void openDevicesDialog(BorderPane root) {

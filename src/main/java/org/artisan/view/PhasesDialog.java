@@ -136,6 +136,11 @@ public final class PhasesDialog extends ArtisanDialog {
         if (closeDialog) getStage().close();
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public boolean applyFromUI() {
+        return validateAndApply();
+    }
+
     private boolean validateAndApply() {
         double dryEnd = dryEndTempSpinner.getValue();
         double fcs = fcsTempSpinner.getValue();

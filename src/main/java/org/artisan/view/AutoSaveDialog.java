@@ -49,6 +49,11 @@ public final class AutoSaveDialog extends ArtisanDialog {
         super.onOk(e);
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public void applyFromUI() {
+        applyFromFields();
+    }
+
     @Override
     protected Node buildContent() {
         enabledCheck = new CheckBox("Enable autosave");

@@ -27,6 +27,7 @@ import org.artisan.ui.components.PhaseStripOverlay;
 import org.artisan.ui.components.ShortcutHelpDialog;
 import org.artisan.ui.vm.BbpController;
 import org.artisan.ui.vm.RoastViewModel;
+import org.artisan.ui.state.ChartAppearance;
 import org.artisan.ui.state.PreferencesStore;
 import org.artisan.ui.state.UIPreferences;
 import org.artisan.view.RoastChartController;
@@ -364,6 +365,11 @@ public final class RoastLiveScreen {
 
     public void setModulationTimelineRef(ModulationTimeline ref) {
         this.modulationRef = ref;
+    }
+
+    public void applyChartAppearance(ChartAppearance appearance) {
+        if (appearance == null || chartController == null) return;
+        chartController.setChartAppearance(appearance);
     }
 
     public void setRoastStateMachine(RoastStateMachine machine) {

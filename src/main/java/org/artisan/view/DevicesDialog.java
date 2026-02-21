@@ -359,6 +359,11 @@ public final class DevicesDialog extends ArtisanDialog {
         super.onOk(e);
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public void applyFromUI() {
+        onApply(null);
+    }
+
     public DeviceType getSelectedDeviceType() {
         return deviceTypeCombo != null ? deviceTypeCombo.getValue() : DeviceType.NONE;
     }

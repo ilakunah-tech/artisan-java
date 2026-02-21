@@ -1,6 +1,7 @@
 package org.artisan.view;
 
 import com.fazecast.jSerialComm.SerialPort;
+import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -21,6 +22,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -30,11 +32,22 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
+import org.artisan.controller.AppController;
 import org.artisan.controller.AppSettings;
+import org.artisan.controller.AutoSave;
+import org.artisan.controller.BackgroundSettings;
+import org.artisan.controller.CommController;
 import org.artisan.controller.DisplaySettings;
+import org.artisan.controller.PhasesSettings;
 import org.artisan.controller.RoastStateMachine;
 import org.artisan.model.AxisConfig;
+import org.artisan.model.ColorConfig;
+import org.artisan.model.SamplingConfig;
+import org.artisan.ui.state.ChartAppearance;
+import org.artisan.ui.state.PreferencesStore;
+import org.artisan.ui.state.UIPreferences;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,6 +62,8 @@ public final class SettingsDialog extends Dialog<ButtonType> {
     private final DisplaySettings displaySettings;
     private final AxisConfig axisConfig;
     private final RoastStateMachine roastStateMachine;
+    private final UIPreferences uiPreferences;
+    private final PreferencesStore preferencesStore;
 
     // Device tab
     private ComboBox<String> deviceTypeCombo;
@@ -114,25 +129,76 @@ public final class SettingsDialog extends Dialog<ButtonType> {
     // Colors tab
     private final Map<String, ColorPicker> palettePickers = new LinkedHashMap<>();
 
+    // Chart Appearance tab
+    private ColorPicker apBtColorPicker;
+    private ColorPicker apEtColorPicker;
+    private ColorPicker apRorBtColorPicker;
+    private ColorPicker apRorEtColorPicker;
+    private ColorPicker apGasColorPicker;
+    private ColorPicker apDrumColorPicker;
+    private ColorPicker apEventLineColorPicker;
+    private ColorPicker apEventDotColorPicker;
+    private ColorPicker apGridColorPicker;
+    private ColorPicker apBgMainColorPicker;
+    private ColorPicker apBgBottomColorPicker;
+    private ColorPicker apAxisFontColorPicker;
+    private ColorPicker apAnnotationBgPicker;
+    private ColorPicker apAnnotationTextPicker;
+    private ColorPicker apReadoutBtPicker;
+    private ColorPicker apReadoutEtPicker;
+    private ColorPicker apReadoutRorBtPicker;
+    private ColorPicker apReadoutRorEtPicker;
+    private Spinner<Double> apBtWidthSpinner;
+    private Spinner<Double> apEtWidthSpinner;
+    private Spinner<Double> apRorBtWidthSpinner;
+    private Spinner<Double> apRorEtWidthSpinner;
+    private Spinner<Double> apGasWidthSpinner;
+    private Spinner<Double> apDrumWidthSpinner;
+    private ComboBox<ChartAppearance.LineStyle> apBtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apEtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apRorBtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apRorEtStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apGasStyleCombo;
+    private ComboBox<ChartAppearance.LineStyle> apDrumStyleCombo;
+    private Spinner<Double> apGasFillOpacitySpinner;
+    private Spinner<Double> apGridOpacitySpinner;
+    private TextField apAxisFontField;
+    private Spinner<Double> apAxisFontSizeSpinner;
+    private Spinner<Double> apAnnotationFontSizeSpinner;
+    private ComboBox<ChartAppearance.LegendPosition> apLegendPositionCombo;
+    private Spinner<Double> apReadoutMainSizeSpinner;
+    private Spinner<Double> apReadoutSecondarySizeSpinner;
+    private ComboBox<String> apPresetCombo;
+
+    /** When non-null, this dialog is in "unified" mode: tabs are embedded dialogs and apply runs their applyFromUI(). */
+    private final SettingsContext unifiedContext;
+    private final List<Runnable> embeddedApplyActions = new ArrayList<>();
+
     public SettingsDialog(AppSettings appSettings,
                           DisplaySettings displaySettings,
                           AxisConfig axisConfig,
                           RoastStateMachine roastStateMachine,
                           Window owner) {
+        this.unifiedContext = null;
         this.appSettings = appSettings != null ? appSettings : new AppSettings();
         this.displaySettings = displaySettings != null ? displaySettings : DisplaySettings.load();
         this.axisConfig = axisConfig != null ? axisConfig : new AxisConfig();
         this.roastStateMachine = roastStateMachine;
+        this.preferencesStore = new PreferencesStore();
+        this.uiPreferences = preferencesStore.load();
 
         if (owner != null) initOwner(owner);
         setTitle("Settings");
         setResizable(true);
         getDialogPane().setPrefSize(700, 560);
+        getDialogPane().addEventHandler(ScrollEvent.ANY, Event::consume);
+        applyDialogStyles();
 
         TabPane tabs = new TabPane();
         tabs.getTabs().add(buildDeviceTab());
         tabs.getTabs().add(buildGraphTab());
         tabs.getTabs().add(buildCurvesTab());
+        tabs.getTabs().add(buildChartAppearanceTab());
         if (roastStateMachine != null) {
             tabs.getTabs().add(buildRoastTab());
         }
@@ -156,6 +222,193 @@ public final class SettingsDialog extends Dialog<ButtonType> {
             }
             return btn;
         });
+    }
+
+    /**
+     * Unified settings dialog: one window with tabs matching Python order (Device, Ports, Curves, Events, Colors, Phases, …).
+     * Each tab embeds the corresponding dialog content; OK/Apply calls applyFromUI() on each and then onSettingsApplied.
+     */
+    public SettingsDialog(SettingsContext ctx) {
+        this.unifiedContext = ctx;
+        this.appSettings = ctx.getAppSettings() != null ? ctx.getAppSettings() : new AppSettings();
+        this.displaySettings = ctx.getDisplaySettings() != null ? ctx.getDisplaySettings() : DisplaySettings.load();
+        this.axisConfig = ctx.getAxisConfig() != null ? ctx.getAxisConfig() : new AxisConfig();
+        this.roastStateMachine = ctx.getRoastStateMachine();
+        this.preferencesStore = ctx.getPreferencesStore() != null ? ctx.getPreferencesStore() : new PreferencesStore();
+        this.uiPreferences = ctx.getUiPreferences() != null ? ctx.getUiPreferences() : preferencesStore.load();
+
+        Window owner = ctx.getOwner();
+        if (owner != null) initOwner(owner);
+        setTitle("Settings");
+        setResizable(true);
+        getDialogPane().setPrefSize(780, 600);
+        getDialogPane().addEventHandler(ScrollEvent.ANY, Event::consume);
+        applyDialogStyles();
+
+        TabPane tabs = new TabPane();
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        // Device
+        DevicesDialog devicesDialog = new DevicesDialog(owner, ctx.getAppController(),
+            ctx.getSerialPortConfig(), ctx.getModbusPortConfig(), ctx.getDeviceConfig(),
+            ctx.getSimulatorConfig(), ctx.getAillioR1Config());
+        embeddedApplyActions.add(devicesDialog::applyFromUI);
+
+        // Ports
+        Node portsNode = new Label("Ports are not available (no CommController).");
+        if (ctx.getCommController() != null) {
+            PortsDialog portsDialog = new PortsDialog(owner, ctx.getSerialPortConfig(), ctx.getModbusPortConfig(),
+                ctx.getBlePortConfig(), ctx.getCommController(),
+                ctx.getAppController() != null ? ctx.getAppController().getSamplingInterval() : 1.0);
+            portsNode = portsDialog.getContentForEmbedding();
+        // Graph (unit, theme, axis) – inline
+        tabs.getTabs().add(buildGraphTab());
+        // Curves – inline with sub-tabs (Line/visibility + RoR & Filters placeholder)
+        Tab curveMainTab = buildCurvesTab();
+        Tab lineTab = new Tab("Line & visibility", curveMainTab.getContent());
+        javafx.scene.control.Label rorPlaceholder = new javafx.scene.control.Label(
+            "RoR and filter settings (smoothing, RoR computation) – to be ported from Python Curves tab.");
+        rorPlaceholder.setWrapText(true);
+        Tab rorTab = new Tab("RoR & Filters", new ScrollPane(rorPlaceholder));
+        TabPane curvesSub = new TabPane(lineTab, rorTab);
+        curvesSub.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabs.getTabs().add(new Tab("Curves", curvesSub));
+
+        // Chart Appearance (RI5)
+        // Roast (auto charge, timeout)
+        if (roastStateMachine != null) {
+            tabs.getTabs().add(buildRoastTab());
+        }
+
+            embeddedApplyActions.add(portsDialog::applyFromUI);
+        }
+
+        // Events
+        EventButtonsDialog eventButtonsDialog = new EventButtonsDialog(owner, () -> {});
+        embeddedApplyActions.add(eventButtonsDialog::applyFromUI);
+
+        // Colors
+        ColorsDialog colorsDialog = new ColorsDialog(owner, displaySettings, ctx.getColorConfig(), () -> {});
+        embeddedApplyActions.add(colorsDialog::applyFromUI);
+
+        // Phases
+        PhasesDialog phasesDialog = new PhasesDialog(owner, ctx.getPhasesSettings(), () -> {});
+        embeddedApplyActions.add(() -> phasesDialog.applyFromUI());
+
+        // Axes
+        AxesDialog axesDialog = new AxesDialog(owner, axisConfig, () -> {});
+        embeddedApplyActions.add(axesDialog::applyFromUI);
+
+        // Grouped tabs (fewer top-level tabs)
+        VBox devicePortsBox = new VBox(14,
+            sectionBox("Device", devicesDialog.getContentForEmbedding()),
+            sectionBox("Ports", portsNode)
+        );
+        tabs.getTabs().add(new Tab("Device & Ports", wrap(devicePortsBox)));
+
+        VBox appearanceBox = new VBox(14,
+            sectionBox("Display & Axes", contentFromTab(buildGraphTab())),
+            sectionBox("Curves (lines & visibility)", contentFromTab(buildCurvesTab())),
+            sectionBox("Chart Appearance", contentFromTab(buildChartAppearanceTab())),
+            sectionBox("Colors", colorsDialog.getContentForEmbedding())
+        );
+        tabs.getTabs().add(new Tab("Appearance", wrap(appearanceBox)));
+
+        tabs.getTabs().add(new Tab("Events", wrap(eventButtonsDialog.getContentForEmbedding())));
+
+        VBox roastBox = new VBox(14,
+            sectionBox("Phases", phasesDialog.getContentForEmbedding())
+        );
+        if (roastStateMachine != null) {
+            roastBox.getChildren().add(sectionBox("Roast (Auto-CHARGE)", contentFromTab(buildRoastTab())));
+        }
+        if (ctx.getSamplingConfig() != null) {
+            SamplingDialog samplingDialog = new SamplingDialog(owner, ctx.getSamplingConfig(), () -> {});
+            embeddedApplyActions.add(samplingDialog::applyFromUI);
+            roastBox.getChildren().add(sectionBox("Sampling", samplingDialog.getContentForEmbedding()));
+        }
+        tabs.getTabs().add(new Tab("Roast & Phases", wrap(roastBox)));
+
+        VBox systemBox = new VBox(14);
+        if (ctx.getAutoSave() != null) {
+            AutoSaveDialog autoSaveDialog = new AutoSaveDialog(owner, ctx.getAutoSave());
+            embeddedApplyActions.add(autoSaveDialog::applyFromUI);
+            systemBox.getChildren().add(sectionBox("Autosave", autoSaveDialog.getContentForEmbedding()));
+        }
+        if (ctx.getAppController() != null) {
+            BatchesDialog batchesDialog = new BatchesDialog(owner, ctx.getAppController());
+            embeddedApplyActions.add(() -> batchesDialog.applyFromUI());
+            systemBox.getChildren().add(sectionBox("Batch", batchesDialog.getContentForEmbedding()));
+        }
+        systemBox.getChildren().add(sectionBox("Axes", axesDialog.getContentForEmbedding()));
+        if (ctx.getAppController() != null) {
+            AlarmsDialog alarmsDialog = new AlarmsDialog(owner, ctx.getAppController().getSession().getAlarms(),
+                ctx.getAppController().getAlarmEngine(), () -> {});
+            embeddedApplyActions.add(() -> alarmsDialog.applyFromUI());
+            systemBox.getChildren().add(sectionBox("Alarms", alarmsDialog.getContentForEmbedding()));
+        }
+        if (ctx.getChartController() != null && ctx.getBackgroundSettings() != null) {
+            BackgroundDialog backgroundDialog = new BackgroundDialog(owner, ctx.getBackgroundSettings(),
+                ctx.getChartController(), () -> {});
+            embeddedApplyActions.add(backgroundDialog::applyFromUI);
+            systemBox.getChildren().add(sectionBox("Background", backgroundDialog.getContentForEmbedding()));
+        }
+        // Import – placeholder (actual import is via File menu)
+        VBox importBox = new VBox(10);
+        importBox.setPadding(new Insets(0));
+        javafx.scene.control.Label importHeading = new javafx.scene.control.Label("Supported import formats (File menu):");
+        importHeading.setStyle(SECTION_STYLE);
+        String importText = "• Artisan (.alog)\n• Cropster CSV\n• Giesen\n• Roest\n• Loring\n• Petroncini\n• Stronghold\n• HiBean\n• Rubasse";
+        javafx.scene.control.Label importList = new javafx.scene.control.Label(importText);
+        importList.setWrapText(true);
+        importBox.getChildren().addAll(importHeading, importList);
+        systemBox.getChildren().add(sectionBox("Import", importBox));
+        tabs.getTabs().add(new Tab("System", wrap(systemBox)));
+
+        getDialogPane().setContent(tabs);
+        getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.OK, ButtonType.CANCEL);
+
+        setResultConverter(btn -> {
+            if (btn == ButtonType.OK || btn == ButtonType.APPLY) {
+                applyChanges();
+            }
+            return btn;
+        });
+    }
+
+    private static Tab tab(String title, Node content) {
+        ScrollPane scroll = new ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+        return new Tab(title, scroll);
+    }
+
+    private static Node contentFromTab(Tab tab) {
+        return tab != null ? tab.getContent() : new Label("Missing content.");
+    }
+
+    private static VBox sectionBox(String title, Node content) {
+        Label label = new Label(title);
+        label.setStyle(SECTION_STYLE);
+        VBox box = new VBox(8, label, content);
+        box.setPadding(new Insets(4, 0, 0, 0));
+        return box;
+    }
+
+    private static ScrollPane wrap(Node content) {
+        ScrollPane scroll = new ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+        return scroll;
+    }
+
+    private void applyDialogStyles() {
+        getDialogPane().getStyleClass().add("artisan-dialog-root");
+        try {
+            getDialogPane().getStylesheets().add(
+                SettingsDialog.class.getResource("/org/artisan/ui/theme/tokens.css").toExternalForm());
+            getDialogPane().getStylesheets().add(
+                SettingsDialog.class.getResource("/org/artisan/ui/theme/light-brand.css").toExternalForm());
+        } catch (Exception ignored) {}
     }
 
     private Tab buildDeviceTab() {
@@ -475,6 +728,140 @@ public final class SettingsDialog extends Dialog<ButtonType> {
         return new Tab("Colors", root);
     }
 
+    private Tab buildChartAppearanceTab() {
+        GridPane grid = buildGrid();
+        int row = 0;
+
+        grid.add(sectionLabel("Series Colors"), 0, row++, 2, 1);
+        apBtColorPicker = colorPicker("#E74C3C");
+        apEtColorPicker = colorPicker("#3498DB");
+        apRorBtColorPicker = colorPicker("#2ECC71");
+        apRorEtColorPicker = colorPicker("#5DADE2");
+        apGasColorPicker = colorPicker("#95A5A6");
+        apDrumColorPicker = colorPicker("#F1C40F");
+        apEventLineColorPicker = colorPicker("#2C3E50");
+        apEventDotColorPicker = colorPicker("#3498DB");
+        addRow(grid, row++, "Bean Temp", apBtColorPicker);
+        addRow(grid, row++, "Exhaust Temp", apEtColorPicker);
+        addRow(grid, row++, "Bean RoR", apRorBtColorPicker);
+        addRow(grid, row++, "Exhaust RoR", apRorEtColorPicker);
+        addRow(grid, row++, "Gas", apGasColorPicker);
+        addRow(grid, row++, "Drum Pressure", apDrumColorPicker);
+        addRow(grid, row++, "Event Line", apEventLineColorPicker);
+        addRow(grid, row++, "Event Dot", apEventDotColorPicker);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Line Widths (px)"), 0, row++, 2, 1);
+        apBtWidthSpinner = doubleSpinner(0.5, 4.0, 2.0, 0.1);
+        apEtWidthSpinner = doubleSpinner(0.5, 4.0, 1.8, 0.1);
+        apRorBtWidthSpinner = doubleSpinner(0.5, 4.0, 1.5, 0.1);
+        apRorEtWidthSpinner = doubleSpinner(0.5, 4.0, 1.2, 0.1);
+        apGasWidthSpinner = doubleSpinner(0.5, 4.0, 1.8, 0.1);
+        apDrumWidthSpinner = doubleSpinner(0.5, 4.0, 1.6, 0.1);
+        addRow(grid, row++, "Bean Temp", apBtWidthSpinner);
+        addRow(grid, row++, "Exhaust Temp", apEtWidthSpinner);
+        addRow(grid, row++, "Bean RoR", apRorBtWidthSpinner);
+        addRow(grid, row++, "Exhaust RoR", apRorEtWidthSpinner);
+        addRow(grid, row++, "Gas", apGasWidthSpinner);
+        addRow(grid, row++, "Drum Pressure", apDrumWidthSpinner);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Line Style"), 0, row++, 2, 1);
+        apBtStyleCombo = new ComboBox<>();
+        apEtStyleCombo = new ComboBox<>();
+        apRorBtStyleCombo = new ComboBox<>();
+        apRorEtStyleCombo = new ComboBox<>();
+        apGasStyleCombo = new ComboBox<>();
+        apDrumStyleCombo = new ComboBox<>();
+        apBtStyleCombo.getItems().addAll(ChartAppearance.LineStyle.values());
+        apEtStyleCombo.getItems().addAll(ChartAppearance.LineStyle.values());
+        apRorBtStyleCombo.getItems().addAll(ChartAppearance.LineStyle.values());
+        apRorEtStyleCombo.getItems().addAll(ChartAppearance.LineStyle.values());
+        apGasStyleCombo.getItems().addAll(ChartAppearance.LineStyle.values());
+        apDrumStyleCombo.getItems().addAll(ChartAppearance.LineStyle.values());
+        addRow(grid, row++, "Bean Temp", apBtStyleCombo);
+        addRow(grid, row++, "Exhaust Temp", apEtStyleCombo);
+        addRow(grid, row++, "Bean RoR", apRorBtStyleCombo);
+        addRow(grid, row++, "Exhaust RoR", apRorEtStyleCombo);
+        addRow(grid, row++, "Gas", apGasStyleCombo);
+        addRow(grid, row++, "Drum Pressure", apDrumStyleCombo);
+        apGasFillOpacitySpinner = doubleSpinner(0.0, 1.0, 0.2, 0.05);
+        addRow(grid, row++, "Gas Fill Opacity", apGasFillOpacitySpinner);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Background & Grid"), 0, row++, 2, 1);
+        apBgMainColorPicker = colorPicker("#FAFAFA");
+        apBgBottomColorPicker = colorPicker("#FAFAFA");
+        apGridColorPicker = colorPicker("#E5E5E5");
+        apGridOpacitySpinner = doubleSpinner(0.1, 1.0, 1.0, 0.05);
+        addRow(grid, row++, "Main Background", apBgMainColorPicker);
+        addRow(grid, row++, "Bottom Background", apBgBottomColorPicker);
+        addRow(grid, row++, "Grid Color", apGridColorPicker);
+        addRow(grid, row++, "Grid Opacity", apGridOpacitySpinner);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Axis"), 0, row++, 2, 1);
+        apAxisFontField = new TextField("Arial");
+        apAxisFontSizeSpinner = doubleSpinner(8.0, 24.0, 12.0, 1.0);
+        apAxisFontColorPicker = colorPicker("#303030");
+        addRow(grid, row++, "Font Family", apAxisFontField);
+        addRow(grid, row++, "Font Size", apAxisFontSizeSpinner);
+        addRow(grid, row++, "Font Color", apAxisFontColorPicker);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Legend"), 0, row++, 2, 1);
+        apLegendPositionCombo = new ComboBox<>();
+        apLegendPositionCombo.getItems().addAll(ChartAppearance.LegendPosition.values());
+        addRow(grid, row++, "Position", apLegendPositionCombo);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Annotations"), 0, row++, 2, 1);
+        apAnnotationBgPicker = colorPicker("#FFFFFF");
+        apAnnotationTextPicker = colorPicker("#000000");
+        apAnnotationFontSizeSpinner = doubleSpinner(8.0, 20.0, 11.0, 1.0);
+        addRow(grid, row++, "Box Background", apAnnotationBgPicker);
+        addRow(grid, row++, "Text Color", apAnnotationTextPicker);
+        addRow(grid, row++, "Font Size", apAnnotationFontSizeSpinner);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Readouts"), 0, row++, 2, 1);
+        apReadoutBtPicker = colorPicker("#E74C3C");
+        apReadoutEtPicker = colorPicker("#3498DB");
+        apReadoutRorBtPicker = colorPicker("#2ECC71");
+        apReadoutRorEtPicker = colorPicker("#5DADE2");
+        apReadoutMainSizeSpinner = doubleSpinner(16.0, 40.0, 28.0, 1.0);
+        apReadoutSecondarySizeSpinner = doubleSpinner(10.0, 20.0, 14.0, 1.0);
+        addRow(grid, row++, "BT Color", apReadoutBtPicker);
+        addRow(grid, row++, "ET Color", apReadoutEtPicker);
+        addRow(grid, row++, "RoR BT Color", apReadoutRorBtPicker);
+        addRow(grid, row++, "RoR ET Color", apReadoutRorEtPicker);
+        addRow(grid, row++, "Main Font Size", apReadoutMainSizeSpinner);
+        addRow(grid, row++, "Secondary Font Size", apReadoutSecondarySizeSpinner);
+
+        grid.add(new Separator(), 0, row++, 2, 1);
+        grid.add(sectionLabel("Presets"), 0, row++, 2, 1);
+        apPresetCombo = new ComboBox<>();
+        apPresetCombo.setEditable(true);
+        Button presetLoadBtn = new Button("Load");
+        Button presetSaveBtn = new Button("Save");
+        Button presetDeleteBtn = new Button("Delete");
+        Button presetResetBtn = new Button("Reset to RI5 defaults");
+        HBox presetRow = new HBox(8, apPresetCombo, presetLoadBtn, presetSaveBtn, presetDeleteBtn);
+        grid.add(presetRow, 0, row++, 2, 1);
+        grid.add(presetResetBtn, 0, row++, 2, 1);
+
+        presetLoadBtn.setOnAction(e -> loadAppearancePreset());
+        presetSaveBtn.setOnAction(e -> saveAppearancePreset());
+        presetDeleteBtn.setOnAction(e -> deleteAppearancePreset());
+        presetResetBtn.setOnAction(e -> resetAppearanceDefaults());
+
+        reloadChartAppearanceUI();
+        wireAppearanceListeners();
+        ScrollPane scroll = new ScrollPane(grid);
+        scroll.setFitToWidth(true);
+        return new Tab("Chart Appearance", scroll);
+    }
+
     private void updateDeviceVisibility(String deviceType) {
         boolean isRtu = "Modbus RTU".equals(deviceType);
         boolean isTcp = "Modbus TCP".equals(deviceType);
@@ -488,6 +875,201 @@ public final class SettingsDialog extends Dialog<ButtonType> {
         setRowVisible(modbusBtLabel, modbusBtRegisterSpinner, isModbus);
         setRowVisible(modbusEtLabel, modbusEtRegisterSpinner, isModbus);
         setRowVisible(modbusScaleLabel, modbusScaleFactorSpinner, isModbus);
+    }
+
+    private void addRow(GridPane grid, int row, String label, Node control) {
+        grid.add(new Label(label), 0, row);
+        grid.add(control, 1, row);
+    }
+
+    private void reloadChartAppearanceUI() {
+        if (uiPreferences == null) return;
+        ChartAppearance ap = uiPreferences.getChartAppearance();
+        apBtColorPicker.setValue(Color.web(ap.getBtColor()));
+        apEtColorPicker.setValue(Color.web(ap.getEtColor()));
+        apRorBtColorPicker.setValue(Color.web(ap.getRorBtColor()));
+        apRorEtColorPicker.setValue(Color.web(ap.getRorEtColor()));
+        apGasColorPicker.setValue(Color.web(ap.getGasColor()));
+        apDrumColorPicker.setValue(Color.web(ap.getDrumColor()));
+        apEventLineColorPicker.setValue(Color.web(ap.getEventLineColor()));
+        apEventDotColorPicker.setValue(Color.web(ap.getEventDotColor()));
+        apGridColorPicker.setValue(Color.web(ap.getGridColor()));
+        apBgMainColorPicker.setValue(Color.web(ap.getBackgroundMain()));
+        apBgBottomColorPicker.setValue(Color.web(ap.getBackgroundBottom()));
+        apAxisFontColorPicker.setValue(Color.web(ap.getAxisFontColor()));
+        apAnnotationBgPicker.setValue(Color.web(ap.getAnnotationBoxBg()));
+        apAnnotationTextPicker.setValue(Color.web(ap.getAnnotationTextColor()));
+        apReadoutBtPicker.setValue(Color.web(ap.getReadoutBtColor()));
+        apReadoutEtPicker.setValue(Color.web(ap.getReadoutEtColor()));
+        apReadoutRorBtPicker.setValue(Color.web(ap.getReadoutRorBtColor()));
+        apReadoutRorEtPicker.setValue(Color.web(ap.getReadoutRorEtColor()));
+        apBtWidthSpinner.getValueFactory().setValue(ap.getBtWidth());
+        apEtWidthSpinner.getValueFactory().setValue(ap.getEtWidth());
+        apRorBtWidthSpinner.getValueFactory().setValue(ap.getRorBtWidth());
+        apRorEtWidthSpinner.getValueFactory().setValue(ap.getRorEtWidth());
+        apGasWidthSpinner.getValueFactory().setValue(ap.getGasWidth());
+        apDrumWidthSpinner.getValueFactory().setValue(ap.getDrumWidth());
+        apGasFillOpacitySpinner.getValueFactory().setValue(ap.getGasFillOpacity());
+        apGridOpacitySpinner.getValueFactory().setValue(ap.getGridOpacity());
+        apAxisFontField.setText(ap.getAxisFontFamily());
+        apAxisFontSizeSpinner.getValueFactory().setValue(ap.getAxisFontSize());
+        apAnnotationFontSizeSpinner.getValueFactory().setValue(ap.getAnnotationFontSize());
+        apLegendPositionCombo.setValue(ap.getLegendPosition());
+        apReadoutMainSizeSpinner.getValueFactory().setValue(ap.getReadoutMainFontSize());
+        apReadoutSecondarySizeSpinner.getValueFactory().setValue(ap.getReadoutSecondaryFontSize());
+        apBtStyleCombo.setValue(ap.getBtLineStyle());
+        apEtStyleCombo.setValue(ap.getEtLineStyle());
+        apRorBtStyleCombo.setValue(ap.getRorBtLineStyle());
+        apRorEtStyleCombo.setValue(ap.getRorEtLineStyle());
+        apGasStyleCombo.setValue(ap.getGasLineStyle());
+        apDrumStyleCombo.setValue(ap.getDrumLineStyle());
+        apPresetCombo.getItems().setAll(uiPreferences.getChartAppearancePresets().keySet());
+        apPresetCombo.setValue(uiPreferences.getChartAppearanceActivePreset());
+    }
+
+    private ChartAppearance buildChartAppearanceFromUI() {
+        ChartAppearance ap = ChartAppearance.ri5Default();
+        ap.setBtColor(toHex(apBtColorPicker.getValue()));
+        ap.setEtColor(toHex(apEtColorPicker.getValue()));
+        ap.setRorBtColor(toHex(apRorBtColorPicker.getValue()));
+        ap.setRorEtColor(toHex(apRorEtColorPicker.getValue()));
+        ap.setGasColor(toHex(apGasColorPicker.getValue()));
+        ap.setDrumColor(toHex(apDrumColorPicker.getValue()));
+        ap.setEventLineColor(toHex(apEventLineColorPicker.getValue()));
+        ap.setEventDotColor(toHex(apEventDotColorPicker.getValue()));
+        ap.setGridColor(toHex(apGridColorPicker.getValue()));
+        ap.setBackgroundMain(toHex(apBgMainColorPicker.getValue()));
+        ap.setBackgroundBottom(toHex(apBgBottomColorPicker.getValue()));
+        ap.setAxisFontColor(toHex(apAxisFontColorPicker.getValue()));
+        ap.setAnnotationBoxBg(toHex(apAnnotationBgPicker.getValue()));
+        ap.setAnnotationTextColor(toHex(apAnnotationTextPicker.getValue()));
+        ap.setReadoutBtColor(toHex(apReadoutBtPicker.getValue()));
+        ap.setReadoutEtColor(toHex(apReadoutEtPicker.getValue()));
+        ap.setReadoutRorBtColor(toHex(apReadoutRorBtPicker.getValue()));
+        ap.setReadoutRorEtColor(toHex(apReadoutRorEtPicker.getValue()));
+        ap.setBtWidth(apBtWidthSpinner.getValue());
+        ap.setEtWidth(apEtWidthSpinner.getValue());
+        ap.setRorBtWidth(apRorBtWidthSpinner.getValue());
+        ap.setRorEtWidth(apRorEtWidthSpinner.getValue());
+        ap.setGasWidth(apGasWidthSpinner.getValue());
+        ap.setDrumWidth(apDrumWidthSpinner.getValue());
+        ap.setGasFillOpacity(apGasFillOpacitySpinner.getValue());
+        ap.setGridOpacity(apGridOpacitySpinner.getValue());
+        ap.setAxisFontFamily(apAxisFontField.getText());
+        ap.setAxisFontSize(apAxisFontSizeSpinner.getValue());
+        ap.setAnnotationFontSize(apAnnotationFontSizeSpinner.getValue());
+        ap.setLegendPosition(apLegendPositionCombo.getValue());
+        ap.setReadoutMainFontSize(apReadoutMainSizeSpinner.getValue());
+        ap.setReadoutSecondaryFontSize(apReadoutSecondarySizeSpinner.getValue());
+        ap.setBtLineStyle(apBtStyleCombo.getValue());
+        ap.setEtLineStyle(apEtStyleCombo.getValue());
+        ap.setRorBtLineStyle(apRorBtStyleCombo.getValue());
+        ap.setRorEtLineStyle(apRorEtStyleCombo.getValue());
+        ap.setGasLineStyle(apGasStyleCombo.getValue());
+        ap.setDrumLineStyle(apDrumStyleCombo.getValue());
+        return ap;
+    }
+
+    private void applyChartAppearanceChanges() {
+        if (uiPreferences == null) return;
+        ChartAppearance ap = buildChartAppearanceFromUI();
+        uiPreferences.setChartAppearance(ap);
+        if (apPresetCombo.getValue() != null) {
+            uiPreferences.setChartAppearanceActivePreset(apPresetCombo.getValue());
+        }
+        if (preferencesStore != null) preferencesStore.save(uiPreferences);
+        applyChartAppearancePreview(ap);
+    }
+
+    private void applyChartAppearancePreview(ChartAppearance ap) {
+        if (unifiedContext != null && unifiedContext.getChartController() != null) {
+            unifiedContext.getChartController().setChartAppearance(ap);
+        }
+    }
+
+    private void saveAppearancePreset() {
+        if (uiPreferences == null) return;
+        String name = apPresetCombo.getEditor().getText();
+        if (name == null || name.isBlank()) return;
+        uiPreferences.getChartAppearancePresets().put(name, buildChartAppearanceFromUI());
+        uiPreferences.setChartAppearanceActivePreset(name);
+        if (preferencesStore != null) preferencesStore.save(uiPreferences);
+        reloadChartAppearanceUI();
+    }
+
+    private void loadAppearancePreset() {
+        if (uiPreferences == null) return;
+        String name = apPresetCombo.getValue();
+        ChartAppearance ap = uiPreferences.getChartAppearancePresets().get(name);
+        if (ap == null) return;
+        uiPreferences.setChartAppearance(ap.copy());
+        uiPreferences.setChartAppearanceActivePreset(name);
+        if (preferencesStore != null) preferencesStore.save(uiPreferences);
+        reloadChartAppearanceUI();
+        applyChartAppearancePreview(ap);
+    }
+
+    private void deleteAppearancePreset() {
+        if (uiPreferences == null) return;
+        String name = apPresetCombo.getValue();
+        if (name == null) return;
+        uiPreferences.getChartAppearancePresets().remove(name);
+        uiPreferences.setChartAppearanceActivePreset("RI5 Default");
+        if (preferencesStore != null) preferencesStore.save(uiPreferences);
+        reloadChartAppearanceUI();
+    }
+
+    private void resetAppearanceDefaults() {
+        if (uiPreferences == null) return;
+        uiPreferences.setChartAppearance(ChartAppearance.ri5Default());
+        uiPreferences.setChartAppearanceActivePreset("RI5 Default");
+        if (preferencesStore != null) preferencesStore.save(uiPreferences);
+        reloadChartAppearanceUI();
+        applyChartAppearancePreview(uiPreferences.getChartAppearance());
+    }
+
+    private void wireAppearanceListeners() {
+        Runnable r = () -> applyChartAppearanceChanges();
+        apBtColorPicker.setOnAction(e -> r.run());
+        apEtColorPicker.setOnAction(e -> r.run());
+        apRorBtColorPicker.setOnAction(e -> r.run());
+        apRorEtColorPicker.setOnAction(e -> r.run());
+        apGasColorPicker.setOnAction(e -> r.run());
+        apDrumColorPicker.setOnAction(e -> r.run());
+        apEventLineColorPicker.setOnAction(e -> r.run());
+        apEventDotColorPicker.setOnAction(e -> r.run());
+        apGridColorPicker.setOnAction(e -> r.run());
+        apBgMainColorPicker.setOnAction(e -> r.run());
+        apBgBottomColorPicker.setOnAction(e -> r.run());
+        apAxisFontColorPicker.setOnAction(e -> r.run());
+        apAnnotationBgPicker.setOnAction(e -> r.run());
+        apAnnotationTextPicker.setOnAction(e -> r.run());
+        apReadoutBtPicker.setOnAction(e -> r.run());
+        apReadoutEtPicker.setOnAction(e -> r.run());
+        apReadoutRorBtPicker.setOnAction(e -> r.run());
+        apReadoutRorEtPicker.setOnAction(e -> r.run());
+
+        apBtWidthSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apEtWidthSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apRorBtWidthSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apRorEtWidthSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apGasWidthSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apDrumWidthSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apGasFillOpacitySpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apGridOpacitySpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apAxisFontSizeSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apAnnotationFontSizeSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apReadoutMainSizeSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+        apReadoutSecondarySizeSpinner.valueProperty().addListener((o, ov, nv) -> r.run());
+
+        apBtStyleCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apEtStyleCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apRorBtStyleCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apRorEtStyleCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apGasStyleCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apDrumStyleCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apLegendPositionCombo.valueProperty().addListener((o, ov, nv) -> r.run());
+        apAxisFontField.textProperty().addListener((o, ov, nv) -> r.run());
     }
 
     private void updateAutoScaleFields(boolean enabled) {
@@ -585,6 +1167,18 @@ public final class SettingsDialog extends Dialog<ButtonType> {
     }
 
     private void applyChanges() {
+        if (unifiedContext != null) {
+            applyInlineChangesOnly();
+            for (Runnable r : embeddedApplyActions) {
+                r.run();
+            }
+            applyChartAppearanceChanges();
+            if (unifiedContext.getOnSettingsApplied() != null) {
+                unifiedContext.getOnSettingsApplied().run();
+            }
+            return;
+        }
+
         commitAllSpinners();
 
         appSettings.setDeviceType(deviceTypeCombo.getValue());
@@ -600,25 +1194,25 @@ public final class SettingsDialog extends Dialog<ButtonType> {
         if (modbusEtRegisterSpinner != null) appSettings.setModbusEtRegister(modbusEtRegisterSpinner.getValue());
         if (modbusScaleFactorSpinner != null) appSettings.setModbusScaleFactor(modbusScaleFactorSpinner.getValue());
 
-        if (unitFahrenheitRadio.isSelected()) {
+        if (unitFahrenheitRadio != null && unitFahrenheitRadio.isSelected()) {
             appSettings.setTempUnit(AxisConfig.TemperatureUnit.FAHRENHEIT);
         } else {
             appSettings.setTempUnit(AxisConfig.TemperatureUnit.CELSIUS);
         }
-        appSettings.setDarkTheme(themeDarkRadio.isSelected());
+        appSettings.setDarkTheme(themeDarkRadio != null && themeDarkRadio.isSelected());
 
-        displaySettings.setShowCrosshair(showCrosshairCheck.isSelected());
-        displaySettings.setShowWatermark(showWatermarkCheck.isSelected());
-        displaySettings.setShowLegend(showLegendCheck.isSelected());
-        displaySettings.setTimeguideSec(timeGuideSpinner.getValue());
-        displaySettings.setAucBaseTemp(aucBaseSpinner.getValue());
+        displaySettings.setShowCrosshair(showCrosshairCheck != null && showCrosshairCheck.isSelected());
+        displaySettings.setShowWatermark(showWatermarkCheck != null && showWatermarkCheck.isSelected());
+        displaySettings.setShowLegend(showLegendCheck != null && showLegendCheck.isSelected());
+        displaySettings.setTimeguideSec(timeGuideSpinner != null ? timeGuideSpinner.getValue() : displaySettings.getTimeguideSec());
+        displaySettings.setAucBaseTemp(aucBaseSpinner != null ? aucBaseSpinner.getValue() : displaySettings.getAucBaseTemp());
 
-        axisConfig.setAutoScaleY(autoScaleYCheck.isSelected());
-        axisConfig.setTempMin(tempMinSpinner.getValue());
-        axisConfig.setTempMax(tempMaxSpinner.getValue());
-        axisConfig.setTempAutoScaleFloor(autoScaleFloorSpinner.getValue());
-        axisConfig.setRorMin(rorMinSpinner.getValue());
-        axisConfig.setRorMax(rorMaxSpinner.getValue());
+        axisConfig.setAutoScaleY(autoScaleYCheck != null && autoScaleYCheck.isSelected());
+        axisConfig.setTempMin(tempMinSpinner != null ? tempMinSpinner.getValue() : axisConfig.getTempMin());
+        axisConfig.setTempMax(tempMaxSpinner != null ? tempMaxSpinner.getValue() : axisConfig.getTempMax());
+        axisConfig.setTempAutoScaleFloor(autoScaleFloorSpinner != null ? autoScaleFloorSpinner.getValue() : axisConfig.getTempAutoScaleFloor());
+        axisConfig.setRorMin(rorMinSpinner != null ? rorMinSpinner.getValue() : axisConfig.getRorMin());
+        axisConfig.setRorMax(rorMaxSpinner != null ? rorMaxSpinner.getValue() : axisConfig.getRorMax());
         axisConfig.setUnit(appSettings.getTempUnit());
 
         appSettings.setAxisAutoScaleY(axisConfig.isAutoScaleY());
@@ -628,35 +1222,98 @@ public final class SettingsDialog extends Dialog<ButtonType> {
         appSettings.setAxisRorMin(axisConfig.getRorMin());
         appSettings.setAxisRorMax(axisConfig.getRorMax());
 
-        displaySettings.setPaletteCurveET(toHex(curveEtPicker.getValue()));
-        displaySettings.setPaletteCurveBT(toHex(curveBtPicker.getValue()));
-        displaySettings.setPaletteCurveDeltaET(toHex(curveDeltaEtPicker.getValue()));
-        displaySettings.setPaletteCurveDeltaBT(toHex(curveDeltaBtPicker.getValue()));
-        displaySettings.setLineWidthET(lineWidthEtSpinner.getValue());
-        displaySettings.setLineWidthBT(lineWidthBtSpinner.getValue());
-        displaySettings.setLineWidthDeltaET(lineWidthDeltaEtSpinner.getValue());
-        displaySettings.setLineWidthDeltaBT(lineWidthDeltaBtSpinner.getValue());
-        displaySettings.setSmoothingBT(toOdd(smoothingBtSpinner.getValue()));
-        displaySettings.setSmoothingET(toOdd(smoothingEtSpinner.getValue()));
-        displaySettings.setSmoothingDelta(toOdd(smoothingDeltaSpinner.getValue()));
-        displaySettings.setVisibleET(visibleEtCheck.isSelected());
-        displaySettings.setVisibleBT(visibleBtCheck.isSelected());
-        displaySettings.setVisibleDeltaET(visibleDeltaEtCheck.isSelected());
-        displaySettings.setVisibleDeltaBT(visibleDeltaBtCheck.isSelected());
-        displaySettings.setBackgroundAlpha(backgroundAlphaSlider.getValue());
+        if (curveEtPicker != null) displaySettings.setPaletteCurveET(toHex(curveEtPicker.getValue()));
+        if (curveBtPicker != null) displaySettings.setPaletteCurveBT(toHex(curveBtPicker.getValue()));
+        if (curveDeltaEtPicker != null) displaySettings.setPaletteCurveDeltaET(toHex(curveDeltaEtPicker.getValue()));
+        if (curveDeltaBtPicker != null) displaySettings.setPaletteCurveDeltaBT(toHex(curveDeltaBtPicker.getValue()));
+        if (lineWidthEtSpinner != null) displaySettings.setLineWidthET(lineWidthEtSpinner.getValue());
+        if (lineWidthBtSpinner != null) displaySettings.setLineWidthBT(lineWidthBtSpinner.getValue());
+        if (lineWidthDeltaEtSpinner != null) displaySettings.setLineWidthDeltaET(lineWidthDeltaEtSpinner.getValue());
+        if (lineWidthDeltaBtSpinner != null) displaySettings.setLineWidthDeltaBT(lineWidthDeltaBtSpinner.getValue());
+        if (smoothingBtSpinner != null) displaySettings.setSmoothingBT(toOdd(smoothingBtSpinner.getValue()));
+        if (smoothingEtSpinner != null) displaySettings.setSmoothingET(toOdd(smoothingEtSpinner.getValue()));
+        if (smoothingDeltaSpinner != null) displaySettings.setSmoothingDelta(toOdd(smoothingDeltaSpinner.getValue()));
+        if (visibleEtCheck != null) displaySettings.setVisibleET(visibleEtCheck.isSelected());
+        if (visibleBtCheck != null) displaySettings.setVisibleBT(visibleBtCheck.isSelected());
+        if (visibleDeltaEtCheck != null) displaySettings.setVisibleDeltaET(visibleDeltaEtCheck.isSelected());
+        if (visibleDeltaBtCheck != null) displaySettings.setVisibleDeltaBT(visibleDeltaBtCheck.isSelected());
+        if (backgroundAlphaSlider != null) displaySettings.setBackgroundAlpha(backgroundAlphaSlider.getValue());
         for (Map.Entry<String, ColorPicker> entry : palettePickers.entrySet()) {
             displaySettings.setPalette(entry.getKey(), toHex(entry.getValue().getValue()));
         }
 
-        if (roastStateMachine != null) {
+        if (roastStateMachine != null && autoChargeDropSpinner != null) {
             roastStateMachine.setAutoChargeTempDropDeg(autoChargeDropSpinner.getValue());
-            roastStateMachine.setAutoChargeDropSustainSec(autoChargeSustainSpinner.getValue());
-            roastStateMachine.setPreRoastTimeoutSec(preRoastTimeoutSpinner.getValue());
+            roastStateMachine.setAutoChargeDropSustainSec(autoChargeSustainSpinner != null ? autoChargeSustainSpinner.getValue() : roastStateMachine.getAutoChargeDropSustainSec());
+            roastStateMachine.setPreRoastTimeoutSec(preRoastTimeoutSpinner != null ? preRoastTimeoutSpinner.getValue() : roastStateMachine.getPreRoastTimeoutSec());
         }
         if (autoChargeDropSpinner != null) appSettings.setAutoChargeDrop(autoChargeDropSpinner.getValue());
         if (autoChargeSustainSpinner != null) appSettings.setAutoChargeSustain(autoChargeSustainSpinner.getValue());
         if (preRoastTimeoutSpinner != null) appSettings.setPreRoastTimeout(preRoastTimeoutSpinner.getValue());
 
+        applyChartAppearanceChanges();
+        appSettings.save();
+    }
+
+    /** Applies settings programmatically (used by UnifiedSettingsDialog). */
+    public void applyFromUI() {
+        applyChanges();
+    }
+
+    /** Applies only the inline tabs (Graph, Curves, Roast) when in unified mode. */
+    private void applyInlineChangesOnly() {
+        commitAllSpinners();
+        if (unitFahrenheitRadio != null) {
+            if (unitFahrenheitRadio.isSelected()) {
+                appSettings.setTempUnit(AxisConfig.TemperatureUnit.FAHRENHEIT);
+            } else {
+                appSettings.setTempUnit(AxisConfig.TemperatureUnit.CELSIUS);
+            }
+        }
+        if (themeDarkRadio != null) appSettings.setDarkTheme(themeDarkRadio.isSelected());
+        if (showCrosshairCheck != null) displaySettings.setShowCrosshair(showCrosshairCheck.isSelected());
+        if (showWatermarkCheck != null) displaySettings.setShowWatermark(showWatermarkCheck.isSelected());
+        if (showLegendCheck != null) displaySettings.setShowLegend(showLegendCheck.isSelected());
+        if (timeGuideSpinner != null) displaySettings.setTimeguideSec(timeGuideSpinner.getValue());
+        if (aucBaseSpinner != null) displaySettings.setAucBaseTemp(aucBaseSpinner.getValue());
+        if (autoScaleYCheck != null) axisConfig.setAutoScaleY(autoScaleYCheck.isSelected());
+        if (tempMinSpinner != null) axisConfig.setTempMin(tempMinSpinner.getValue());
+        if (tempMaxSpinner != null) axisConfig.setTempMax(tempMaxSpinner.getValue());
+        if (autoScaleFloorSpinner != null) axisConfig.setTempAutoScaleFloor(autoScaleFloorSpinner.getValue());
+        if (rorMinSpinner != null) axisConfig.setRorMin(rorMinSpinner.getValue());
+        if (rorMaxSpinner != null) axisConfig.setRorMax(rorMaxSpinner.getValue());
+        axisConfig.setUnit(appSettings.getTempUnit());
+        appSettings.setAxisAutoScaleY(axisConfig.isAutoScaleY());
+        appSettings.setAxisTempMin(axisConfig.getTempMin());
+        appSettings.setAxisTempMax(axisConfig.getTempMax());
+        appSettings.setAxisAutoScaleFloor(axisConfig.getTempAutoScaleFloor());
+        appSettings.setAxisRorMin(axisConfig.getRorMin());
+        appSettings.setAxisRorMax(axisConfig.getRorMax());
+        if (curveEtPicker != null) displaySettings.setPaletteCurveET(toHex(curveEtPicker.getValue()));
+        if (curveBtPicker != null) displaySettings.setPaletteCurveBT(toHex(curveBtPicker.getValue()));
+        if (curveDeltaEtPicker != null) displaySettings.setPaletteCurveDeltaET(toHex(curveDeltaEtPicker.getValue()));
+        if (curveDeltaBtPicker != null) displaySettings.setPaletteCurveDeltaBT(toHex(curveDeltaBtPicker.getValue()));
+        if (lineWidthEtSpinner != null) displaySettings.setLineWidthET(lineWidthEtSpinner.getValue());
+        if (lineWidthBtSpinner != null) displaySettings.setLineWidthBT(lineWidthBtSpinner.getValue());
+        if (lineWidthDeltaEtSpinner != null) displaySettings.setLineWidthDeltaET(lineWidthDeltaEtSpinner.getValue());
+        if (lineWidthDeltaBtSpinner != null) displaySettings.setLineWidthDeltaBT(lineWidthDeltaBtSpinner.getValue());
+        if (smoothingBtSpinner != null) displaySettings.setSmoothingBT(toOdd(smoothingBtSpinner.getValue()));
+        if (smoothingEtSpinner != null) displaySettings.setSmoothingET(toOdd(smoothingEtSpinner.getValue()));
+        if (smoothingDeltaSpinner != null) displaySettings.setSmoothingDelta(toOdd(smoothingDeltaSpinner.getValue()));
+        if (visibleEtCheck != null) displaySettings.setVisibleET(visibleEtCheck.isSelected());
+        if (visibleBtCheck != null) displaySettings.setVisibleBT(visibleBtCheck.isSelected());
+        if (visibleDeltaEtCheck != null) displaySettings.setVisibleDeltaET(visibleDeltaEtCheck.isSelected());
+        if (visibleDeltaBtCheck != null) displaySettings.setVisibleDeltaBT(visibleDeltaBtCheck.isSelected());
+        if (backgroundAlphaSlider != null) displaySettings.setBackgroundAlpha(backgroundAlphaSlider.getValue());
+        if (roastStateMachine != null && autoChargeDropSpinner != null) {
+            roastStateMachine.setAutoChargeTempDropDeg(autoChargeDropSpinner.getValue());
+            roastStateMachine.setAutoChargeDropSustainSec(autoChargeSustainSpinner != null ? autoChargeSustainSpinner.getValue() : roastStateMachine.getAutoChargeDropSustainSec());
+            roastStateMachine.setPreRoastTimeoutSec(preRoastTimeoutSpinner != null ? preRoastTimeoutSpinner.getValue() : roastStateMachine.getPreRoastTimeoutSec());
+        }
+        if (autoChargeDropSpinner != null) appSettings.setAutoChargeDrop(autoChargeDropSpinner.getValue());
+        if (autoChargeSustainSpinner != null) appSettings.setAutoChargeSustain(autoChargeSustainSpinner.getValue());
+        if (preRoastTimeoutSpinner != null) appSettings.setPreRoastTimeout(preRoastTimeoutSpinner.getValue());
+        applyChartAppearanceChanges();
         appSettings.save();
     }
 
@@ -741,6 +1398,18 @@ public final class SettingsDialog extends Dialog<ButtonType> {
         commitEditorText(smoothingBtSpinner);
         commitEditorText(smoothingEtSpinner);
         commitEditorText(smoothingDeltaSpinner);
+        commitEditorText(apBtWidthSpinner);
+        commitEditorText(apEtWidthSpinner);
+        commitEditorText(apRorBtWidthSpinner);
+        commitEditorText(apRorEtWidthSpinner);
+        commitEditorText(apGasWidthSpinner);
+        commitEditorText(apDrumWidthSpinner);
+        commitEditorText(apGasFillOpacitySpinner);
+        commitEditorText(apGridOpacitySpinner);
+        commitEditorText(apAxisFontSizeSpinner);
+        commitEditorText(apAnnotationFontSizeSpinner);
+        commitEditorText(apReadoutMainSizeSpinner);
+        commitEditorText(apReadoutSecondarySizeSpinner);
         commitEditorText(autoChargeDropSpinner);
         commitEditorText(autoChargeSustainSpinner);
         commitEditorText(preRoastTimeoutSpinner);

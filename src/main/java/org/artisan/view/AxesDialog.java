@@ -166,6 +166,11 @@ public final class AxesDialog extends ArtisanDialog {
         if (close) getStage().close();
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public void applyFromUI() {
+        applyAndRedraw(false);
+    }
+
     @Override
     protected void onOk(javafx.event.ActionEvent e) {
         applyAndRedraw(false);

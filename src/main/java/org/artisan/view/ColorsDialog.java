@@ -396,6 +396,11 @@ public final class ColorsDialog extends ArtisanDialog {
         onApply.run();
     }
 
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public void applyFromUI() {
+        applyAndRedraw();
+    }
+
     @Override
     protected void onOk(javafx.event.ActionEvent e) {
         applyAndRedraw();

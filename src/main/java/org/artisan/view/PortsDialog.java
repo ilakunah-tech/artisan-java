@@ -348,7 +348,7 @@ public final class PortsDialog extends ArtisanDialog {
         return "serial";
     }
 
-    private void applyAndMaybeRestart(boolean close) {
+    void applyAndMaybeRestart(boolean close) {
         syncAllFromUi();
         SerialPortConfig.saveToPreferences(serialConfig);
         ModbusPortConfig.saveToPreferences(modbusConfig);
@@ -364,6 +364,11 @@ public final class PortsDialog extends ArtisanDialog {
             if (wasRunning) commController.start(intervalSeconds);
         }
         if (close) getStage().close();
+    }
+
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public void applyFromUI() {
+        applyAndMaybeRestart(false);
     }
 
     @Override

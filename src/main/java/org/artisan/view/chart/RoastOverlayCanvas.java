@@ -18,6 +18,7 @@ import javafx.scene.text.Text;
 import org.artisan.controller.DisplaySettings;
 import org.artisan.model.*;
 import org.artisan.view.RoastChartController;
+import org.artisan.ui.state.ChartAppearance;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -55,6 +56,7 @@ public final class RoastOverlayCanvas extends Canvas {
     private CanvasData      canvasData;
     private ColorConfig     colorConfig;
     private DisplaySettings displaySettings;
+    private ChartAppearance chartAppearance;
     private EventList       eventList;
     private BackgroundProfile backgroundProfile;
     private PhasesConfig    phasesConfig;
@@ -136,6 +138,7 @@ public final class RoastOverlayCanvas extends Canvas {
     public void setCanvasData(CanvasData d)               { this.canvasData   = d; }
     public void setColorConfig(ColorConfig c)              { this.colorConfig  = c; }
     public void setDisplaySettings(DisplaySettings ds)     { this.displaySettings = ds; }
+    public void setChartAppearance(ChartAppearance ap)     { this.chartAppearance = ap; }
     public void setEventList(EventList el)                 { this.eventList    = el; }
     public void setBackgroundProfile(BackgroundProfile bp) { this.backgroundProfile = bp; }
     public void setPhasesConfig(PhasesConfig pc)           { this.phasesConfig = pc; }
@@ -410,13 +413,13 @@ public final class RoastOverlayCanvas extends Canvas {
         if (canvasData == null || lastTimex == null || lastTimex.isEmpty()) return;
         double lineH = ph - STRIP_H;
 
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getChargeIndex(),  "CH",   Color.web("#555555", 0.80));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getDryEndIndex(),  "DE",   Color.web("#2980b9", 0.80));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getFcStartIndex(), "FC\u2191", Color.web("#e67e22", 0.90));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getFcEndIndex(),   "FC\u2193", Color.web("#e67e22", 0.70));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getScStartIndex(), "SC\u2191", Color.web("#c0392b", 0.80));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getScEndIndex(),   "SC\u2193", Color.web("#c0392b", 0.65));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getDropIndex(),    "DROP", Color.web("#c0392b", 0.95));
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getChargeIndex(), "Charge");
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getDryEndIndex(), "Color change");
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getFcStartIndex(), "First crack");
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getFcEndIndex(), "First crack end");
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getScStartIndex(), "Second crack");
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getScEndIndex(), "Second crack end");
+        drawRi5EventMarker(gc, px, py, pw, lineH, canvasData.getDropIndex(), "Drop");
 
         // Special events bar (18 px above the phase strip)
         if (eventList == null) return;
@@ -470,6 +473,57 @@ public final class RoastOverlayCanvas extends Canvas {
         gc.fillRoundRect(xPx - pillW / 2, py + 2, pillW, pillH, 4, 4);
         gc.setFill(Color.WHITE);
         gc.fillText(label, xPx - tw / 2, py + 12);
+    }
+
+    private void drawRi5EventMarker(GraphicsContext gc,
+                                    double px, double py, double pw, double lineH,
+                                    int idx, String label) {
+        if (idx < 0 || lastTimex == null || idx >= lastTimex.size()) return;
+        double xPx = xAxis.getDisplayPosition(lastTimex.get(idx)) + px;
+        if (xPx < px || xPx > px + pw) return;
+
+        Color lineC = colorFromAppearance(chartAppearance != null ? chartAppearance.getEventLineColor() : "#2C3E50");
+        gc.setStroke(lineC);
+        gc.setLineWidth(1.0);
+        gc.setLineDashes(null);
+        gc.strokeLine(xPx, py, xPx, py + lineH - 4);
+
+        double btVal = (lastBT != null && idx < lastBT.size()) ? lastBT.get(idx) : Double.NaN;
+        if (Double.isFinite(btVal)) {
+            double btYPx = yAxis.getDisplayPosition(btVal) + py;
+            Color dotC = colorFromAppearance(chartAppearance != null ? chartAppearance.getEventDotColor() : "#3498DB");
+            gc.setFill(dotC);
+            gc.fillOval(xPx - 4, btYPx - 4, 8, 8);
+            gc.setStroke(Color.WHITE);
+            gc.setLineWidth(1.0);
+            gc.strokeOval(xPx - 4, btYPx - 4, 8, 8);
+        }
+
+        int totalSec = (int) Math.round(lastTimex.get(idx));
+        String timeStr = String.format("%02d:%02d", totalSec / 60, totalSec % 60);
+        String tempStr = Double.isFinite(btVal) ? String.format("%.1f°", btVal) : "—";
+        String text = label + "\n" + timeStr + "  " + tempStr;
+
+        double fontSize = chartAppearance != null ? chartAppearance.getAnnotationFontSize() : 11.0;
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, fontSize));
+        double tw = Math.max(computeTextWidth(label, fontSize), computeTextWidth(timeStr + "  " + tempStr, fontSize));
+        double boxW = tw + 10;
+        double boxH = fontSize * 2.2;
+        double bx = xPx + 6;
+        double by = py + 6;
+        if (bx + boxW > px + pw) bx = xPx - boxW - 6;
+
+        Color boxBg = colorFromAppearance(chartAppearance != null ? chartAppearance.getAnnotationBoxBg() : "#FFFFFF");
+        Color boxText = colorFromAppearance(chartAppearance != null ? chartAppearance.getAnnotationTextColor() : "#000000");
+        gc.setFill(boxBg);
+        gc.fillRoundRect(bx, by, boxW, boxH, 6, 6);
+        gc.setStroke(lineC);
+        gc.setLineWidth(0.9);
+        gc.strokeRoundRect(bx, by, boxW, boxH, 6, 6);
+        gc.setFill(boxText);
+        gc.fillText(label, bx + 5, by + fontSize + 2);
+        gc.setFont(Font.font("Arial", FontWeight.NORMAL, fontSize));
+        gc.fillText(timeStr + "  " + tempStr, bx + 5, by + fontSize * 2 + 2);
     }
 
     // ═══════════════════════════════════════════════════
@@ -597,6 +651,7 @@ public final class RoastOverlayCanvas extends Canvas {
     // ═══════════════════════════════════════════════════
     private void drawCrosshair(GraphicsContext gc,
                                 double px, double py, double pw, double ph) {
+        if (displaySettings != null && !displaySettings.isShowCrosshair()) return;
         if (!Double.isFinite(crosshairX) || lastTimex == null || lastTimex.isEmpty()) return;
         double relX = crosshairX - px;
         if (relX < 0 || relX > pw) return;
@@ -696,6 +751,11 @@ public final class RoastOverlayCanvas extends Canvas {
         if (colorConfig == null) return fallback;
         Color c = colorConfig.getPaletteColorOrNull(key);
         return c != null ? c : fallback;
+    }
+
+    private static Color colorFromAppearance(String hex) {
+        if (hex == null || hex.isBlank()) return Color.BLACK;
+        try { return Color.web(hex); } catch (Exception ex) { return Color.BLACK; }
     }
 
     private static int nearestIndex(List<Double> timex, double target) {

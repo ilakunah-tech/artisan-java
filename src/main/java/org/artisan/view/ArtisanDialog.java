@@ -101,6 +101,11 @@ public abstract class ArtisanDialog {
     /** Content to show in center of the dialog. */
     protected abstract Node buildContent();
 
+    /** Returns the same node as buildContent() for embedding this dialog's content into another (e.g. unified Settings). */
+    public final Node getContentForEmbedding() {
+        return buildContent();
+    }
+
     /** Called after layout is ready. Override to add content. */
     protected void initLayout() {
         Node content = buildContent();

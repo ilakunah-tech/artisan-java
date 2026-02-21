@@ -93,6 +93,8 @@ public final class AppShell {
         leftDrawer = new LeftDrawer();
         loginOverlay = new LoginOverlay();
         settingsOverlay = new SettingsOverlay();
+        settingsOverlay.setChartAppearanceContext(
+            this.uiPreferences, this.preferencesStore, chartController, rightReadoutPanel, roastLiveScreen);
         settingsOverlay.setOnImport(pd -> {
             if (appController != null) {
                 appController.loadSimulatedProfile(pd);
@@ -134,13 +136,7 @@ public final class AppShell {
                 leftIconRail.setFlameActive(leftDrawer.isOpen());
             },
             () -> {
-                if (settingsOverlay.isVisible()) {
-                    settingsOverlay.hide();
-                    leftIconRail.setCupActive(false);
-                } else {
-                    settingsOverlay.showTab("Device");
-                    leftIconRail.setCupActive(true);
-                }
+                if (onSettings != null) onSettings.run();
             }
         );
         webOverlay.visibleProperty().addListener((obs, oldVal, newVal) ->

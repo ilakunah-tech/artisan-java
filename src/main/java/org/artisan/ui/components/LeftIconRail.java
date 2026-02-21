@@ -7,7 +7,7 @@ import javafx.scene.layout.VBox;
 
 /**
  * Narrow left icon rail (28px wide) with three action buttons:
- * cloud (account), flame (roast properties), cup (settings).
+ * cloud (account), flame (roast properties), gear (settings).
  */
 public final class LeftIconRail extends VBox {
 
@@ -26,7 +26,7 @@ public final class LeftIconRail extends VBox {
 
         cloudBtn = createIconButton("\u2601", "Website");
         flameBtn = createIconButton("\uD83D\uDD25", "Roast Properties");
-        cupBtn   = createIconButton("\u2615", "Settings");
+        cupBtn   = createIconButton("\u2699", "Settings");
 
         cloudBtn.setOnAction(e -> { if (onCloud != null) onCloud.run(); });
         flameBtn.setOnAction(e -> { if (onFlame != null) onFlame.run(); });

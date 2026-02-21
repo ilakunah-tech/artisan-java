@@ -11,6 +11,7 @@ import javafx.scene.paint.Color;
 import org.artisan.controller.BackgroundSettings;
 import org.artisan.controller.DisplaySettings;
 import org.artisan.model.*;
+import org.artisan.ui.state.ChartAppearance;
 import org.artisan.util.CurveSmoothing;
 import org.artisan.view.chart.*;
 
@@ -148,6 +149,12 @@ public final class RoastChartController {
         bgManager.setDisplaySettings(ds);
         applyColors();
         applyAxisConfig(axisConfig);
+    }
+
+    public void setChartAppearance(ChartAppearance ap) {
+        if (overlay == null) return;
+        overlay.setChartAppearance(ap);
+        overlay.redraw();
     }
 
     public void setBackgroundSettings(BackgroundSettings bs) {

@@ -196,4 +196,24 @@ public final class EventButtonsDialog extends ArtisanDialog {
         onSaved.run();
         super.onOk(e);
     }
+
+    /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+    public boolean applyFromUI() {
+        java.util.List<EventButtonConfig> toSave = new java.util.ArrayList<>();
+        for (int i = 0; i < items.size() && i < MAX_BUTTONS; i++) {
+            toSave.add(items.get(i));
+        }
+        try {
+            EventButtonConfigPersistence.save(toSave);
+        } catch (IOException ex) {
+            Alert err = new Alert(Alert.AlertType.ERROR);
+            err.setTitle("Events");
+            err.setHeaderText("Save failed");
+            err.setContentText(ex.getMessage());
+            err.showAndWait();
+            return false;
+        }
+        onSaved.run();
+        return true;
+    }
 }

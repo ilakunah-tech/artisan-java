@@ -189,6 +189,11 @@ public final class BackgroundDialog extends ArtisanDialog {
     applyAndClose(true);
   }
 
+  /** Apply and persist settings without closing. Used when this dialog is embedded in unified Settings. */
+  public void applyFromUI() {
+    applyAndClose(false);
+  }
+
   private void applyAndClose(boolean close) {
     BackgroundSettings.Config c = new BackgroundSettings.Config();
     c.setEnabled(enabledCheck != null && enabledCheck.isSelected());
