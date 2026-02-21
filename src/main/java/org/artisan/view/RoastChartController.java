@@ -286,10 +286,14 @@ public final class RoastChartController {
             chartFactory.getDataDeltaBT().setStyle(curveSet.getDeltaBt().toChartFxStyle());
             chartFactory.getDataDeltaET().setStyle(curveSet.getDeltaEt().toChartFxStyle());
         } else {
-            chartFactory.getDataBT().setStyle(ChartFactory.styleFor(visBT, colorConfig.getCurveBT(), wBT));
-            chartFactory.getDataET().setStyle(ChartFactory.styleFor(visET, colorConfig.getCurveET(), wET));
-            chartFactory.getDataDeltaBT().setStyle(ChartFactory.styleFor(visDeltaBT, colorConfig.getCurveDeltaBT(), wDeltaBT));
-            chartFactory.getDataDeltaET().setStyle(ChartFactory.styleFor(visDeltaET, colorConfig.getCurveDeltaET(), wDeltaET));
+            chartFactory.getDataET().setStyle(
+                "-fx-stroke: #3498db; -fx-stroke-width: 2.5px;");
+            chartFactory.getDataBT().setStyle(
+                "-fx-stroke: #e74c3c; -fx-stroke-width: 2.5px;");
+            chartFactory.getDataDeltaBT().setStyle(
+                "-fx-stroke: #27ae60; -fx-stroke-width: 1.8px;");
+            chartFactory.getDataDeltaET().setStyle(
+                "-fx-stroke: #16a085; -fx-stroke-width: 1.5px; -fx-opacity: 0.75;");
         }
         bgManager.applyStyles();
     }

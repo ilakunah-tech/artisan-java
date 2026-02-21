@@ -41,11 +41,11 @@ import java.util.function.Consumer;
 public final class RoastOverlayCanvas extends Canvas {
 
     // PhaseStrip constants
-    private static final double STRIP_H      = 28.0;
-    private static final Color  COL_DRY      = Color.rgb(249, 168,  37, 0.88);
-    private static final Color  COL_MAILLARD = Color.rgb( 90,  50,  15, 0.88);
-    private static final Color  COL_DEV      = Color.rgb( 46, 125,  50, 0.88);
-    private static final Color  COL_REMAINDER= Color.rgb( 40,  40,  40, 0.60);
+    private static final double STRIP_H      = 30.0;
+    private static final Color  COL_DRY      = Color.rgb(255, 193,   7, 0.90);
+    private static final Color  COL_MAILLARD = Color.rgb(121,  85,  72, 0.85);
+    private static final Color  COL_DEV      = Color.rgb( 56, 142,  60, 0.90);
+    private static final Color  COL_REMAINDER= Color.rgb(200, 200, 200, 0.50);
 
     private XYChart chart;
     private Axis xAxis;
@@ -97,7 +97,12 @@ public final class RoastOverlayCanvas extends Canvas {
         });
         chart.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (onChartBodyClick == null || lastTimex == null) return;
-            double plotX   = chart.getCanvas().getLayoutX();
+            javafx.scene.canvas.Canvas ic = chart.getCanvas();
+            javafx.geometry.Bounds cb;
+            try {
+                cb = chart.sceneToLocal(ic.localToScene(ic.getBoundsInLocal()));
+            } catch (Exception ex) { return; }
+            double plotX = cb.getMinX();
             double timeSec = xAxis.getValueForDisplay(e.getX() - plotX);
             int idx = nearestIndex(lastTimex, timeSec);
             if (idx < 0) return;
@@ -139,10 +144,17 @@ public final class RoastOverlayCanvas extends Canvas {
         GraphicsContext gc = getGraphicsContext2D();
         gc.clearRect(0, 0, w, h);
 
-        double plotX = chart.getCanvas().getLayoutX();
-        double plotY = chart.getCanvas().getLayoutY();
-        double plotW = chart.getCanvas().getWidth();
-        double plotH = chart.getCanvas().getHeight();
+        javafx.scene.canvas.Canvas innerCanvas = chart.getCanvas();
+        javafx.geometry.Bounds canvasBounds;
+        try {
+            canvasBounds = chart.sceneToLocal(innerCanvas.localToScene(innerCanvas.getBoundsInLocal()));
+        } catch (Exception e) {
+            return;
+        }
+        double plotX = canvasBounds.getMinX();
+        double plotY = canvasBounds.getMinY();
+        double plotW = canvasBounds.getWidth();
+        double plotH = canvasBounds.getHeight();
         if (plotW <= 0 || plotH <= 0) return;
 
         gc.setLineCap(StrokeLineCap.ROUND);
@@ -198,7 +210,7 @@ public final class RoastOverlayCanvas extends Canvas {
                 double segW = dryEnd - stripStart;
                 if (segW > 50) {
                     gc.setFont(Font.font("System", FontWeight.BOLD, 11));
-                    gc.setFill(Color.rgb(30, 30, 30, 0.95));
+                    gc.setFill(Color.rgb(60, 40, 0, 0.95));
                     String pct = formatPct(chargeIdx, chargeIdx, dryIdx, dropIdx);
                     gc.fillText("DRY " + pct, stripStart + 6, stripY + STRIP_H - 8);
                 }
@@ -221,7 +233,7 @@ public final class RoastOverlayCanvas extends Canvas {
                 double segW = malEnd - malStart;
                 if (segW > 75) {
                     gc.setFont(Font.font("System", FontWeight.BOLD, 11));
-                    gc.setFill(Color.web("#ffffff", 0.90));
+                    gc.setFill(Color.WHITE);
                     String pct = formatPct(chargeIdx, dryIdx, fcIdx, dropIdx);
                     gc.fillText("MAILLARD " + pct, malStart + 6, stripY + STRIP_H - 8);
                 }
@@ -241,7 +253,7 @@ public final class RoastOverlayCanvas extends Canvas {
                 double segW = devEnd - devStart;
                 if (segW > 40) {
                     gc.setFont(Font.font("System", FontWeight.BOLD, 11));
-                    gc.setFill(Color.web("#ffffff", 0.90));
+                    gc.setFill(Color.WHITE);
                     String dtr = formatDTR(chargeIdx, fcIdx, dropIdx);
                     gc.fillText("DT " + dtr, devStart + 6, stripY + STRIP_H - 8);
                 }
@@ -249,7 +261,7 @@ public final class RoastOverlayCanvas extends Canvas {
         }
 
         // Top border
-        gc.setStroke(Color.web("#000000", 0.35));
+        gc.setStroke(Color.web("#aaaaaa", 0.60));
         gc.setLineWidth(1.0);
         gc.strokeLine(px, stripY, px + pw, stripY);
     }
@@ -283,13 +295,13 @@ public final class RoastOverlayCanvas extends Canvas {
         double shadingH = ph - STRIP_H;
         drawPhaseRect(gc, px, py, pw, shadingH,
             canvasData.getChargeIndex(), canvasData.getDryEndIndex(),
-            color("rect1", Color.web("#b5deff", 0.07)));
+            color("phasesdry", Color.web("#85c1e9", 0.12)));
         drawPhaseRect(gc, px, py, pw, shadingH,
             canvasData.getDryEndIndex(), canvasData.getFcStartIndex(),
-            color("rect2", Color.web("#ffd580", 0.07)));
+            color("phasesmid", Color.web("#f8c471", 0.12)));
         drawPhaseRect(gc, px, py, pw, shadingH,
             canvasData.getFcStartIndex(), canvasData.getDropIndex(),
-            color("rect3", Color.web("#ffb347", 0.07)));
+            color("phasesdev", Color.web("#82e0aa", 0.12)));
     }
 
     private void drawPhaseRect(GraphicsContext gc,
@@ -364,13 +376,13 @@ public final class RoastOverlayCanvas extends Canvas {
         if (canvasData == null || lastTimex == null || lastTimex.isEmpty()) return;
         double lineH = ph - STRIP_H;
 
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getChargeIndex(),  "CH",   Color.web("#ffffff", 0.75));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getDryEndIndex(),  "DE",   Color.web("#9bd3ff", 0.75));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getFcStartIndex(), "FC\u2191", Color.web("#ffc04c", 0.85));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getFcEndIndex(),   "FC\u2193", Color.web("#ffc04c", 0.65));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getScStartIndex(), "SC\u2191", Color.web("#ff8c8c", 0.70));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getScEndIndex(),   "SC\u2193", Color.web("#ff8c8c", 0.55));
-        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getDropIndex(),    "DROP", Color.web("#ff5871", 0.90));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getChargeIndex(),  "CH",   Color.web("#555555", 0.80));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getDryEndIndex(),  "DE",   Color.web("#2980b9", 0.80));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getFcStartIndex(), "FC\u2191", Color.web("#e67e22", 0.90));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getFcEndIndex(),   "FC\u2193", Color.web("#e67e22", 0.70));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getScStartIndex(), "SC\u2191", Color.web("#c0392b", 0.80));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getScEndIndex(),   "SC\u2193", Color.web("#c0392b", 0.65));
+        drawVerticalMarker(gc, px, py, pw, lineH, canvasData.getDropIndex(),    "DROP", Color.web("#c0392b", 0.95));
 
         // Special events bar (18 px above the phase strip)
         if (eventList == null) return;
@@ -420,7 +432,7 @@ public final class RoastOverlayCanvas extends Canvas {
         gc.setFont(Font.font("System", FontWeight.SEMI_BOLD, 10));
         double tw    = computeTextWidth(label, 10);
         double pillW = tw + 8, pillH = 14;
-        gc.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.80));
+        gc.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.85));
         gc.fillRoundRect(xPx - pillW / 2, py + 2, pillW, pillH, 4, 4);
         gc.setFill(Color.WHITE);
         gc.fillText(label, xPx - tw / 2, py + 12);
@@ -568,7 +580,7 @@ public final class RoastOverlayCanvas extends Canvas {
             onCursorMoved.accept(snapTime, btVal);
 
         double lineBottom = py + ph - STRIP_H;
-        gc.setStroke(Color.web("#ffffff", 0.25));
+        gc.setStroke(Color.web("#333333", 0.40));
         gc.setLineWidth(1.0);
         gc.setLineDashes(4, 4);
         gc.strokeLine(snapXPx, py, snapXPx, lineBottom);
@@ -623,17 +635,17 @@ public final class RoastOverlayCanvas extends Canvas {
         if (tipX + pillW > px + pw) tipX = snapXPx - pillW - 14;
         if (tipY + pillH > lineBottom - 4) tipY = lineBottom - pillH - 4;
 
-        gc.setFill(Color.color(0.1, 0.1, 0.1, 0.90));
+        gc.setFill(Color.color(0.98, 0.98, 0.98, 0.95));
         gc.fillRoundRect(tipX, tipY, pillW, pillH, 8, 8);
-        gc.setStroke(Color.web("#ffffff", 0.10));
+        gc.setStroke(Color.web("#cccccc", 0.80));
         gc.setLineWidth(0.8);
         gc.strokeRoundRect(tipX, tipY, pillW, pillH, 8, 8);
 
         Color[] colors = {
-            Color.web("#ffffff", 0.90),
-            colorConfig != null ? colorConfig.getCurveBT()      : Color.web("#E05C47"),
-            colorConfig != null ? colorConfig.getCurveET()      : Color.web("#4A90D9"),
-            colorConfig != null ? colorConfig.getCurveDeltaBT() : Color.web("#50C878")
+            Color.web("#222222", 0.90),
+            colorConfig != null ? colorConfig.getCurveBT()      : Color.web("#e74c3c"),
+            colorConfig != null ? colorConfig.getCurveET()      : Color.web("#3498db"),
+            colorConfig != null ? colorConfig.getCurveDeltaBT() : Color.web("#27ae60")
         };
         double ty = tipY + pad + lineH * 0.7;
         for (int i = 0; i < lines.length; i++) {
