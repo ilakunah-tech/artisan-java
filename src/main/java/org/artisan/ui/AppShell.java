@@ -121,8 +121,14 @@ public final class AppShell {
                 leftIconRail.setFlameActive(leftDrawer.isOpen());
             },
             () -> {
-                settingsOverlay.toggle();
-                leftIconRail.setCupActive(settingsOverlay.isVisible());
+                if (onSettings != null) {
+                    if (settingsOverlay.isVisible()) settingsOverlay.hide();
+                    onSettings.run();
+                    leftIconRail.setCupActive(false);
+                } else {
+                    settingsOverlay.toggle();
+                    leftIconRail.setCupActive(settingsOverlay.isVisible());
+                }
             }
         );
         webOverlay.visibleProperty().addListener((obs, oldVal, newVal) ->

@@ -22,6 +22,16 @@ public final class AppSettings {
   private static final String KEY_MODBUS_BT_REGISTER = "modbusBtRegister";
   private static final String KEY_MODBUS_ET_REGISTER = "modbusEtRegister";
   private static final String KEY_MODBUS_SCALE_FACTOR = "modbusScaleFactor";
+  private static final String KEY_TCP_HOST = "tcpHost";
+  private static final String KEY_AXIS_AUTO_SCALE_FLOOR = "axis.autoScaleFloor";
+  private static final String KEY_AXIS_AUTO_SCALE_Y = "axis.autoScaleY";
+  private static final String KEY_AXIS_TEMP_MIN = "axis.tempMin";
+  private static final String KEY_AXIS_TEMP_MAX = "axis.tempMax";
+  private static final String KEY_AXIS_ROR_MIN = "axis.rorMin";
+  private static final String KEY_AXIS_ROR_MAX = "axis.rorMax";
+  private static final String KEY_ROAST_AUTO_CHARGE_DROP = "roast.autoChargeDrop";
+  private static final String KEY_ROAST_AUTO_CHARGE_SUSTAIN = "roast.autoChargeSustain";
+  private static final String KEY_ROAST_PRE_ROAST_TIMEOUT = "roast.preRoastTimeout";
 
   private String lastDevicePort = "";
   private String deviceType = "Simulator";
@@ -34,6 +44,16 @@ public final class AppSettings {
   private int modbusBtRegister = 1;
   private int modbusEtRegister = 2;
   private double modbusScaleFactor = 10.0;
+  private String tcpHost = "localhost";
+  private double axisAutoScaleFloor = 50.0;
+  private boolean axisAutoScaleY = true;
+  private double axisTempMin = 0.0;
+  private double axisTempMax = 275.0;
+  private double axisRorMin = -20.0;
+  private double axisRorMax = 50.0;
+  private double autoChargeDrop = 5.0;
+  private double autoChargeSustain = 20.0;
+  private double preRoastTimeout = 300.0;
 
   public String getLastDevicePort() {
     return lastDevicePort;
@@ -123,6 +143,86 @@ public final class AppSettings {
     this.modbusScaleFactor = modbusScaleFactor > 0 ? modbusScaleFactor : 10.0;
   }
 
+  public String getTcpHost() {
+    return tcpHost;
+  }
+
+  public void setTcpHost(String tcpHost) {
+    this.tcpHost = tcpHost != null ? tcpHost : "localhost";
+  }
+
+  public double getAxisAutoScaleFloor() {
+    return axisAutoScaleFloor;
+  }
+
+  public void setAxisAutoScaleFloor(double axisAutoScaleFloor) {
+    this.axisAutoScaleFloor = axisAutoScaleFloor;
+  }
+
+  public boolean isAxisAutoScaleY() {
+    return axisAutoScaleY;
+  }
+
+  public void setAxisAutoScaleY(boolean axisAutoScaleY) {
+    this.axisAutoScaleY = axisAutoScaleY;
+  }
+
+  public double getAxisTempMin() {
+    return axisTempMin;
+  }
+
+  public void setAxisTempMin(double axisTempMin) {
+    this.axisTempMin = axisTempMin;
+  }
+
+  public double getAxisTempMax() {
+    return axisTempMax;
+  }
+
+  public void setAxisTempMax(double axisTempMax) {
+    this.axisTempMax = axisTempMax;
+  }
+
+  public double getAxisRorMin() {
+    return axisRorMin;
+  }
+
+  public void setAxisRorMin(double axisRorMin) {
+    this.axisRorMin = axisRorMin;
+  }
+
+  public double getAxisRorMax() {
+    return axisRorMax;
+  }
+
+  public void setAxisRorMax(double axisRorMax) {
+    this.axisRorMax = axisRorMax;
+  }
+
+  public double getAutoChargeDrop() {
+    return autoChargeDrop;
+  }
+
+  public void setAutoChargeDrop(double autoChargeDrop) {
+    this.autoChargeDrop = autoChargeDrop;
+  }
+
+  public double getAutoChargeSustain() {
+    return autoChargeSustain;
+  }
+
+  public void setAutoChargeSustain(double autoChargeSustain) {
+    this.autoChargeSustain = autoChargeSustain;
+  }
+
+  public double getPreRoastTimeout() {
+    return preRoastTimeout;
+  }
+
+  public void setPreRoastTimeout(double preRoastTimeout) {
+    this.preRoastTimeout = preRoastTimeout;
+  }
+
   /** Loads settings from Preferences. */
   public static AppSettings load() {
     AppSettings s = new AppSettings();
@@ -143,6 +243,16 @@ public final class AppSettings {
     s.modbusBtRegister = prefs.getInt(KEY_MODBUS_BT_REGISTER, 1);
     s.modbusEtRegister = prefs.getInt(KEY_MODBUS_ET_REGISTER, 2);
     s.modbusScaleFactor = prefs.getDouble(KEY_MODBUS_SCALE_FACTOR, 10.0);
+    s.tcpHost = prefs.get(KEY_TCP_HOST, "localhost");
+    s.axisAutoScaleFloor = prefs.getDouble(KEY_AXIS_AUTO_SCALE_FLOOR, 50.0);
+    s.axisAutoScaleY = prefs.getBoolean(KEY_AXIS_AUTO_SCALE_Y, true);
+    s.axisTempMin = prefs.getDouble(KEY_AXIS_TEMP_MIN, 0.0);
+    s.axisTempMax = prefs.getDouble(KEY_AXIS_TEMP_MAX, 275.0);
+    s.axisRorMin = prefs.getDouble(KEY_AXIS_ROR_MIN, -20.0);
+    s.axisRorMax = prefs.getDouble(KEY_AXIS_ROR_MAX, 50.0);
+    s.autoChargeDrop = prefs.getDouble(KEY_ROAST_AUTO_CHARGE_DROP, 5.0);
+    s.autoChargeSustain = prefs.getDouble(KEY_ROAST_AUTO_CHARGE_SUSTAIN, 20.0);
+    s.preRoastTimeout = prefs.getDouble(KEY_ROAST_PRE_ROAST_TIMEOUT, 300.0);
     return s;
   }
 
@@ -160,5 +270,15 @@ public final class AppSettings {
     prefs.putInt(KEY_MODBUS_BT_REGISTER, modbusBtRegister);
     prefs.putInt(KEY_MODBUS_ET_REGISTER, modbusEtRegister);
     prefs.putDouble(KEY_MODBUS_SCALE_FACTOR, modbusScaleFactor);
+    prefs.put(KEY_TCP_HOST, tcpHost);
+    prefs.putDouble(KEY_AXIS_AUTO_SCALE_FLOOR, axisAutoScaleFloor);
+    prefs.putBoolean(KEY_AXIS_AUTO_SCALE_Y, axisAutoScaleY);
+    prefs.putDouble(KEY_AXIS_TEMP_MIN, axisTempMin);
+    prefs.putDouble(KEY_AXIS_TEMP_MAX, axisTempMax);
+    prefs.putDouble(KEY_AXIS_ROR_MIN, axisRorMin);
+    prefs.putDouble(KEY_AXIS_ROR_MAX, axisRorMax);
+    prefs.putDouble(KEY_ROAST_AUTO_CHARGE_DROP, autoChargeDrop);
+    prefs.putDouble(KEY_ROAST_AUTO_CHARGE_SUSTAIN, autoChargeSustain);
+    prefs.putDouble(KEY_ROAST_PRE_ROAST_TIMEOUT, preRoastTimeout);
   }
 }

@@ -170,6 +170,7 @@ public final class MainWindow extends Application {
     syncColorConfigFromDisplaySettings(colorConfig, displaySettings);
     axisConfig = new AxisConfig();
     AxisConfig.loadFromPreferences(axisConfig);
+    applyAxisConfigFromAppSettings();
     samplingConfig = new SamplingConfig();
     SamplingConfig.loadFromPreferences(samplingConfig);
     chartController = new RoastChartController(
@@ -293,6 +294,8 @@ public final class MainWindow extends Application {
     toolsMenu.getItems().addAll(comparatorItem, designerItem, transposerItem, simulatorItem, calculatorItem);
 
     Menu configMenu = new Menu("Config");
+    MenuItem settingsItem = new MenuItem("Settings...");
+    settingsItem.setOnAction(e -> openSettingsDialog(root));
     MenuItem axesItem = new MenuItem("Axes...");
     axesItem.setOnAction(e -> openAxesDialog(root, chartController));
     MenuItem samplingItem = new MenuItem("Sampling...");
@@ -320,7 +323,11 @@ public final class MainWindow extends Application {
     MenuItem resetLayoutItem = new MenuItem("Reset Layout...");
     resetLayoutItem.setAccelerator(javafx.scene.input.KeyCombination.keyCombination("Ctrl+Shift+R"));
     resetLayoutItem.setOnAction(e -> doResetLayout());
-    configMenu.getItems().addAll(axesItem, samplingItem, portsItem, deviceItem, s7Item, new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(), eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(), pidItem, new SeparatorMenuItem(), resetLayoutItem);
+    configMenu.getItems().addAll(settingsItem, new SeparatorMenuItem(),
+        axesItem, samplingItem, portsItem, deviceItem, s7Item,
+        new SeparatorMenuItem(), phasesItem, backgroundItem, new SeparatorMenuItem(),
+        eventsItem, alarmsItem, autosaveItem, replayItem, new SeparatorMenuItem(),
+        pidItem, new SeparatorMenuItem(), resetLayoutItem);
 
     Menu helpMenu = new Menu("Help");
     MenuItem shortcutsItem = new MenuItem("Keyboard Shortcuts...");
@@ -362,7 +369,7 @@ public final class MainWindow extends Application {
     });
     appShell.addLeadingToTopBar(menuOverflowBtn);
     appShell.setOnCurveVisibilitySync(() -> syncDisplaySettingsFromUIPreferences(displaySettings, uiPreferences));
-    appShell.setOnSettings(() -> openDeviceSettings(root));
+    appShell.setOnSettings(() -> openSettingsDialog(root));
     appShell.setOnResetLayout(this::doResetLayout);
     appShell.setOnOpenReplay(() -> openReplayDialog(root));
     appShell.setOnOpenRecent(path -> openRecentFile(path, root, chartController));
@@ -370,6 +377,7 @@ public final class MainWindow extends Application {
     demoRunner = new DemoRunner(appController);
     appShell.setDemoRunner(demoRunner);
     appShell.getRoastLiveScreen().setRoastStateMachine(roastStateMachine);
+    applyRoastStateMachineFromAppSettings();
 
     roastStateMachine.setOnAutoCharge(
         () -> Platform.runLater(this::handleAutoCharge));
@@ -788,6 +796,45 @@ public final class MainWindow extends Application {
     }
   }
 
+  private void applyThemeFromSettings(BorderPane root) {
+    if (root == null || appSettings == null) return;
+    boolean dark = appSettings.isDarkTheme();
+    applyAtlantaFXTheme(dark);
+    if (dark) {
+      root.getStyleClass().remove("ri5-light");
+    } else if (!root.getStyleClass().contains("ri5-light")) {
+      root.getStyleClass().add("ri5-light");
+    }
+    if (uiPreferences != null && preferencesStore != null) {
+      uiPreferences.setTheme(dark ? "dark" : "light");
+      preferencesStore.save(uiPreferences);
+    }
+  }
+
+  private void applyAxisConfigFromAppSettings() {
+    if (axisConfig == null || appSettings == null) return;
+    axisConfig.setAutoScaleY(appSettings.isAxisAutoScaleY());
+    double tempMin = appSettings.getAxisTempMin();
+    double tempMax = appSettings.getAxisTempMax();
+    if (tempMin > tempMax) {
+      tempMin = 0.0;
+      tempMax = 275.0;
+    }
+    axisConfig.setTempMin(tempMin);
+    axisConfig.setTempMax(tempMax);
+    axisConfig.setTempAutoScaleFloor(appSettings.getAxisAutoScaleFloor());
+    axisConfig.setRorMin(appSettings.getAxisRorMin());
+    axisConfig.setRorMax(appSettings.getAxisRorMax());
+    axisConfig.setUnit(appSettings.getTempUnit());
+  }
+
+  private void applyRoastStateMachineFromAppSettings() {
+    if (roastStateMachine == null || appSettings == null) return;
+    roastStateMachine.setAutoChargeTempDropDeg(appSettings.getAutoChargeDrop());
+    roastStateMachine.setAutoChargeDropSustainSec(appSettings.getAutoChargeSustain());
+    roastStateMachine.setPreRoastTimeoutSec(appSettings.getPreRoastTimeout());
+  }
+
   private static void syncColorConfigFromDisplaySettings(ColorConfig colorConfig, DisplaySettings ds) {
     if (ds == null) return;
     colorConfig.setPaletteColor("et", ColorConfig.fromHex(ds.getPaletteCurveET()));
@@ -810,6 +857,31 @@ public final class MainWindow extends Application {
 
   private void openDeviceSettings(BorderPane root) {
     openDevicesDialog(root);
+  }
+
+  private void openSettingsDialog(BorderPane root) {
+    Window owner = root.getScene() != null ? root.getScene().getWindow() : null;
+    if (owner == null) return;
+    SettingsDialog dialog = new SettingsDialog(
+        appSettings, displaySettings, axisConfig, roastStateMachine, owner);
+    dialog.showAndWait().ifPresent(btn -> {
+      if (btn == ButtonType.OK || btn == ButtonType.APPLY) {
+        if (appController != null) appController.setDisplaySettings(displaySettings);
+        if (chartController != null && appController != null) {
+          syncColorConfigFromDisplaySettings(appController.getColorConfig(), displaySettings);
+          chartController.setDisplaySettings(displaySettings);
+          chartController.applyAxisConfig(axisConfig);
+          chartController.applyColors();
+          chartController.updateChart();
+        }
+        applyThemeFromSettings(root);
+        applyRoastStateMachineFromAppSettings();
+        if (appShell != null && appShell.getRoastLiveScreen() != null) {
+          appShell.getRoastLiveScreen().refreshCurveLegendColors(displaySettings);
+        }
+        if (appController != null) appController.refreshStatistics();
+      }
+    });
   }
 
   private void openDevicesDialog(BorderPane root) {
@@ -855,6 +927,16 @@ public final class MainWindow extends Application {
       if (cc != null) {
         cc.applyAxisConfig(axisConfig);
         cc.updateChart();
+      }
+      if (appSettings != null) {
+        appSettings.setAxisAutoScaleY(axisConfig.isAutoScaleY());
+        appSettings.setAxisTempMin(axisConfig.getTempMin());
+        appSettings.setAxisTempMax(axisConfig.getTempMax());
+        appSettings.setAxisAutoScaleFloor(axisConfig.getTempAutoScaleFloor());
+        appSettings.setAxisRorMin(axisConfig.getRorMin());
+        appSettings.setAxisRorMax(axisConfig.getRorMax());
+        appSettings.setTempUnit(axisConfig.getUnit());
+        appSettings.save();
       }
     });
     dialog.showAndWait();
